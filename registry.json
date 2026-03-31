@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "adapters": [
+    {
+      "name": "claude-code",
+      "displayName": "Claude Code",
+      "description": "Anthropic's AI coding assistant",
+      "accent": "#d97706",
+      "binary": "claude",
+      "sdkVersion": 1,
+      "platforms": ["macos"],
+      "official": true,
+      "version": "1.0.0",
+      "minAppVersion": "1.0.0"
+    },
+    {
+      "name": "codex",
+      "displayName": "Codex",
+      "description": "OpenAI's AI coding assistant",
+      "accent": "#059669",
+      "binary": "codex",
+      "sdkVersion": 1,
+      "platforms": ["macos"],
+      "official": true,
+      "version": "1.0.0",
+      "minAppVersion": "1.0.0"
+    }
+  ]
+}

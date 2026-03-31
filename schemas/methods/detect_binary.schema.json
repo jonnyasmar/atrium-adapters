@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "detect_binary output",
+  "description": "Output schema for the detect_binary method.",
+  "type": "object",
+  "required": ["path"],
+  "properties": {
+    "path": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ],
+      "description": "Absolute path to the detected binary, or null if not found."
+    }
+  },
+  "additionalProperties": false
+}

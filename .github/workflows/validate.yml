@@ -1,0 +1,34 @@
+name: Validate Adapters
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Make validate-adapter.sh executable
+        run: chmod +x validate-adapter.sh
+
+      - name: Validate all adapters
+        run: |
+          failed=0
+          for dir in adapters/*/; do
+            echo "=== Validating ${dir} ==="
+            if ! ./validate-adapter.sh "$dir"; then
+              echo "FAILED: ${dir}"
+              failed=1
+            fi
+          done
+          if [ "$failed" -eq 1 ]; then
+            echo "One or more adapters failed validation."
+            exit 1
+          fi
+          echo "All adapters passed validation."

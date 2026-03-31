@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "check_auth output",
+  "description": "Output schema for the check_auth method.",
+  "type": "object",
+  "required": ["authenticated"],
+  "properties": {
+    "authenticated": {
+      "type": "boolean",
+      "description": "Whether the tool is authenticated and ready to use."
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable recovery message when not authenticated."
+    },
+    "command": {
+      "type": "string",
+      "description": "Shell command to run for authentication recovery."
+    }
+  },
+  "additionalProperties": false
+}

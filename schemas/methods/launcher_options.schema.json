@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "launcher_options output",
+  "description": "Output schema for the launcher_options method (static JSON).",
+  "type": "object",
+  "required": ["options"],
+  "properties": {
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "label", "type", "default"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique key for this option, maps to AdapterFlags.extra."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable label shown in the launcher UI."
+          },
+          "description": {
+            "type": "string",
+            "description": "Tooltip text shown on hover."
+          },
+          "type": {
+            "type": "string",
+            "enum": ["toggle", "select", "text"],
+            "description": "UI control type."
+          },
+          "default": {
+            "description": "Default value for this option."
+          },
+          "choices": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Available choices (required when type is 'select')."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "List of configurable launcher options."
+    }
+  },
+  "additionalProperties": false
+}

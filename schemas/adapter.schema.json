@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Adapter Manifest",
+  "description": "Schema for adapter.json manifest files used by the atrium Script Adapter SDK.",
+  "type": "object",
+  "required": [
+    "sdkVersion",
+    "name",
+    "displayName",
+    "description",
+    "accent",
+    "binary",
+    "version",
+    "methods"
+  ],
+  "properties": {
+    "sdkVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "SDK version this adapter targets."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Machine-readable adapter identifier (lowercase, hyphens only)."
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable adapter name shown in the UI."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of the adapter."
+    },
+    "accent": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "Hex color code for the adapter accent color."
+    },
+    "binary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the CLI binary this adapter wraps (e.g., 'claude', 'codex')."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+",
+      "description": "Semantic version of the adapter."
+    },
+    "author": {
+      "type": "string",
+      "description": "Adapter author name (optional)."
+    },
+    "methods": {
+      "type": "object",
+      "description": "Map of method names to their resolution references.",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["script"],
+            "properties": {
+              "script": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Path to the executable script file, relative to the adapter directory."
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": ["static"],
+            "properties": {
+              "static": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Path to a static JSON file, relative to the adapter directory."
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}

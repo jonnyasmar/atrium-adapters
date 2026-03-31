@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "hooks output",
+  "description": "Output schema for the hooks method (supports install, uninstall, and status subcommands).",
+  "oneOf": [
+    {
+      "title": "status response",
+      "type": "object",
+      "required": ["installed", "subcommand"],
+      "properties": {
+        "subcommand": {
+          "type": "string",
+          "const": "status",
+          "description": "Discriminator field identifying this as a status response."
+        },
+        "installed": {
+          "type": "boolean",
+          "description": "Whether hooks are currently installed."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Explanation when hooks are not installed."
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "install response",
+      "type": "object",
+      "required": ["installed", "subcommand"],
+      "properties": {
+        "subcommand": {
+          "type": "string",
+          "const": "install",
+          "description": "Discriminator field identifying this as an install response."
+        },
+        "installed": {
+          "type": "boolean",
+          "description": "Whether hooks were successfully installed."
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "uninstall response",
+      "type": "object",
+      "required": ["uninstalled", "subcommand"],
+      "properties": {
+        "subcommand": {
+          "type": "string",
+          "const": "uninstall",
+          "description": "Discriminator field identifying this as an uninstall response."
+        },
+        "uninstalled": {
+          "type": "boolean",
+          "description": "Whether hooks were successfully uninstalled."
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
+}

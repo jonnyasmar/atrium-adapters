@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "detect_running output",
+  "description": "Output schema for the detect_running method.",
+  "type": "object",
+  "required": ["running"],
+  "properties": {
+    "running": {
+      "type": "boolean",
+      "description": "Whether the adapter's tool is running under the given PID."
+    }
+  },
+  "additionalProperties": false
+}

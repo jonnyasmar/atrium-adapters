@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "extract_session_id output",
+  "description": "Output schema for the extract_session_id method.",
+  "type": "object",
+  "required": ["sessionId"],
+  "properties": {
+    "sessionId": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ],
+      "description": "The active session ID, or null if not detected."
+    },
+    "args": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        { "type": "null" }
+      ],
+      "description": "Original launch arguments with session-specific flags stripped."
+    }
+  },
+  "additionalProperties": false
+}

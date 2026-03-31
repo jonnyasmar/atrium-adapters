@@ -1,0 +1,20 @@
+{
+  "sdkVersion": 1,
+  "name": "claude-code",
+  "displayName": "Claude Code",
+  "description": "Anthropic's AI coding assistant",
+  "accent": "#d97706",
+  "binary": "claude",
+  "version": "1.0.0",
+  "methods": {
+    "detect_binary": { "script": "detect_binary.sh" },
+    "detect_running": { "script": "detect_running.sh" },
+    "extract_session_id": { "script": "extract_session_id.sh" },
+    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
+    "build_launch_command": { "script": "build_launch_command.sh" },
+    "build_resume_command": { "script": "build_resume_command.sh" },
+    "check_auth": { "script": "check_auth.sh" },
+    "hooks": { "script": "hooks.sh" },
+    "launcher_options": { "static": "launcher_options.json" }
+  }
+}
