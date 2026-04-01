@@ -22,14 +22,15 @@ fi
 atrium_MARKER="atrium/hook-port"
 
 # Build the SessionStart hook command template.
-# Reads port from ~/.atrium/hook-port at execution time (not install time).
+# Prefers ATRIUM_HOOK_PORT env var (set per-PTY, routes to the correct instance)
+# with fallback to ~/.atrium/hook-port file for backward compatibility.
 build_session_start_hook() {
   cat <<'HOOKJSON'
 [{
   "matcher": "startup|resume",
   "hooks": [{
     "type": "command",
-    "command": "PORT=$(cat ~/.atrium/hook-port 2>/dev/null) && [ -n \"$PORT\" ] && curl -s -X POST http://127.0.0.1:$PORT/api/adapter/codex/session-start -H 'Content-Type: application/json' -d \"$(cat)\"",
+    "command": "PORT=${ATRIUM_HOOK_PORT:-$(cat ~/.atrium/hook-port 2>/dev/null)} && [ -n \"$PORT\" ] && curl -s -X POST http://127.0.0.1:$PORT/api/adapter/codex/session-start -H 'Content-Type: application/json' -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"$(cat)\"",
     "timeout": 5
   }]
 }]
@@ -42,7 +43,7 @@ build_session_end_hook() {
   "matcher": "*",
   "hooks": [{
     "type": "command",
-    "command": "PORT=$(cat ~/.atrium/hook-port 2>/dev/null) && [ -n \"$PORT\" ] && curl -s -X POST http://127.0.0.1:$PORT/api/adapter/codex/session-end -H 'Content-Type: application/json' -d \"$(cat)\"",
+    "command": "PORT=${ATRIUM_HOOK_PORT:-$(cat ~/.atrium/hook-port 2>/dev/null)} && [ -n \"$PORT\" ] && curl -s -X POST http://127.0.0.1:$PORT/api/adapter/codex/session-end -H 'Content-Type: application/json' -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"$(cat)\"",
     "timeout": 5
   }]
 }]
