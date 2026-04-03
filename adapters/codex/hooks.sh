@@ -22,10 +22,22 @@ fi
 atrium_MARKER="atrium/hook-port"
 
 # Build the SessionStart hook command template.
-# Prefers ATRIUM_HOOK_PORT env var (set per-PTY, routes to the correct instance)
-# with fallback to ~/.atrium/hook-port file for backward compatibility.
+# When ATRIUM_HOOK_URL_SESSION_START is set (from manifest hooks), uses the /resolve
+# endpoint with a JSON POST body containing the atrium:// URI.
+# Falls back to ATRIUM_HOOK_PORT env var or ~/.atrium/hook-port file for backward compat.
 build_session_start_hook() {
-  cat <<'HOOKJSON'
+  local url="${ATRIUM_HOOK_URL_SESSION_START:-}"
+  if [ -n "$url" ]; then
+    jq -n --arg url "$url" '[{
+      "matcher": "startup|resume",
+      "hooks": [{
+        "type": "command",
+        "command": ("PAYLOAD=$(cat) && curl -s -X POST " + $url + " -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"atrium://hooks/codex/session-start\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
+        "timeout": 5
+      }]
+    }]'
+  else
+    cat <<'HOOKJSON'
 [{
   "matcher": "startup|resume",
   "hooks": [{
@@ -35,10 +47,22 @@ build_session_start_hook() {
   }]
 }]
 HOOKJSON
+  fi
 }
 
 build_session_end_hook() {
-  cat <<'HOOKJSON'
+  local url="${ATRIUM_HOOK_URL_SESSION_END:-}"
+  if [ -n "$url" ]; then
+    jq -n --arg url "$url" '[{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": ("PAYLOAD=$(cat) && curl -s -X POST " + $url + " -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"atrium://hooks/codex/session-end\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
+        "timeout": 5
+      }]
+    }]'
+  else
+    cat <<'HOOKJSON'
 [{
   "matcher": "*",
   "hooks": [{
@@ -48,6 +72,7 @@ build_session_end_hook() {
   }]
 }]
 HOOKJSON
+  fi
 }
 
 # Ensure the ~/.codex directory exists
@@ -140,11 +165,11 @@ do_install() {
     '
     .hooks = (.hooks // {}) |
     .hooks.SessionStart = (
-      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port") | not))]
+      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port|AITERM|/resolve") | not))]
       + $session_start
     ) |
     .hooks.SessionEnd = (
-      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port") | not))]
+      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|AITERM|/resolve") | not))]
       + $session_end
     ) |
     # Clean up legacy root-level keys from previous versions
@@ -158,8 +183,38 @@ do_install() {
   echo "$updated" > "$temp_file"
   mv "$temp_file" "$HOOKS_JSON"
 
+  # Step 3: Register atrium MCP server via codex CLI
+  install_mcp_server
+
   echo '{"subcommand": "install", "installed": true}'
   exit 0
+}
+
+install_mcp_server() {
+  local shim_path="${ATRIUM_MCP_SHIM_PATH:-}"
+  local data_dir="${ATRIUM_DATA_DIR:-}"
+
+  if [ -z "$shim_path" ] || [ -z "$data_dir" ]; then
+    return 0
+  fi
+
+  if ! command -v codex &>/dev/null; then
+    return 0
+  fi
+
+  # Remove existing atrium MCP entry and write fresh config with env_vars
+  codex mcp remove atrium 2>/dev/null || true
+
+  local config="${HOME}/.codex/config.toml"
+  cat >> "$config" << MCPTOML
+
+[mcp_servers.atrium]
+command = "${shim_path}"
+env_vars = ["ATRIUM_PANE_ID", "ATRIUM_HOOK_PORT"]
+
+[mcp_servers.atrium.env]
+ATRIUM_DATA_DIR = "${data_dir}"
+MCPTOML
 }
 
 do_uninstall() {
@@ -193,6 +248,11 @@ do_uninstall() {
   local temp_file="${HOOKS_JSON}.atrium-tmp"
   echo "$updated" > "$temp_file"
   mv "$temp_file" "$HOOKS_JSON"
+
+  # Step 3: Remove atrium MCP server
+  if command -v codex &>/dev/null; then
+    codex mcp remove atrium 2>/dev/null || true
+  fi
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
   exit 0

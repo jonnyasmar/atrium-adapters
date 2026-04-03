@@ -83,6 +83,14 @@
           }
         ]
       }
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Optional map of hook event names to atrium:// URIs. When present, the hook installer provides resolved HTTP URLs as environment variables to hooks.sh.",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^atrium://"
+      }
     }
   },
   "additionalProperties": false
