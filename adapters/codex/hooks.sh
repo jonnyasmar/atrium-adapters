@@ -30,7 +30,7 @@ build_session_start_hook() {
     "matcher": "startup|resume",
     "hooks": [{
       "type": "command",
-      "command": ($marker + "; PAYLOAD=$(cat); [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
+      "command": ($marker + "; PAYLOAD=$(cat); CLI=${ATRIUM_CLI_PATH:-atrium}; if [ -x \"$CLI\" ] || command -v \"$CLI\" >/dev/null 2>&1; then printf %s \"$PAYLOAD\" | \"$CLI\" hook emit codex session-start --pane-id \"${ATRIUM_PANE_ID:-}\" >/dev/null 2>&1 || true; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\" >/dev/null 2>&1 || true; fi"),
       "timeout": 5
     }]
   }]'
@@ -42,7 +42,7 @@ build_session_end_hook() {
     "matcher": "*",
     "hooks": [{
       "type": "command",
-      "command": ($marker + "; PAYLOAD=$(cat); [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
+      "command": ($marker + "; PAYLOAD=$(cat); CLI=${ATRIUM_CLI_PATH:-atrium}; if [ -x \"$CLI\" ] || command -v \"$CLI\" >/dev/null 2>&1; then printf %s \"$PAYLOAD\" | \"$CLI\" hook emit codex session-end --pane-id \"${ATRIUM_PANE_ID:-}\" >/dev/null 2>&1 || true; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\" >/dev/null 2>&1 || true; fi"),
       "timeout": 5
     }]
   }]'
