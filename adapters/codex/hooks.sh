@@ -18,61 +18,34 @@ if ! command -v jq &>/dev/null; then
   exit 1
 fi
 
-# atrium hook marker — used to identify our hooks for clean uninstall
-atrium_MARKER="atrium/hook-port"
+# atrium hook marker — used to identify our hooks for clean uninstall/status
+atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 
 # Build the SessionStart hook command template.
-# When ATRIUM_HOOK_URL_SESSION_START is set (from manifest hooks), uses the /resolve
-# endpoint with a JSON POST body containing the atrium:// URI.
-# Falls back to ATRIUM_HOOK_PORT env var or ~/.atrium/hook-port file for backward compat.
+# The installed command resolves the active hook port at runtime from the pane's
+# injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
 build_session_start_hook() {
-  local url="${ATRIUM_HOOK_URL_SESSION_START:-}"
-  if [ -n "$url" ]; then
-    jq -n --arg url "$url" '[{
-      "matcher": "startup|resume",
-      "hooks": [{
-        "type": "command",
-        "command": ("PAYLOAD=$(cat) && curl -s -X POST " + $url + " -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"atrium://hooks/codex/session-start\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
-        "timeout": 5
-      }]
-    }]'
-  else
-    cat <<'HOOKJSON'
-[{
-  "matcher": "startup|resume",
-  "hooks": [{
-    "type": "command",
-    "command": "PORT=${ATRIUM_HOOK_PORT:-$(cat ~/.atrium/hook-port 2>/dev/null)} && [ -n \"$PORT\" ] && curl -s -X POST http://127.0.0.1:$PORT/api/adapter/codex/session-start -H 'Content-Type: application/json' -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"$(cat)\"",
-    "timeout": 5
-  }]
-}]
-HOOKJSON
-  fi
+  local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/codex/session-start}"
+  jq -n --arg uri "$uri" --arg marker "$atrium_MARKER" '[{
+    "matcher": "startup|resume",
+    "hooks": [{
+      "type": "command",
+      "command": ($marker + "; PAYLOAD=$(cat); [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
+      "timeout": 5
+    }]
+  }]'
 }
 
 build_session_end_hook() {
-  local url="${ATRIUM_HOOK_URL_SESSION_END:-}"
-  if [ -n "$url" ]; then
-    jq -n --arg url "$url" '[{
-      "matcher": "*",
-      "hooks": [{
-        "type": "command",
-        "command": ("PAYLOAD=$(cat) && curl -s -X POST " + $url + " -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"atrium://hooks/codex/session-end\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
-        "timeout": 5
-      }]
-    }]'
-  else
-    cat <<'HOOKJSON'
-[{
-  "matcher": "*",
-  "hooks": [{
-    "type": "command",
-    "command": "PORT=${ATRIUM_HOOK_PORT:-$(cat ~/.atrium/hook-port 2>/dev/null)} && [ -n \"$PORT\" ] && curl -s -X POST http://127.0.0.1:$PORT/api/adapter/codex/session-end -H 'Content-Type: application/json' -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"$(cat)\"",
-    "timeout": 5
-  }]
-}]
-HOOKJSON
-  fi
+  local uri="${ATRIUM_HOOK_URI_SESSION_END:-atrium://hooks/codex/session-end}"
+  jq -n --arg uri "$uri" --arg marker "$atrium_MARKER" '[{
+    "matcher": "*",
+    "hooks": [{
+      "type": "command",
+      "command": ($marker + "; PAYLOAD=$(cat); [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\""),
+      "timeout": 5
+    }]
+  }]'
 }
 
 # Ensure the ~/.codex directory exists
@@ -165,11 +138,11 @@ do_install() {
     '
     .hooks = (.hooks // {}) |
     .hooks.SessionStart = (
-      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port|AITERM|/resolve") | not))]
+      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port|AITERM|/resolve|atrium-runtime-hook") | not))]
       + $session_start
     ) |
     .hooks.SessionEnd = (
-      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|AITERM|/resolve") | not))]
+      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|AITERM|/resolve|atrium-runtime-hook") | not))]
       + $session_end
     ) |
     # Clean up legacy root-level keys from previous versions
@@ -210,7 +183,7 @@ install_mcp_server() {
 
 [mcp_servers.atrium]
 command = "${shim_path}"
-env_vars = ["ATRIUM_PANE_ID", "ATRIUM_HOOK_PORT"]
+env_vars = ["ATRIUM_PANE_ID", "ATRIUM_HOOK_PORT", "ATRIUM_DATA_DIR"]
 
 [mcp_servers.atrium.env]
 ATRIUM_DATA_DIR = "${data_dir}"
@@ -233,7 +206,7 @@ do_uninstall() {
     if .hooks then
       .hooks |= with_entries(
         .value |= [.[] |
-          .hooks |= [.[] | select(.command | test("atrium/hook-port") | not)]
+          .hooks |= [.[] | select(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve") | not)]
           | select(.hooks | length > 0)
         ] | select(length > 0)
       )
@@ -271,9 +244,9 @@ do_status() {
   local has_hook=false
   if [ -f "$HOOKS_JSON" ]; then
     has_hook="$(jq '
-      ((.hooks.SessionStart // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port")))
+      ((.hooks.SessionStart // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve")))
       and
-      ((.hooks.SessionEnd // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port")))
+      ((.hooks.SessionEnd // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve")))
     ' "$HOOKS_JSON" 2>/dev/null)" || has_hook="false"
   fi
 
