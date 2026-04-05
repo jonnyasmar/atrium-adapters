@@ -17,16 +17,28 @@ fi
 # atrium hook marker — used to identify our hooks for clean uninstall/status
 atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 
+# Build the hook command string with CLI transport (preferred) and HTTP fallback.
+# Usage: build_hook_command <uri> <adapter_name> <event_name> <marker>
+# Runtime detection: checks `command -v atrium` on every hook invocation so the CLI
+# path activates automatically once the binary is on PATH — no reinstall needed.
+build_hook_command() {
+  local uri="$1" adapter_name="$2" event_name="$3" marker="$4"
+  jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" \
+    '($marker + "; PAYLOAD=$(cat); if command -v atrium >/dev/null 2>&1; then atrium hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
+}
+
 # Build the hook command template.
 # The installed command resolves the active hook port at runtime from the pane's
 # injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
 build_session_start_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/claude-code/session-start}"
-  jq -n --arg uri "$uri" --arg marker "$atrium_MARKER" '[{
+  local cmd
+  cmd="$(build_hook_command "$uri" "claude-code" "session-start" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
     "matcher": "startup|resume",
     "hooks": [{
       "type": "command",
-      "command": ($marker + "; PAYLOAD=$(cat); CLI=${ATRIUM_CLI_PATH:-atrium}; if [ -x \"$CLI\" ] || command -v \"$CLI\" >/dev/null 2>&1; then printf %s \"$PAYLOAD\" | \"$CLI\" hook emit claude-code session-start --pane-id \"${ATRIUM_PANE_ID:-}\" >/dev/null 2>&1 || true; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\" >/dev/null 2>&1 || true; fi"),
+      "command": $cmd,
       "timeout": 5
     }]
   }]'
@@ -34,11 +46,13 @@ build_session_start_hook() {
 
 build_session_end_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_END:-atrium://hooks/claude-code/session-end}"
-  jq -n --arg uri "$uri" --arg marker "$atrium_MARKER" '[{
+  local cmd
+  cmd="$(build_hook_command "$uri" "claude-code" "session-end" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
     "matcher": "*",
     "hooks": [{
       "type": "command",
-      "command": ($marker + "; PAYLOAD=$(cat); CLI=${ATRIUM_CLI_PATH:-atrium}; if [ -x \"$CLI\" ] || command -v \"$CLI\" >/dev/null 2>&1; then printf %s \"$PAYLOAD\" | \"$CLI\" hook emit claude-code session-end --pane-id \"${ATRIUM_PANE_ID:-}\" >/dev/null 2>&1 || true; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\" >/dev/null 2>&1 || true; fi"),
+      "command": $cmd,
       "timeout": 5
     }]
   }]'
@@ -72,7 +86,9 @@ install_mcp_server() {
   claude mcp remove -s user atrium 2>/dev/null || true
 
   # Add with env var for data dir (name must come before -e due to variadic parsing)
-  claude mcp add -s user atrium -e "ATRIUM_DATA_DIR=${data_dir}" -- "$shim_path" 2>/dev/null || true
+  # The shim_path points to the atrium CLI binary; mcp-serve subcommand starts the MCP server.
+  # --pane-id is injected at runtime by Claude Code via ATRIUM_PANE_ID env var.
+  claude mcp add -s user atrium -e "ATRIUM_DATA_DIR=${data_dir}" -- "$shim_path" mcp-serve 2>/dev/null || true
 }
 
 do_install() {
@@ -94,11 +110,11 @@ do_install() {
     '
     .hooks = (.hooks // {}) |
     .hooks.SessionStart = (
-      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port|aiterm/hook-port|AITERM|/resolve|atrium-runtime-hook") | not))]
+      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
       + $session_start
     ) |
     .hooks.SessionEnd = (
-      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|aiterm/hook-port|AITERM|/resolve|atrium-runtime-hook") | not))]
+      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
       + $session_end
     )
     ' "$SETTINGS_FILE")"
@@ -129,7 +145,7 @@ do_uninstall() {
     if .hooks then
       .hooks |= with_entries(
         .value |= map(
-          .hooks |= map(select(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve") | not))
+          .hooks |= map(select(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))
           | select(.hooks | length > 0)
         )
         | select(.value | length > 0)
@@ -160,9 +176,9 @@ do_status() {
   # Check if our hooks are present by looking for the atrium marker
   local has_hooks
   has_hooks="$(jq '
-    ((.hooks.SessionStart // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve")))
+    ((.hooks.SessionStart // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
     and
-    ((.hooks.SessionEnd // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve")))
+    ((.hooks.SessionEnd // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
   ' "$SETTINGS_FILE" 2>/dev/null)" || has_hooks="false"
 
   # Check if MCP server config is present
