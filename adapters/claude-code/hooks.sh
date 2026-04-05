@@ -18,13 +18,13 @@ fi
 atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 
 # Build the hook command string with CLI transport (preferred) and HTTP fallback.
-# Usage: build_hook_command <uri> <adapter_name> <event_name> <marker>
-# Runtime detection: checks `command -v atrium` on every hook invocation so the CLI
-# path activates automatically once the binary is on PATH — no reinstall needed.
+# Usage: build_hook_command <uri> <adapter_name> <event_name> <marker> <cli_path>
+# Uses the channel-specific CLI binary path (ATRIUM_MCP_SHIM_PATH) baked at install
+# time, with fallback to generic `atrium` on PATH, then HTTP.
 build_hook_command() {
-  local uri="$1" adapter_name="$2" event_name="$3" marker="$4"
-  jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" \
-    '($marker + "; PAYLOAD=$(cat); if command -v atrium >/dev/null 2>&1; then atrium hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
+  local uri="$1" adapter_name="$2" event_name="$3" marker="$4" cli_path="$5"
+  jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" --arg cli "$cli_path" \
+    '($marker + "; PAYLOAD=$(cat); CLI=\"" + $cli + "\"; if [ -x \"$CLI\" ]; then \"$CLI\" hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
 }
 
 # Build the hook command template.
@@ -32,8 +32,9 @@ build_hook_command() {
 # injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
 build_session_start_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/claude-code/session-start}"
+  local cli_path="${ATRIUM_MCP_SHIM_PATH:-atrium}"
   local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "session-start" "$atrium_MARKER")"
+  cmd="$(build_hook_command "$uri" "claude-code" "session-start" "$atrium_MARKER" "$cli_path")"
   jq -n --argjson cmd "$cmd" '[{
     "matcher": "startup|resume",
     "hooks": [{
@@ -46,8 +47,9 @@ build_session_start_hook() {
 
 build_session_end_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_END:-atrium://hooks/claude-code/session-end}"
+  local cli_path="${ATRIUM_MCP_SHIM_PATH:-atrium}"
   local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "session-end" "$atrium_MARKER")"
+  cmd="$(build_hook_command "$uri" "claude-code" "session-end" "$atrium_MARKER" "$cli_path")"
   jq -n --argjson cmd "$cmd" '[{
     "matcher": "*",
     "hooks": [{
