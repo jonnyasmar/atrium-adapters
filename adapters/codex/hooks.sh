@@ -35,7 +35,7 @@ build_hook_command() {
 # injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
 build_session_start_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/codex/session-start}"
-  local cli_path="${ATRIUM_MCP_SHIM_PATH:-atrium}"
+  local cli_path="${ATRIUM_CLI_PATH:-atrium}"
   local cmd
   cmd="$(build_hook_command "$uri" "codex" "session-start" "$atrium_MARKER" "$cli_path")"
   jq -n --argjson cmd "$cmd" '[{
@@ -178,10 +178,10 @@ do_install() {
 }
 
 install_mcp_server() {
-  local shim_path="${ATRIUM_MCP_SHIM_PATH:-}"
+  local cli_path="${ATRIUM_CLI_PATH:-}"
   local data_dir="${ATRIUM_DATA_DIR:-}"
 
-  if [ -z "$shim_path" ] || [ -z "$data_dir" ]; then
+  if [ -z "$cli_path" ] || [ -z "$data_dir" ]; then
     return 0
   fi
 
@@ -189,18 +189,22 @@ install_mcp_server() {
     return 0
   fi
 
-  # Remove existing atrium MCP entry and write fresh config with env_vars
+  # Remove existing atrium MCP entry and write fresh config with env_vars.
+  # Uses sh -c wrapper so ATRIUM_CLI_PATH is expanded at runtime from the
+  # pane's environment via env_vars forwarding.
   codex mcp remove atrium 2>/dev/null || true
 
   local config="${HOME}/.codex/config.toml"
   cat >> "$config" << MCPTOML
 
 [mcp_servers.atrium]
-command = "${shim_path}"
-env_vars = ["ATRIUM_PANE_ID", "ATRIUM_HOOK_PORT", "ATRIUM_DATA_DIR"]
+command = "sh"
+args = ["-c", "\"\\${ATRIUM_CLI_PATH:-atrium}\" mcp-serve"]
+env_vars = ["ATRIUM_CLI_PATH", "ATRIUM_DATA_DIR", "ATRIUM_PANE_ID"]
 
 [mcp_servers.atrium.env]
 ATRIUM_DATA_DIR = "${data_dir}"
+ATRIUM_CLI_PATH = "${cli_path}"
 MCPTOML
 }
 

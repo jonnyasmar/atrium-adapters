@@ -19,8 +19,8 @@ atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 
 # Build the hook command string with CLI transport (preferred) and HTTP fallback.
 # Usage: build_hook_command <uri> <adapter_name> <event_name> <marker> <cli_path>
-# Uses the channel-specific CLI binary path (ATRIUM_MCP_SHIM_PATH) baked at install
-# time, with fallback to generic `atrium` on PATH, then HTTP.
+# Uses the CLI binary path (ATRIUM_CLI_PATH) baked at install time,
+# with fallback to generic `atrium` on PATH, then HTTP.
 build_hook_command() {
   local uri="$1" adapter_name="$2" event_name="$3" marker="$4" cli_path="$5"
   jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" --arg cli "$cli_path" \
@@ -32,7 +32,7 @@ build_hook_command() {
 # injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
 build_session_start_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/claude-code/session-start}"
-  local cli_path="${ATRIUM_MCP_SHIM_PATH:-atrium}"
+  local cli_path="${ATRIUM_CLI_PATH:-atrium}"
   local cmd
   cmd="$(build_hook_command "$uri" "claude-code" "session-start" "$atrium_MARKER" "$cli_path")"
   jq -n --argjson cmd "$cmd" '[{
@@ -47,7 +47,7 @@ build_session_start_hook() {
 
 build_session_end_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_END:-atrium://hooks/claude-code/session-end}"
-  local cli_path="${ATRIUM_MCP_SHIM_PATH:-atrium}"
+  local cli_path="${ATRIUM_CLI_PATH:-atrium}"
   local cmd
   cmd="$(build_hook_command "$uri" "claude-code" "session-end" "$atrium_MARKER" "$cli_path")"
   jq -n --argjson cmd "$cmd" '[{
@@ -73,11 +73,10 @@ ensure_settings_file() {
 }
 
 install_mcp_server() {
-  local shim_path="${ATRIUM_MCP_SHIM_PATH:-}"
+  local cli_path="${ATRIUM_CLI_PATH:-}"
   local data_dir="${ATRIUM_DATA_DIR:-}"
-  local channel="${ATRIUM_CHANNEL:-stable}"
 
-  if [ -z "$shim_path" ] || [ -z "$data_dir" ]; then
+  if [ -z "$cli_path" ] || [ -z "$data_dir" ]; then
     return 0
   fi
 
@@ -85,20 +84,12 @@ install_mcp_server() {
     return 0
   fi
 
-  # Channel-specific MCP server name so stable/dev/beta can coexist.
-  # Stable uses "atrium", dev uses "atrium-dev", beta uses "atrium-beta".
-  local mcp_name="atrium"
-  if [ "$channel" != "stable" ]; then
-    mcp_name="atrium-${channel}"
-  fi
-
   # Remove existing entry first (idempotent)
-  claude mcp remove -s user "$mcp_name" 2>/dev/null || true
+  claude mcp remove -s user atrium 2>/dev/null || true
 
-  # Add with env var for data dir (name must come before -e due to variadic parsing)
-  # The shim_path points to the atrium CLI binary; mcp-serve subcommand starts the MCP server.
-  # --pane-id is injected at runtime by Claude Code via ATRIUM_PANE_ID env var.
-  claude mcp add -s user "$mcp_name" -e "ATRIUM_DATA_DIR=${data_dir}" -- "$shim_path" mcp-serve 2>/dev/null || true
+  # Add with sh -c wrapper so ATRIUM_CLI_PATH is expanded at runtime from the
+  # pane's environment. The -e flags inject env vars into the MCP server process.
+  claude mcp add -s user atrium -e "ATRIUM_DATA_DIR=${data_dir}" -e "ATRIUM_CLI_PATH=${cli_path}" -- sh -c '"${ATRIUM_CLI_PATH:-atrium}" mcp-serve' 2>/dev/null || true
 }
 
 do_install() {
@@ -168,11 +159,9 @@ do_uninstall() {
   echo "$updated" > "$temp_file"
   mv "$temp_file" "$SETTINGS_FILE"
 
-  # Remove atrium MCP server (all channel variants)
+  # Remove atrium MCP server
   if command -v claude &>/dev/null; then
     claude mcp remove -s user atrium 2>/dev/null || true
-    claude mcp remove -s user atrium-dev 2>/dev/null || true
-    claude mcp remove -s user atrium-beta 2>/dev/null || true
   fi
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
