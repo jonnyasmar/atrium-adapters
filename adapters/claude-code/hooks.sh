@@ -73,6 +73,7 @@ ensure_settings_file() {
 install_mcp_server() {
   local shim_path="${ATRIUM_MCP_SHIM_PATH:-}"
   local data_dir="${ATRIUM_DATA_DIR:-}"
+  local channel="${ATRIUM_CHANNEL:-stable}"
 
   if [ -z "$shim_path" ] || [ -z "$data_dir" ]; then
     return 0
@@ -82,13 +83,20 @@ install_mcp_server() {
     return 0
   fi
 
+  # Channel-specific MCP server name so stable/dev/beta can coexist.
+  # Stable uses "atrium", dev uses "atrium-dev", beta uses "atrium-beta".
+  local mcp_name="atrium"
+  if [ "$channel" != "stable" ]; then
+    mcp_name="atrium-${channel}"
+  fi
+
   # Remove existing entry first (idempotent)
-  claude mcp remove -s user atrium 2>/dev/null || true
+  claude mcp remove -s user "$mcp_name" 2>/dev/null || true
 
   # Add with env var for data dir (name must come before -e due to variadic parsing)
   # The shim_path points to the atrium CLI binary; mcp-serve subcommand starts the MCP server.
   # --pane-id is injected at runtime by Claude Code via ATRIUM_PANE_ID env var.
-  claude mcp add -s user atrium -e "ATRIUM_DATA_DIR=${data_dir}" -- "$shim_path" mcp-serve 2>/dev/null || true
+  claude mcp add -s user "$mcp_name" -e "ATRIUM_DATA_DIR=${data_dir}" -- "$shim_path" mcp-serve 2>/dev/null || true
 }
 
 do_install() {
@@ -158,9 +166,11 @@ do_uninstall() {
   echo "$updated" > "$temp_file"
   mv "$temp_file" "$SETTINGS_FILE"
 
-  # Remove atrium MCP server
+  # Remove atrium MCP server (all channel variants)
   if command -v claude &>/dev/null; then
     claude mcp remove -s user atrium 2>/dev/null || true
+    claude mcp remove -s user atrium-dev 2>/dev/null || true
+    claude mcp remove -s user atrium-beta 2>/dev/null || true
   fi
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
