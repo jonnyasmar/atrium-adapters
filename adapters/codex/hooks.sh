@@ -22,12 +22,12 @@ fi
 atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 
 # Build the hook command string with CLI transport (preferred) and HTTP fallback.
-# Usage: build_hook_command <uri> <adapter_name> <event_name> <marker> <cli_path>
-# Uses the channel-specific CLI binary path baked at install time.
+# Usage: build_hook_command <uri> <adapter_name> <event_name> <marker>
+# Uses ATRIUM_CLI_PATH env var at runtime for environment-aware CLI resolution.
 build_hook_command() {
-  local uri="$1" adapter_name="$2" event_name="$3" marker="$4" cli_path="$5"
-  jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" --arg cli "$cli_path" \
-    '($marker + "; PAYLOAD=$(cat); CLI=\"" + $cli + "\"; if [ -x \"$CLI\" ]; then \"$CLI\" hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
+  local uri="$1" adapter_name="$2" event_name="$3" marker="$4"
+  jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" \
+    '($marker + "; PAYLOAD=$(cat); CLI=\"${ATRIUM_CLI_PATH:-atrium}\"; if [ -x \"$CLI\" ]; then echo \"$PAYLOAD\" | \"$CLI\" hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
 }
 
 # Build the SessionStart hook command template.
@@ -35,9 +35,8 @@ build_hook_command() {
 # injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
 build_session_start_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/codex/session-start}"
-  local cli_path="${ATRIUM_CLI_PATH:-atrium}"
   local cmd
-  cmd="$(build_hook_command "$uri" "codex" "session-start" "$atrium_MARKER" "$cli_path")"
+  cmd="$(build_hook_command "$uri" "codex" "session-start" "$atrium_MARKER")"
   jq -n --argjson cmd "$cmd" '[{
     "matcher": "startup|resume",
     "hooks": [{
@@ -199,7 +198,7 @@ install_mcp_server() {
 
 [mcp_servers.atrium]
 command = "sh"
-args = ["-c", "\"\\${ATRIUM_CLI_PATH:-atrium}\" mcp-serve"]
+args = ["-c", "\"${cli_path}\" mcp-serve"]
 env_vars = ["ATRIUM_CLI_PATH", "ATRIUM_DATA_DIR", "ATRIUM_PANE_ID"]
 
 [mcp_servers.atrium.env]
