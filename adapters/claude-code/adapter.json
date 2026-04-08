@@ -5,10 +5,15 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97706",
   "binary": "claude",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "hooks": {
     "session-start": "atrium://hooks/claude-code/session-start",
-    "session-end": "atrium://hooks/claude-code/session-end"
+    "session-end": "atrium://hooks/claude-code/session-end",
+    "pre-tool-use": "atrium://hooks/claude-code/pre-tool-use",
+    "post-tool-use": "atrium://hooks/claude-code/post-tool-use",
+    "stop": "atrium://hooks/claude-code/stop",
+    "notification": "atrium://hooks/claude-code/notification",
+    "user-prompt-submit": "atrium://hooks/claude-code/user-prompt-submit"
   },
   "methods": {
     "detect_binary": { "script": "detect_binary.sh" },

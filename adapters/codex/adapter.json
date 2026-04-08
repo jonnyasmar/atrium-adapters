@@ -5,10 +5,14 @@
   "description": "OpenAI's AI coding assistant",
   "accent": "#059669",
   "binary": "codex",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "hooks": {
     "session-start": "atrium://hooks/codex/session-start",
-    "session-end": "atrium://hooks/codex/session-end"
+    "session-end": "atrium://hooks/codex/session-end",
+    "pre-tool-use": "atrium://hooks/codex/pre-tool-use",
+    "post-tool-use": "atrium://hooks/codex/post-tool-use",
+    "stop": "atrium://hooks/codex/stop",
+    "user-prompt-submit": "atrium://hooks/codex/user-prompt-submit"
   },
   "methods": {
     "detect_binary": { "script": "detect_binary.sh" },

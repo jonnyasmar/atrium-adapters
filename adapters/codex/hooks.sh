@@ -61,6 +61,62 @@ build_session_end_hook() {
   }]'
 }
 
+build_pre_tool_use_hook() {
+  local uri="${ATRIUM_HOOK_URI_PRE_TOOL_USE:-atrium://hooks/codex/pre-tool-use}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "codex" "pre-tool-use" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
+build_post_tool_use_hook() {
+  local uri="${ATRIUM_HOOK_URI_POST_TOOL_USE:-atrium://hooks/codex/post-tool-use}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "codex" "post-tool-use" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
+build_stop_hook() {
+  local uri="${ATRIUM_HOOK_URI_STOP:-atrium://hooks/codex/stop}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "codex" "stop" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
+build_user_prompt_submit_hook() {
+  local uri="${ATRIUM_HOOK_URI_USER_PROMPT_SUBMIT:-atrium://hooks/codex/user-prompt-submit}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "codex" "user-prompt-submit" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
 # Ensure the ~/.codex directory exists
 ensure_codex_dir() {
   local dir
@@ -136,18 +192,27 @@ do_install() {
   # Step 2: Write hooks into hooks.json under the "hooks" wrapper key
   ensure_hooks_file
 
-  local start_hook end_hook
+  local start_hook end_hook pre_tool_use_hook post_tool_use_hook stop_hook user_prompt_submit_hook
   start_hook="$(build_session_start_hook)"
   end_hook="$(build_session_end_hook)"
+  pre_tool_use_hook="$(build_pre_tool_use_hook)"
+  post_tool_use_hook="$(build_post_tool_use_hook)"
+  stop_hook="$(build_stop_hook)"
+  user_prompt_submit_hook="$(build_user_prompt_submit_hook)"
 
   # Deep-merge hooks into existing hooks.json.
-  # Codex expects: { "hooks": { "SessionStart": [...], "SessionEnd": [...] } }
+  # Codex expects: { "hooks": { "SessionStart": [...], "SessionEnd": [...], ... } }
   # Remove any existing atrium hooks first, then add new ones.
+  # Single jq invocation with 6 --argjson arguments, single atomic write.
   # Also clean up legacy root-level and on_user_prompt keys.
   local updated
   updated="$(jq \
     --argjson session_start "$start_hook" \
     --argjson session_end "$end_hook" \
+    --argjson pre_tool_use "$pre_tool_use_hook" \
+    --argjson post_tool_use "$post_tool_use_hook" \
+    --argjson stop "$stop_hook" \
+    --argjson user_prompt_submit "$user_prompt_submit_hook" \
     '
     .hooks = (.hooks // {}) |
     .hooks.SessionStart = (
@@ -157,6 +222,22 @@ do_install() {
     .hooks.SessionEnd = (
       [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
       + $session_end
+    ) |
+    .hooks.PreToolUse = (
+      [(.hooks.PreToolUse // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $pre_tool_use
+    ) |
+    .hooks.PostToolUse = (
+      [(.hooks.PostToolUse // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $post_tool_use
+    ) |
+    .hooks.Stop = (
+      [(.hooks.Stop // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $stop
+    ) |
+    .hooks.UserPromptSubmit = (
+      [(.hooks.UserPromptSubmit // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $user_prompt_submit
     ) |
     # Clean up legacy root-level keys from previous versions
     if .SessionStart then del(.SessionStart) else . end |
@@ -219,7 +300,7 @@ do_uninstall() {
 
   local updated
   updated="$(jq '
-    # Remove atrium hooks from hooks.SessionStart / hooks.SessionEnd
+    # Remove atrium hooks from all event categories under .hooks (generic filter)
     if .hooks then
       .hooks |= with_entries(
         .value |= [.[] |
@@ -267,12 +348,27 @@ do_status() {
     ' "$HOOKS_JSON" 2>/dev/null)" || has_hook="false"
   fi
 
-  # Both must be true for hooks to be considered installed
-  if [ "$has_feature" = "true" ] && [ "$has_hook" = "true" ]; then
-    echo '{"subcommand": "status", "installed": true}'
-  else
-    echo '{"subcommand": "status", "installed": false}'
+  # Check if activity hooks are present (at least one of PreToolUse, PostToolUse, Stop, UserPromptSubmit)
+  local has_activity_hooks=false
+  if [ -f "$HOOKS_JSON" ]; then
+    has_activity_hooks="$(jq '
+      ((.hooks.PreToolUse // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+      or
+      ((.hooks.PostToolUse // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+      or
+      ((.hooks.Stop // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+      or
+      ((.hooks.UserPromptSubmit // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+    ' "$HOOKS_JSON" 2>/dev/null)" || has_activity_hooks="false"
   fi
+
+  # Both feature flag + session hooks must be true for hooks to be considered installed
+  local installed=false
+  if [ "$has_feature" = "true" ] && [ "$has_hook" = "true" ]; then
+    installed=true
+  fi
+
+  echo "{\"subcommand\": \"status\", \"installed\": ${installed}, \"activityHooks\": ${has_activity_hooks}}"
   exit 0
 }
 

@@ -58,6 +58,76 @@ build_session_end_hook() {
   }]'
 }
 
+build_pre_tool_use_hook() {
+  local uri="${ATRIUM_HOOK_URI_PRE_TOOL_USE:-atrium://hooks/claude-code/pre-tool-use}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "claude-code" "pre-tool-use" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
+build_post_tool_use_hook() {
+  local uri="${ATRIUM_HOOK_URI_POST_TOOL_USE:-atrium://hooks/claude-code/post-tool-use}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "claude-code" "post-tool-use" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
+build_stop_hook() {
+  local uri="${ATRIUM_HOOK_URI_STOP:-atrium://hooks/claude-code/stop}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "claude-code" "stop" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
+build_notification_hook() {
+  local uri="${ATRIUM_HOOK_URI_NOTIFICATION:-atrium://hooks/claude-code/notification}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "claude-code" "notification" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
+build_user_prompt_submit_hook() {
+  local uri="${ATRIUM_HOOK_URI_USER_PROMPT_SUBMIT:-atrium://hooks/claude-code/user-prompt-submit}"
+  local cmd
+  cmd="$(build_hook_command "$uri" "claude-code" "user-prompt-submit" "$atrium_MARKER")"
+  jq -n --argjson cmd "$cmd" '[{
+    "matcher": ".*",
+    "hooks": [{
+      "type": "command",
+      "command": $cmd,
+      "timeout": 5
+    }]
+  }]'
+}
+
 # Ensure settings file exists with valid JSON
 ensure_settings_file() {
   local dir
@@ -93,19 +163,30 @@ install_mcp_server() {
 do_install() {
   ensure_settings_file
 
-  local start_hook end_hook
+  local start_hook end_hook pre_tool_use_hook post_tool_use_hook stop_hook notification_hook user_prompt_submit_hook
   start_hook="$(build_session_start_hook)"
   end_hook="$(build_session_end_hook)"
+  pre_tool_use_hook="$(build_pre_tool_use_hook)"
+  post_tool_use_hook="$(build_post_tool_use_hook)"
+  stop_hook="$(build_stop_hook)"
+  notification_hook="$(build_notification_hook)"
+  user_prompt_submit_hook="$(build_user_prompt_submit_hook)"
 
   # Deep-merge hooks into existing settings.json
   # Uses jq to:
   # 1. Read existing settings
-  # 2. Remove any existing atrium hooks from SessionStart/SessionEnd
+  # 2. Remove any existing atrium hooks from all 7 event categories
   # 3. Append new atrium hooks to the arrays (preserving non-atrium hooks)
+  # Single jq invocation with 7 --argjson arguments, single atomic write.
   local updated
   updated="$(jq \
     --argjson session_start "$start_hook" \
     --argjson session_end "$end_hook" \
+    --argjson pre_tool_use "$pre_tool_use_hook" \
+    --argjson post_tool_use "$post_tool_use_hook" \
+    --argjson stop "$stop_hook" \
+    --argjson notification "$notification_hook" \
+    --argjson user_prompt_submit "$user_prompt_submit_hook" \
     '
     .hooks = (.hooks // {}) |
     .hooks.SessionStart = (
@@ -115,6 +196,26 @@ do_install() {
     .hooks.SessionEnd = (
       [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
       + $session_end
+    ) |
+    .hooks.PreToolUse = (
+      [(.hooks.PreToolUse // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $pre_tool_use
+    ) |
+    .hooks.PostToolUse = (
+      [(.hooks.PostToolUse // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $post_tool_use
+    ) |
+    .hooks.Stop = (
+      [(.hooks.Stop // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $stop
+    ) |
+    .hooks.Notification = (
+      [(.hooks.Notification // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $notification
+    ) |
+    .hooks.UserPromptSubmit = (
+      [(.hooks.UserPromptSubmit // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
+      + $user_prompt_submit
     )
     ' "$SETTINGS_FILE")"
 
@@ -168,11 +269,11 @@ do_uninstall() {
 
 do_status() {
   if [ ! -f "$SETTINGS_FILE" ]; then
-    echo '{"subcommand": "status", "installed": false, "mcpConfigured": false}'
+    echo '{"subcommand": "status", "installed": false, "activityHooks": false, "mcpConfigured": false}'
     exit 0
   fi
 
-  # Check if our hooks are present by looking for the atrium marker
+  # Check if session hooks are present by looking for the atrium marker
   local has_hooks
   has_hooks="$(jq '
     ((.hooks.SessionStart // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
@@ -180,13 +281,27 @@ do_status() {
     ((.hooks.SessionEnd // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
   ' "$SETTINGS_FILE" 2>/dev/null)" || has_hooks="false"
 
+  # Check if activity hooks are present (at least one of PreToolUse, PostToolUse, Stop, Notification, UserPromptSubmit)
+  local has_activity_hooks
+  has_activity_hooks="$(jq '
+    ((.hooks.PreToolUse // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+    or
+    ((.hooks.PostToolUse // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+    or
+    ((.hooks.Stop // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+    or
+    ((.hooks.Notification // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+    or
+    ((.hooks.UserPromptSubmit // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
+  ' "$SETTINGS_FILE" 2>/dev/null)" || has_activity_hooks="false"
+
   # Check if MCP server config is present
   local has_mcp="false"
   if command -v claude &>/dev/null && claude mcp get atrium &>/dev/null; then
     has_mcp="true"
   fi
 
-  echo "{\"subcommand\": \"status\", \"installed\": ${has_hooks}, \"mcpConfigured\": ${has_mcp}}"
+  echo "{\"subcommand\": \"status\", \"installed\": ${has_hooks}, \"activityHooks\": ${has_activity_hooks}, \"mcpConfigured\": ${has_mcp}}"
   exit 0
 }
 
