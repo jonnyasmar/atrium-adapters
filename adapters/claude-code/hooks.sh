@@ -8,343 +8,206 @@ set -euo pipefail
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 SETTINGS_FILE="${HOME}/.claude/settings.json"
 
-# jq is required for reliable JSON deep-merge
 if ! command -v jq &>/dev/null; then
   echo '{"error": "jq is required for hook management"}' >&2
   exit 1
 fi
 
-# atrium hook marker — used to identify our hooks for clean uninstall/status
-atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
+# Marker embedded as the first statement of every atrium-owned hook command.
+# The regex below is used by install/uninstall/status to identify hooks we own,
+# including legacy command shapes from prior releases. Add legacy alternates
+# when bumping the command format; prune once old releases age out.
+ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
 
-# Build the hook command string with CLI transport (preferred) and HTTP fallback.
-# Usage: build_hook_command <uri> <adapter_name> <event_name> <marker> <cli_path>
-# Uses the CLI binary path (ATRIUM_CLI_PATH) baked at install time,
-# with fallback to generic `atrium` on PATH, then HTTP.
+# Event table: kebab-case event name, Claude settings key, matcher.
+# Each event becomes one hook entry in the corresponding settings.json key.
+EVENTS=$'session-start\tSessionStart\tstartup|resume
+session-end\tSessionEnd\t*
+pre-tool-use\tPreToolUse\t.*
+post-tool-use\tPostToolUse\t.*
+stop\tStop\t.*
+notification\tNotification\t.*
+user-prompt-submit\tUserPromptSubmit\t.*'
+
+# Build the hook command string for a given event. Resolved at hook-fire time
+# against the pane's injected env vars so stable/dev/beta can coexist. Trails
+# with `exit 0` so any CLI failure never breaks the agent session.
 build_hook_command() {
-  local uri="$1" adapter_name="$2" event_name="$3" marker="$4"
-  jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" \
-    '($marker + "; PAYLOAD=$(cat); CLI=\"${ATRIUM_CLI_PATH:-atrium}\"; if [ -x \"$CLI\" ]; then echo \"$PAYLOAD\" | \"$CLI\" hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
+  local event="$1"
+  printf '%s; "${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter claude-code --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$event"
 }
 
-# Build the hook command template.
-# The installed command resolves the active hook port at runtime from the pane's
-# injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
+# Assemble the full hooks object by walking the event table, then append the
+# claude-specific context-inject entry whose stdout is consumed as session
+# context. Emits JSON shaped like { "SessionStart": [...], ... }.
+build_all_hooks() {
+  local hooks='{}'
+  local event key matcher cmd entry
+  while IFS=$'\t' read -r event key matcher; do
+    [ -n "${event:-}" ] || continue
+    cmd="$(build_hook_command "$event")"
+    entry="$(jq -n --arg matcher "$matcher" --arg cmd "$cmd" \
+      '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+    hooks="$(jq --arg key "$key" --argjson entry "$entry" \
+      '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
+  done <<< "$EVENTS"
+
+  # Claude-specific: a second SessionStart matcher whose stdout becomes
+  # session context. Reads agent-context.txt from the active channel's data
+  # dir at runtime (ATRIUM_DATA_DIR is injected per-pane).
+  local ctx_cmd ctx_entry
+  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && cat "${ATRIUM_DATA_DIR:-$HOME/.atrium}/agent-context.txt" 2>/dev/null || true' \
+    "$ATRIUM_HOOK_MARKER_PREFIX")"
+  ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
+    '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+
+  printf '%s' "$hooks"
+}
+
+ensure_settings_file() {
+  local dir
+  dir="$(dirname "$SETTINGS_FILE")"
+  [ -d "$dir" ] || mkdir -p "$dir"
+  [ -f "$SETTINGS_FILE" ] || echo '{}' > "$SETTINGS_FILE"
+}
+
 install_context_file() {
-  # Copy the shared context file to the active channel's data dir so hooks
-  # can cat it at runtime. Uses ATRIUM_DATA_DIR (set by the PTY manager)
-  # to target the correct channel (stable, dev, beta).
   local source_file
   source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.txt"
   local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
-
-  if [ ! -f "$source_file" ]; then
-    return 0
-  fi
-
+  [ -f "$source_file" ] || return 0
   mkdir -p "$dest_dir"
   cp "$source_file" "$dest_dir/agent-context.txt"
 }
 
-build_session_start_hook() {
-  local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/claude-code/session-start}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "session-start" "$atrium_MARKER")"
-  # Context injection is a separate matcher entry so it gets its own stdin/stdout.
-  local ctx_cmd_str="${atrium_MARKER}; [ -n \"\${ATRIUM:-}\" ] && cat \"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/agent-context.txt\" 2>/dev/null || true"
-  jq -n --argjson cmd "$cmd" --arg ctx_cmd "$ctx_cmd_str" '[{
-    "matcher": "startup|resume",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5
-    }]
-  }, {
-    "matcher": "startup|resume",
-    "hooks": [{
-      "type": "command",
-      "command": $ctx_cmd,
-      "timeout": 5
-    }]
-  }]'
-}
-
-build_session_end_hook() {
-  local uri="${ATRIUM_HOOK_URI_SESSION_END:-atrium://hooks/claude-code/session-end}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "session-end" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": "*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5
-    }]
-  }]'
-}
-
-build_pre_tool_use_hook() {
-  local uri="${ATRIUM_HOOK_URI_PRE_TOOL_USE:-atrium://hooks/claude-code/pre-tool-use}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "pre-tool-use" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": ".*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5
-    }]
-  }]'
-}
-
-build_post_tool_use_hook() {
-  local uri="${ATRIUM_HOOK_URI_POST_TOOL_USE:-atrium://hooks/claude-code/post-tool-use}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "post-tool-use" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": ".*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5
-    }]
-  }]'
-}
-
-build_stop_hook() {
-  local uri="${ATRIUM_HOOK_URI_STOP:-atrium://hooks/claude-code/stop}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "stop" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": ".*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5
-    }]
-  }]'
-}
-
-build_notification_hook() {
-  local uri="${ATRIUM_HOOK_URI_NOTIFICATION:-atrium://hooks/claude-code/notification}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "notification" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": ".*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5
-    }]
-  }]'
-}
-
-build_user_prompt_submit_hook() {
-  local uri="${ATRIUM_HOOK_URI_USER_PROMPT_SUBMIT:-atrium://hooks/claude-code/user-prompt-submit}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "claude-code" "user-prompt-submit" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": ".*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5
-    }]
-  }]'
-}
-
-# Ensure settings file exists with valid JSON
-ensure_settings_file() {
-  local dir
-  dir="$(dirname "$SETTINGS_FILE")"
-  if [ ! -d "$dir" ]; then
-    mkdir -p "$dir"
-  fi
-  if [ ! -f "$SETTINGS_FILE" ]; then
-    echo '{}' > "$SETTINGS_FILE"
-  fi
-}
-
 install_skill() {
-  # Install the atrium CLI skill to ~/.claude/skills/atrium/
-  # This gives Claude Code automatic awareness of atrium capabilities.
   local skill_dir="${HOME}/.claude/skills/atrium"
   local source_dir
   source_dir="$(cd "$(dirname "$0")" && pwd)/skills/atrium"
-
-  if [ ! -f "${source_dir}/skill.md" ]; then
-    # Skill source not found — running from a context without the adapter tree
-    return 0
-  fi
-
+  [ -f "${source_dir}/skill.md" ] || return 0
   mkdir -p "$skill_dir"
   cp "${source_dir}/skill.md" "${skill_dir}/skill.md"
 }
 
 uninstall_skill() {
   local skill_dir="${HOME}/.claude/skills/atrium"
-  if [ -d "$skill_dir" ]; then
-    rm -rf "$skill_dir"
-  fi
+  [ -d "$skill_dir" ] && rm -rf "$skill_dir"
 }
 
 uninstall_mcp_server() {
-  # Remove legacy MCP server registration if present
   if command -v claude &>/dev/null; then
     claude mcp remove -s user atrium 2>/dev/null || true
   fi
 }
 
+# Check whether any hook under the listed settings keys matches the atrium
+# marker. Args: one or more settings.json key names (e.g. SessionStart).
+has_atrium_hooks_in() {
+  local keys_json
+  keys_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
+  jq -r \
+    --argjson keys "$keys_json" \
+    --arg marker "$ATRIUM_HOOK_MARKER_RE" \
+    '[$keys[] as $k | (.hooks[$k] // [])[] | .hooks[]?.command] | any(test($marker))' \
+    "$SETTINGS_FILE" 2>/dev/null || echo "false"
+}
+
 do_install() {
   ensure_settings_file
 
-  local start_hook end_hook pre_tool_use_hook post_tool_use_hook stop_hook notification_hook user_prompt_submit_hook
-  start_hook="$(build_session_start_hook)"
-  end_hook="$(build_session_end_hook)"
-  pre_tool_use_hook="$(build_pre_tool_use_hook)"
-  post_tool_use_hook="$(build_post_tool_use_hook)"
-  stop_hook="$(build_stop_hook)"
-  notification_hook="$(build_notification_hook)"
-  user_prompt_submit_hook="$(build_user_prompt_submit_hook)"
+  local new_hooks
+  new_hooks="$(build_all_hooks)"
 
-  # Deep-merge hooks into existing settings.json
-  # Uses jq to:
-  # 1. Read existing settings
-  # 2. Remove any existing atrium hooks from all 7 event categories
-  # 3. Append new atrium hooks to the arrays (preserving non-atrium hooks)
-  # Single jq invocation with 7 --argjson arguments, single atomic write.
+  # Deep-merge atrium hooks into existing settings.json. For every key in
+  # new_hooks: strip any prior atrium entries, then append fresh ones.
+  # Non-atrium hook entries are preserved untouched.
   local updated
   updated="$(jq \
-    --argjson session_start "$start_hook" \
-    --argjson session_end "$end_hook" \
-    --argjson pre_tool_use "$pre_tool_use_hook" \
-    --argjson post_tool_use "$post_tool_use_hook" \
-    --argjson stop "$stop_hook" \
-    --argjson notification "$notification_hook" \
-    --argjson user_prompt_submit "$user_prompt_submit_hook" \
+    --argjson new_hooks "$new_hooks" \
+    --arg marker "$ATRIUM_HOOK_MARKER_RE" \
     '
     .hooks = (.hooks // {}) |
-    .hooks.SessionStart = (
-      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $session_start
-    ) |
-    .hooks.SessionEnd = (
-      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $session_end
-    ) |
-    .hooks.PreToolUse = (
-      [(.hooks.PreToolUse // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $pre_tool_use
-    ) |
-    .hooks.PostToolUse = (
-      [(.hooks.PostToolUse // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $post_tool_use
-    ) |
-    .hooks.Stop = (
-      [(.hooks.Stop // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $stop
-    ) |
-    .hooks.Notification = (
-      [(.hooks.Notification // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $notification
-    ) |
-    .hooks.UserPromptSubmit = (
-      [(.hooks.UserPromptSubmit // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $user_prompt_submit
+    reduce ($new_hooks | keys_unsorted[]) as $k (.;
+      .hooks[$k] = (
+        [(.hooks[$k] // [])[] | select(.hooks | all(.command | test($marker) | not))]
+        + $new_hooks[$k]
+      )
     )
     ' "$SETTINGS_FILE")"
 
-  # Atomic write: write hooks to settings.json
-  local temp_file="${SETTINGS_FILE}.atrium-tmp"
-  echo "$updated" > "$temp_file"
-  mv "$temp_file" "$SETTINGS_FILE"
+  local tmp="${SETTINGS_FILE}.atrium-tmp"
+  printf '%s\n' "$updated" > "$tmp"
+  mv "$tmp" "$SETTINGS_FILE"
 
-  # Remove legacy MCP server if present (replaced by CLI skill)
   uninstall_mcp_server
-
-  # Install atrium CLI skill for Claude Code
   install_skill
-
-  # Install agent context file for SessionStart injection
   install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
-  exit 0
 }
 
 do_uninstall() {
   if [ ! -f "$SETTINGS_FILE" ]; then
+    uninstall_skill
     echo '{"subcommand": "uninstall", "uninstalled": true}'
-    exit 0
+    return
   fi
 
-  # Remove only the atrium-specific hook entries (SessionStart and SessionEnd
-  # that contain our hook-port marker). Filter out hooks whose command references
-  # atrium/hook-port, then prune empty arrays and the hooks object if empty.
+  # Strip atrium entries from every category under .hooks, prune empty arrays,
+  # drop .hooks entirely if nothing remains.
   local updated
-  updated="$(jq '
+  updated="$(jq \
+    --arg marker "$ATRIUM_HOOK_MARKER_RE" \
+    '
     if .hooks then
       .hooks |= with_entries(
         .value |= map(
-          .hooks |= map(select(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))
+          .hooks |= map(select(.command | test($marker) | not))
           | select(.hooks | length > 0)
         )
         | select(.value | length > 0)
       )
       | if (.hooks | length) == 0 then del(.hooks) else . end
     else . end
-  ' "$SETTINGS_FILE")"
+    ' "$SETTINGS_FILE")"
 
-  local temp_file="${SETTINGS_FILE}.atrium-tmp"
-  echo "$updated" > "$temp_file"
-  mv "$temp_file" "$SETTINGS_FILE"
+  local tmp="${SETTINGS_FILE}.atrium-tmp"
+  printf '%s\n' "$updated" > "$tmp"
+  mv "$tmp" "$SETTINGS_FILE"
 
-  # Remove legacy MCP server if present
   uninstall_mcp_server
-
-  # Remove atrium CLI skill
   uninstall_skill
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
-  exit 0
 }
 
 do_status() {
   if [ ! -f "$SETTINGS_FILE" ]; then
     echo '{"subcommand": "status", "installed": false, "activityHooks": false, "skillInstalled": false}'
-    exit 0
+    return
   fi
 
-  # Check if session hooks are present by looking for the atrium marker
-  local has_hooks
-  has_hooks="$(jq '
-    ((.hooks.SessionStart // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-    and
-    ((.hooks.SessionEnd // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-  ' "$SETTINGS_FILE" 2>/dev/null)" || has_hooks="false"
-
-  # Check if activity hooks are present (at least one of PreToolUse, PostToolUse, Stop, Notification, UserPromptSubmit)
-  local has_activity_hooks
-  has_activity_hooks="$(jq '
-    ((.hooks.PreToolUse // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-    or
-    ((.hooks.PostToolUse // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-    or
-    ((.hooks.Stop // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-    or
-    ((.hooks.Notification // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-    or
-    ((.hooks.UserPromptSubmit // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-  ' "$SETTINGS_FILE" 2>/dev/null)" || has_activity_hooks="false"
-
-  # Check if skill is installed
-  local has_skill="false"
-  if [ -f "${HOME}/.claude/skills/atrium/skill.md" ]; then
-    has_skill="true"
+  # Session is considered installed only when both SessionStart and
+  # SessionEnd are present — matches the prior contract.
+  local start end session
+  start="$(has_atrium_hooks_in SessionStart)"
+  end="$(has_atrium_hooks_in SessionEnd)"
+  if [ "$start" = "true" ] && [ "$end" = "true" ]; then
+    session="true"
+  else
+    session="false"
   fi
 
-  echo "{\"subcommand\": \"status\", \"installed\": ${has_hooks}, \"activityHooks\": ${has_activity_hooks}, \"skillInstalled\": ${has_skill}}"
-  exit 0
+  local activity
+  activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop Notification UserPromptSubmit)"
+
+  local skill="false"
+  [ -f "${HOME}/.claude/skills/atrium/skill.md" ] && skill="true"
+
+  echo "{\"subcommand\": \"status\", \"installed\": ${session}, \"activityHooks\": ${activity}, \"skillInstalled\": ${skill}}"
 }
 
 case "$SUBCOMMAND" in

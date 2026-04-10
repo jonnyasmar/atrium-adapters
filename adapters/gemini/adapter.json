@@ -5,7 +5,7 @@
   "description": "Google's AI coding assistant",
   "accent": "#4285f4",
   "binary": "gemini",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "binaryDiscovery": {
     "commands": ["gemini"],
     "wellKnownPaths": [

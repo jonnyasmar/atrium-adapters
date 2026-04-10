@@ -8,282 +8,167 @@ set -euo pipefail
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 SETTINGS_FILE="${HOME}/.gemini/settings.json"
 
-# jq is required for reliable JSON deep-merge
 if ! command -v jq &>/dev/null; then
   echo '{"error": "jq is required for hook management"}' >&2
   exit 1
 fi
 
-# atrium hook marker — used to identify our hooks for clean uninstall/status
-atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
+# Marker embedded as the first statement of every atrium-owned hook command.
+# The regex matches both current and legacy command shapes so install and
+# uninstall can still clean up entries written by prior releases.
+ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
 
-# Build the hook command string with CLI transport (preferred) and HTTP fallback.
+# Gemini sanitizes hook environments, stripping some ATRIUM_* vars at hook
+# fire time. We probe the filesystem at install time to bake the active
+# channel's CLI path as a fallback to ${ATRIUM_CLI_PATH:-...} — runtime env
+# still wins when present, baked path kicks in when it doesn't.
+if [ -d "${HOME}/.atrium-dev/adapters/gemini" ]; then
+  ATRIUM_CLI_FALLBACK="${HOME}/.atrium-dev/bin/atrium-dev"
+else
+  ATRIUM_CLI_FALLBACK="${HOME}/.atrium/bin/atrium"
+fi
+
+# Event table: kebab-case event name, Gemini settings key, matcher.
+# Gemini timeouts are in milliseconds (the other adapters use seconds).
+EVENTS=$'session-start\tSessionStart\tstartup
+session-end\tSessionEnd\t*
+user-prompt-submit\tBeforeAgent\t*
+pre-tool-use\tBeforeTool\t.*
+post-tool-use\tAfterTool\t.*
+stop\tAfterAgent\t*
+notification\tNotification\t*'
+
+# Build the hook command string for a given event. Trails with `exit 0` so
+# any CLI failure never breaks the agent session.
 build_hook_command() {
-  local uri="$1" adapter_name="$2" event_name="$3" marker="$4"
-  # Gemini sanitizes hook environments, stripping ATRIUM_* vars.
-  # We bake the data dir path at install time so hooks work without env vars.
-  # Detect dev vs stable from the current data dir.
-  local atrium_dir_name
-  atrium_dir_name="$(basename "$(crate::paths::atrium_dir_name 2>/dev/null || echo ".atrium")")"
-  # Simpler: check if we're installed under .atrium-dev
-  if [ -d "${HOME}/.atrium-dev/adapters/gemini" ]; then
-    atrium_dir_name=".atrium-dev"
-  else
-    atrium_dir_name=".atrium"
-  fi
-  jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" --arg atrium_dir "$atrium_dir_name" \
-    '($marker + "; PAYLOAD=$(cat); CLI=\"${ATRIUM_CLI_PATH:-$HOME/" + $atrium_dir + "/bin/" + (if $atrium_dir == ".atrium-dev" then "atrium-dev" else "atrium" end) + "}\"; if [ -x \"$CLI\" ]; then echo \"$PAYLOAD\" | \"$CLI\" hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else DATA_DIR=\"$HOME/" + $atrium_dir + "\"; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
+  local event="$1"
+  printf '%s; "${ATRIUM_CLI_PATH:-%s}" hook emit %s --adapter gemini --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$ATRIUM_CLI_FALLBACK" "$event"
 }
 
-build_session_start_hook() {
-  local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/gemini/session-start}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "gemini" "session-start" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": "startup",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5000
-    }]
-  }]'
+# Assemble the full hooks object by walking the event table.
+build_all_hooks() {
+  local hooks='{}'
+  local event key matcher cmd entry
+  while IFS=$'\t' read -r event key matcher; do
+    [ -n "${event:-}" ] || continue
+    cmd="$(build_hook_command "$event")"
+    entry="$(jq -n --arg matcher "$matcher" --arg cmd "$cmd" \
+      '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
+    hooks="$(jq --arg key "$key" --argjson entry "$entry" \
+      '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
+  done <<< "$EVENTS"
+  printf '%s' "$hooks"
 }
 
-build_session_end_hook() {
-  local uri="${ATRIUM_HOOK_URI_SESSION_END:-atrium://hooks/gemini/session-end}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "gemini" "session-end" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": "*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5000
-    }]
-  }]'
-}
-
-build_before_agent_hook() {
-  local uri="${ATRIUM_HOOK_URI_USER_PROMPT_SUBMIT:-atrium://hooks/gemini/user-prompt-submit}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "gemini" "user-prompt-submit" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": "*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5000
-    }]
-  }]'
-}
-
-build_before_tool_hook() {
-  local uri="${ATRIUM_HOOK_URI_PRE_TOOL_USE:-atrium://hooks/gemini/pre-tool-use}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "gemini" "pre-tool-use" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": ".*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5000
-    }]
-  }]'
-}
-
-build_after_tool_hook() {
-  local uri="${ATRIUM_HOOK_URI_POST_TOOL_USE:-atrium://hooks/gemini/post-tool-use}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "gemini" "post-tool-use" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": ".*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5000
-    }]
-  }]'
-}
-
-build_after_agent_hook() {
-  local uri="${ATRIUM_HOOK_URI_STOP:-atrium://hooks/gemini/stop}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "gemini" "stop" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": "*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5000
-    }]
-  }]'
-}
-
-build_notification_hook() {
-  local uri="${ATRIUM_HOOK_URI_NOTIFICATION:-atrium://hooks/gemini/notification}"
-  local cmd
-  cmd="$(build_hook_command "$uri" "gemini" "notification" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
-    "matcher": "*",
-    "hooks": [{
-      "type": "command",
-      "command": $cmd,
-      "timeout": 5000
-    }]
-  }]'
-}
-
-# Ensure settings file exists with valid JSON
 ensure_settings_file() {
   local dir
   dir="$(dirname "$SETTINGS_FILE")"
-  if [ ! -d "$dir" ]; then
-    mkdir -p "$dir"
-  fi
-  if [ ! -f "$SETTINGS_FILE" ]; then
-    echo '{}' > "$SETTINGS_FILE"
-  fi
-}
-
-do_install() {
-  ensure_settings_file
-
-  local start_hook end_hook before_agent_hook before_tool_hook after_tool_hook after_agent_hook notification_hook
-  start_hook="$(build_session_start_hook)"
-  end_hook="$(build_session_end_hook)"
-  before_agent_hook="$(build_before_agent_hook)"
-  before_tool_hook="$(build_before_tool_hook)"
-  after_tool_hook="$(build_after_tool_hook)"
-  after_agent_hook="$(build_after_agent_hook)"
-  notification_hook="$(build_notification_hook)"
-
-  # Deep-merge hooks into existing settings.json
-  # Keys are Gemini's PascalCase event names; commands emit atrium's kebab-case names.
-  local updated
-  updated="$(jq \
-    --argjson session_start "$start_hook" \
-    --argjson session_end "$end_hook" \
-    --argjson before_agent "$before_agent_hook" \
-    --argjson before_tool "$before_tool_hook" \
-    --argjson after_tool "$after_tool_hook" \
-    --argjson after_agent "$after_agent_hook" \
-    --argjson notification "$notification_hook" \
-    '
-    .hooks = (.hooks // {}) |
-    .hooks.SessionStart = (
-      [(.hooks.SessionStart // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $session_start
-    ) |
-    .hooks.SessionEnd = (
-      [(.hooks.SessionEnd // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $session_end
-    ) |
-    .hooks.BeforeAgent = (
-      [(.hooks.BeforeAgent // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $before_agent
-    ) |
-    .hooks.BeforeTool = (
-      [(.hooks.BeforeTool // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $before_tool
-    ) |
-    .hooks.AfterTool = (
-      [(.hooks.AfterTool // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $after_tool
-    ) |
-    .hooks.AfterAgent = (
-      [(.hooks.AfterAgent // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $after_agent
-    ) |
-    .hooks.Notification = (
-      [(.hooks.Notification // [])[] | select(.hooks | all(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))]
-      + $notification
-    )
-    ' "$SETTINGS_FILE")"
-
-  # Atomic write
-  local temp_file="${SETTINGS_FILE}.atrium-tmp"
-  echo "$updated" > "$temp_file"
-  mv "$temp_file" "$SETTINGS_FILE"
-
-  # Install atrium CLI skill for Gemini
-  install_skill
-
-  echo '{"subcommand": "install", "installed": true}'
-  exit 0
+  [ -d "$dir" ] || mkdir -p "$dir"
+  [ -f "$SETTINGS_FILE" ] || echo '{}' > "$SETTINGS_FILE"
 }
 
 install_skill() {
-  # Install the atrium CLI skill to ~/.gemini/skills/atrium/
   local skill_dir="${HOME}/.gemini/skills/atrium"
   local source_dir
   source_dir="$(cd "$(dirname "$0")" && pwd)/skills/atrium"
-
-  if [ ! -f "${source_dir}/SKILL.md" ]; then
-    return 0
-  fi
-
+  [ -f "${source_dir}/SKILL.md" ] || return 0
   mkdir -p "$skill_dir"
   cp "${source_dir}/SKILL.md" "${skill_dir}/SKILL.md"
 }
 
 uninstall_skill() {
   local skill_dir="${HOME}/.gemini/skills/atrium"
-  if [ -d "$skill_dir" ]; then
-    rm -rf "$skill_dir"
-  fi
+  [ -d "$skill_dir" ] && rm -rf "$skill_dir"
+}
+
+has_atrium_hooks_in() {
+  local keys_json
+  keys_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
+  jq -r \
+    --argjson keys "$keys_json" \
+    --arg marker "$ATRIUM_HOOK_MARKER_RE" \
+    '[$keys[] as $k | (.hooks[$k] // [])[] | .hooks[]?.command] | any(test($marker))' \
+    "$SETTINGS_FILE" 2>/dev/null || echo "false"
+}
+
+do_install() {
+  ensure_settings_file
+
+  local new_hooks
+  new_hooks="$(build_all_hooks)"
+
+  # Deep-merge atrium hooks into settings.json via a single reduce over the
+  # new_hooks keys. Non-atrium entries in each category are preserved.
+  local updated
+  updated="$(jq \
+    --argjson new_hooks "$new_hooks" \
+    --arg marker "$ATRIUM_HOOK_MARKER_RE" \
+    '
+    .hooks = (.hooks // {}) |
+    reduce ($new_hooks | keys_unsorted[]) as $k (.;
+      .hooks[$k] = (
+        [(.hooks[$k] // [])[] | select(.hooks | all(.command | test($marker) | not))]
+        + $new_hooks[$k]
+      )
+    )
+    ' "$SETTINGS_FILE")"
+
+  local tmp="${SETTINGS_FILE}.atrium-tmp"
+  printf '%s\n' "$updated" > "$tmp"
+  mv "$tmp" "$SETTINGS_FILE"
+
+  install_skill
+
+  echo '{"subcommand": "install", "installed": true}'
 }
 
 do_uninstall() {
   if [ ! -f "$SETTINGS_FILE" ]; then
     uninstall_skill
     echo '{"subcommand": "uninstall", "uninstalled": true}'
-    exit 0
+    return
   fi
 
   local updated
-  updated="$(jq '
+  updated="$(jq \
+    --arg marker "$ATRIUM_HOOK_MARKER_RE" \
+    '
     if .hooks then
       .hooks |= with_entries(
         .value |= map(
-          .hooks |= map(select(.command | test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit") | not))
+          .hooks |= map(select(.command | test($marker) | not))
           | select(.hooks | length > 0)
         )
         | select(.value | length > 0)
       )
       | if (.hooks | length) == 0 then del(.hooks) else . end
     else . end
-  ' "$SETTINGS_FILE")"
+    ' "$SETTINGS_FILE")"
 
-  local temp_file="${SETTINGS_FILE}.atrium-tmp"
-  echo "$updated" > "$temp_file"
-  mv "$temp_file" "$SETTINGS_FILE"
+  local tmp="${SETTINGS_FILE}.atrium-tmp"
+  printf '%s\n' "$updated" > "$tmp"
+  mv "$tmp" "$SETTINGS_FILE"
 
-  # Remove atrium CLI skill
   uninstall_skill
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
-  exit 0
 }
 
 do_status() {
   if [ ! -f "$SETTINGS_FILE" ]; then
     echo '{"subcommand": "status", "installed": false, "skillInstalled": false}'
-    exit 0
+    return
   fi
 
-  local has_hooks
-  has_hooks="$(jq '
-    ((.hooks.SessionStart // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
-  ' "$SETTINGS_FILE" 2>/dev/null || echo "false")"
+  local session
+  session="$(has_atrium_hooks_in SessionStart)"
 
-  # Check if skill is installed
-  local has_skill="false"
-  if [ -f "${HOME}/.gemini/skills/atrium/SKILL.md" ]; then
-    has_skill="true"
-  fi
+  local skill="false"
+  [ -f "${HOME}/.gemini/skills/atrium/SKILL.md" ] && skill="true"
 
-  echo "{\"subcommand\": \"status\", \"installed\": ${has_hooks}, \"skillInstalled\": ${has_skill}}"
-  exit 0
+  echo "{\"subcommand\": \"status\", \"installed\": ${session}, \"skillInstalled\": ${skill}}"
 }
 
 case "$SUBCOMMAND" in
