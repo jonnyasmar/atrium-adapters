@@ -2,25 +2,30 @@
 set -euo pipefail
 
 # build_launch_command.sh — Build the command to launch Codex.
-# Takes $1 = JSON flags
-# Output: {"command": ["codex"]} or {"command": ["codex", "--dangerously-bypass-approvals-and-sandbox"]}
+# Takes $1 = JSON flags from launcher options
+# Output: {"command": ["codex", ...flags]}
 
 FLAGS="${1:-"{}"}"
+CMD='["codex"'
 
-# Parse dangerouslySkipPermissions from flags JSON
-SKIP_PERMISSIONS=false
 if command -v jq &>/dev/null; then
-  SKIP_PERMISSIONS="$(echo "$FLAGS" | jq -r '.dangerouslySkipPermissions // .dangerous_skip_permissions // false' 2>/dev/null)" || SKIP_PERMISSIONS=false
+  SKIP="$(echo "$FLAGS" | jq -r '.dangerouslySkipPermissions // false' 2>/dev/null)" || SKIP="false"
+  if [ "$SKIP" = "true" ]; then
+    CMD="${CMD}, \"--dangerously-bypass-approvals-and-sandbox\""
+  fi
+
+  EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
+  if [ -n "$EXTRA" ]; then
+    for arg in $EXTRA; do
+      CMD="${CMD}, \"${arg}\""
+    done
+  fi
 else
-  # Fallback: grep for the key
-  if echo "$FLAGS" | grep -qE '"dangerouslySkipPermissions"\s*:\s*true|"dangerous_skip_permissions"\s*:\s*true'; then
-    SKIP_PERMISSIONS=true
+  if echo "$FLAGS" | grep -qE '"dangerouslySkipPermissions"\s*:\s*true'; then
+    CMD="${CMD}, \"--dangerously-bypass-approvals-and-sandbox\""
   fi
 fi
 
-if [ "$SKIP_PERMISSIONS" = "true" ]; then
-  echo '{"command": ["codex", "--dangerously-bypass-approvals-and-sandbox"]}'
-else
-  echo '{"command": ["codex"]}'
-fi
+CMD="${CMD}]"
+echo "{\"command\": ${CMD}}"
 exit 0

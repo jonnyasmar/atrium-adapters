@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "adapters": [
     {
       "name": "claude-code",
@@ -7,11 +7,11 @@
       "description": "Anthropic's AI coding assistant",
       "accent": "#d97706",
       "binary": "claude",
-      "sdkVersion": 1,
+      "sdkVersion": 2,
       "platforms": ["macos"],
       "official": true,
-      "version": "1.0.0",
-      "minAppVersion": "0.1.0"
+      "version": "1.10.0",
+      "minAppVersion": "0.65.0"
     },
     {
       "name": "codex",
@@ -19,11 +19,23 @@
       "description": "OpenAI's AI coding assistant",
       "accent": "#059669",
       "binary": "codex",
-      "sdkVersion": 1,
+      "sdkVersion": 2,
       "platforms": ["macos"],
       "official": true,
-      "version": "1.0.0",
-      "minAppVersion": "0.1.0"
+      "version": "1.12.0",
+      "minAppVersion": "0.65.0"
+    },
+    {
+      "name": "gemini",
+      "displayName": "Gemini CLI",
+      "description": "Google's AI coding assistant",
+      "accent": "#4285f4",
+      "binary": "gemini",
+      "sdkVersion": 2,
+      "platforms": ["macos"],
+      "official": true,
+      "version": "0.1.0",
+      "minAppVersion": "0.65.0"
     }
   ]
 }

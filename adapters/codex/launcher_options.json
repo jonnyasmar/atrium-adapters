@@ -1,1 +1,18 @@
-{"options": [{"key": "dangerouslySkipPermissions", "label": "\ud83e\udd37\u200d\u2642\ufe0f", "description": "--dangerously-bypass-approvals-and-sandbox", "type": "toggle", "default": false}]}
+{
+  "options": [
+    {
+      "key": "dangerouslySkipPermissions",
+      "label": "\ud83d\udc6e\u200d\u2642\ufe0f",
+      "description": "--dangerously-bypass-approvals-and-sandbox",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ]
+}

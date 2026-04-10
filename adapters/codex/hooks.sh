@@ -27,7 +27,20 @@ atrium_MARKER="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 build_hook_command() {
   local uri="$1" adapter_name="$2" event_name="$3" marker="$4"
   jq -n --arg uri "$uri" --arg adapter "$adapter_name" --arg event "$event_name" --arg marker "$marker" \
-    '($marker + "; PAYLOAD=$(cat); CLI=\"${ATRIUM_CLI_PATH:-atrium}\"; if [ -x \"$CLI\" ]; then echo \"$PAYLOAD\" | \"$CLI\" hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\"; fi")'
+    '($marker + "; PAYLOAD=$(cat); CLI=\"${ATRIUM_CLI_PATH:-atrium}\"; if [ -x \"$CLI\" ]; then echo \"$PAYLOAD\" | \"$CLI\" hook emit " + $event + " --adapter " + $adapter + " --pane-id \"${ATRIUM_PANE_ID:-}\" --json >/dev/null 2>/dev/null || exit 0; else [ -n \"${ATRIUM_HOOK_PORT:-}${ATRIUM_DATA_DIR:-}\" ] || exit 0; DATA_DIR=${ATRIUM_DATA_DIR:-$HOME/.atrium}; PORT=${ATRIUM_HOOK_PORT:-$(cat \"$DATA_DIR/hook-port\" 2>/dev/null)}; [ -n \"$PORT\" ] || exit 0; curl -s -X POST http://127.0.0.1:$PORT/resolve -H \"Content-Type: application/json\" -H \"X-Atrium-Pane-Id: ${ATRIUM_PANE_ID:-}\" -d \"{\\\"uri\\\": \\\"" + $uri + "\\\", \\\"paneId\\\": \\\"${ATRIUM_PANE_ID:-}\\\", \\\"params\\\": $PAYLOAD}\" >/dev/null; fi")'
+}
+
+install_context_file() {
+  local source_file
+  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.txt"
+  local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
+
+  if [ ! -f "$source_file" ]; then
+    return 0
+  fi
+
+  mkdir -p "$dest_dir"
+  cp "$source_file" "$dest_dir/agent-context.txt"
 }
 
 # Build the SessionStart hook command template.
@@ -37,11 +50,19 @@ build_session_start_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/codex/session-start}"
   local cmd
   cmd="$(build_hook_command "$uri" "codex" "session-start" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
+  local ctx_cmd_str="${atrium_MARKER}; [ -n \"\${ATRIUM:-}\" ] && cat \"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/agent-context.txt\" 2>/dev/null || true"
+  jq -n --argjson cmd "$cmd" --arg ctx_cmd "$ctx_cmd_str" '[{
     "matcher": "startup|resume",
     "hooks": [{
       "type": "command",
       "command": $cmd,
+      "timeout": 5
+    }]
+  }, {
+    "matcher": "startup|resume",
+    "hooks": [{
+      "type": "command",
+      "command": $ctx_cmd,
       "timeout": 5
     }]
   }]'
@@ -185,6 +206,28 @@ ensure_hooks_file() {
   fi
 }
 
+remove_atrium_mcp_config() {
+  if [ ! -f "$CONFIG_TOML" ]; then
+    return 0
+  fi
+
+  local temp_file="${CONFIG_TOML}.atrium-tmp"
+  awk '
+    BEGIN { skip = 0 }
+    /^\[mcp_servers\.atrium(\.env)?\]$/ {
+      skip = 1
+      next
+    }
+    /^\[/ {
+      if (skip) {
+        skip = 0
+      }
+    }
+    !skip { print }
+  ' "$CONFIG_TOML" > "$temp_file"
+  mv "$temp_file" "$CONFIG_TOML"
+}
+
 do_install() {
   # Step 1: Enable feature flag in config.toml
   enable_hooks_feature
@@ -250,42 +293,46 @@ do_install() {
   echo "$updated" > "$temp_file"
   mv "$temp_file" "$HOOKS_JSON"
 
-  # Step 3: Register atrium MCP server via codex CLI
-  install_mcp_server
+  # Step 3: Remove legacy MCP server if present (replaced by CLI skill)
+  uninstall_mcp_server
+
+  # Step 4: Install atrium CLI skill for Codex
+  install_skill
+
+  # Step 5: Install agent context file for SessionStart injection
+  install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
   exit 0
 }
 
-install_mcp_server() {
-  local cli_path="${ATRIUM_CLI_PATH:-}"
-  local data_dir="${ATRIUM_DATA_DIR:-}"
+install_skill() {
+  # Install the atrium CLI skill to ~/.codex/skills/atrium/
+  local skill_dir="${HOME}/.codex/skills/atrium"
+  local source_dir
+  source_dir="$(cd "$(dirname "$0")" && pwd)/skills/atrium"
 
-  if [ -z "$cli_path" ] || [ -z "$data_dir" ]; then
+  if [ ! -f "${source_dir}/SKILL.md" ]; then
     return 0
   fi
 
-  if ! command -v codex &>/dev/null; then
-    return 0
+  mkdir -p "$skill_dir"
+  cp "${source_dir}/SKILL.md" "${skill_dir}/SKILL.md"
+}
+
+uninstall_skill() {
+  local skill_dir="${HOME}/.codex/skills/atrium"
+  if [ -d "$skill_dir" ]; then
+    rm -rf "$skill_dir"
   fi
+}
 
-  # Remove existing atrium MCP entry and write fresh config with env_vars.
-  # Uses sh -c wrapper so ATRIUM_CLI_PATH is expanded at runtime from the
-  # pane's environment via env_vars forwarding.
-  codex mcp remove atrium 2>/dev/null || true
-
-  local config="${HOME}/.codex/config.toml"
-  cat >> "$config" << MCPTOML
-
-[mcp_servers.atrium]
-command = "sh"
-args = ["-c", "\"${cli_path}\" mcp-serve"]
-env_vars = ["ATRIUM_CLI_PATH", "ATRIUM_DATA_DIR", "ATRIUM_PANE_ID"]
-
-[mcp_servers.atrium.env]
-ATRIUM_DATA_DIR = "${data_dir}"
-ATRIUM_CLI_PATH = "${cli_path}"
-MCPTOML
+uninstall_mcp_server() {
+  # Remove legacy MCP server registration if present
+  if command -v codex &>/dev/null; then
+    codex mcp remove atrium 2>/dev/null || true
+  fi
+  remove_atrium_mcp_config
 }
 
 do_uninstall() {
@@ -321,9 +368,10 @@ do_uninstall() {
   mv "$temp_file" "$HOOKS_JSON"
 
   # Step 3: Remove atrium MCP server
-  if command -v codex &>/dev/null; then
-    codex mcp remove atrium 2>/dev/null || true
-  fi
+  uninstall_mcp_server
+
+  # Step 4: Remove atrium CLI skill
+  uninstall_skill
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
   exit 0
@@ -368,7 +416,13 @@ do_status() {
     installed=true
   fi
 
-  echo "{\"subcommand\": \"status\", \"installed\": ${installed}, \"activityHooks\": ${has_activity_hooks}}"
+  # Check if skill is installed
+  local has_skill="false"
+  if [ -f "${HOME}/.codex/skills/atrium/SKILL.md" ]; then
+    has_skill="true"
+  fi
+
+  echo "{\"subcommand\": \"status\", \"installed\": ${installed}, \"activityHooks\": ${has_activity_hooks}, \"skillInstalled\": ${has_skill}}"
   exit 0
 }
 

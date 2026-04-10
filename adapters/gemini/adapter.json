@@ -1,0 +1,38 @@
+{
+  "sdkVersion": 2,
+  "name": "gemini",
+  "displayName": "Gemini CLI",
+  "description": "Google's AI coding assistant",
+  "accent": "#4285f4",
+  "binary": "gemini",
+  "version": "0.1.0",
+  "binaryDiscovery": {
+    "commands": ["gemini"],
+    "wellKnownPaths": [
+      "/opt/homebrew/bin/gemini",
+      "/usr/local/bin/gemini",
+      "~/.local/bin/gemini",
+      "~/.npm/bin/gemini"
+    ]
+  },
+  "launch": {
+    "command": ["gemini"],
+    "resumeFlag": "--resume"
+  },
+  "hooks": {
+    "session-start": "atrium://hooks/gemini/session-start",
+    "session-end": "atrium://hooks/gemini/session-end",
+    "user-prompt-submit": "atrium://hooks/gemini/user-prompt-submit",
+    "pre-tool-use": "atrium://hooks/gemini/pre-tool-use",
+    "post-tool-use": "atrium://hooks/gemini/post-tool-use",
+    "stop": "atrium://hooks/gemini/stop",
+    "notification": "atrium://hooks/gemini/notification"
+  },
+  "methods": {
+    "build_launch_command": { "script": "build_launch_command.sh" },
+    "build_resume_command": { "script": "build_resume_command.sh" },
+    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
+    "hooks": { "script": "hooks.sh" },
+    "launcher_options": { "static": "launcher_options.json" }
+  }
+}

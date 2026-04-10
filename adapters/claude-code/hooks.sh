@@ -30,15 +30,40 @@ build_hook_command() {
 # Build the hook command template.
 # The installed command resolves the active hook port at runtime from the pane's
 # injected ATRIUM_HOOK_PORT / ATRIUM_DATA_DIR so stable/dev/beta instances can coexist.
+install_context_file() {
+  # Copy the shared context file to the active channel's data dir so hooks
+  # can cat it at runtime. Uses ATRIUM_DATA_DIR (set by the PTY manager)
+  # to target the correct channel (stable, dev, beta).
+  local source_file
+  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.txt"
+  local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
+
+  if [ ! -f "$source_file" ]; then
+    return 0
+  fi
+
+  mkdir -p "$dest_dir"
+  cp "$source_file" "$dest_dir/agent-context.txt"
+}
+
 build_session_start_hook() {
   local uri="${ATRIUM_HOOK_URI_SESSION_START:-atrium://hooks/claude-code/session-start}"
   local cmd
   cmd="$(build_hook_command "$uri" "claude-code" "session-start" "$atrium_MARKER")"
-  jq -n --argjson cmd "$cmd" '[{
+  # Context injection is a separate matcher entry so it gets its own stdin/stdout.
+  local ctx_cmd_str="${atrium_MARKER}; [ -n \"\${ATRIUM:-}\" ] && cat \"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/agent-context.txt\" 2>/dev/null || true"
+  jq -n --argjson cmd "$cmd" --arg ctx_cmd "$ctx_cmd_str" '[{
     "matcher": "startup|resume",
     "hooks": [{
       "type": "command",
       "command": $cmd,
+      "timeout": 5
+    }]
+  }, {
+    "matcher": "startup|resume",
+    "hooks": [{
+      "type": "command",
+      "command": $ctx_cmd,
       "timeout": 5
     }]
   }]'
@@ -140,24 +165,34 @@ ensure_settings_file() {
   fi
 }
 
-install_mcp_server() {
-  local cli_path="${ATRIUM_CLI_PATH:-}"
-  local data_dir="${ATRIUM_DATA_DIR:-}"
+install_skill() {
+  # Install the atrium CLI skill to ~/.claude/skills/atrium/
+  # This gives Claude Code automatic awareness of atrium capabilities.
+  local skill_dir="${HOME}/.claude/skills/atrium"
+  local source_dir
+  source_dir="$(cd "$(dirname "$0")" && pwd)/skills/atrium"
 
-  if [ -z "$cli_path" ] || [ -z "$data_dir" ]; then
+  if [ ! -f "${source_dir}/skill.md" ]; then
+    # Skill source not found — running from a context without the adapter tree
     return 0
   fi
 
-  if ! command -v claude &>/dev/null; then
-    return 0
+  mkdir -p "$skill_dir"
+  cp "${source_dir}/skill.md" "${skill_dir}/skill.md"
+}
+
+uninstall_skill() {
+  local skill_dir="${HOME}/.claude/skills/atrium"
+  if [ -d "$skill_dir" ]; then
+    rm -rf "$skill_dir"
   fi
+}
 
-  # Remove existing entry first (idempotent)
-  claude mcp remove -s user atrium 2>/dev/null || true
-
-  # Add with sh -c wrapper so ATRIUM_CLI_PATH is expanded at runtime from the
-  # pane's environment. The -e flags inject env vars into the MCP server process.
-  claude mcp add -s user atrium -e "ATRIUM_DATA_DIR=${data_dir}" -e "ATRIUM_CLI_PATH=${cli_path}" -- sh -c '"${ATRIUM_CLI_PATH:-atrium}" mcp-serve' 2>/dev/null || true
+uninstall_mcp_server() {
+  # Remove legacy MCP server registration if present
+  if command -v claude &>/dev/null; then
+    claude mcp remove -s user atrium 2>/dev/null || true
+  fi
 }
 
 do_install() {
@@ -224,8 +259,14 @@ do_install() {
   echo "$updated" > "$temp_file"
   mv "$temp_file" "$SETTINGS_FILE"
 
-  # Register atrium MCP server via claude CLI
-  install_mcp_server
+  # Remove legacy MCP server if present (replaced by CLI skill)
+  uninstall_mcp_server
+
+  # Install atrium CLI skill for Claude Code
+  install_skill
+
+  # Install agent context file for SessionStart injection
+  install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
   exit 0
@@ -258,10 +299,11 @@ do_uninstall() {
   echo "$updated" > "$temp_file"
   mv "$temp_file" "$SETTINGS_FILE"
 
-  # Remove atrium MCP server
-  if command -v claude &>/dev/null; then
-    claude mcp remove -s user atrium 2>/dev/null || true
-  fi
+  # Remove legacy MCP server if present
+  uninstall_mcp_server
+
+  # Remove atrium CLI skill
+  uninstall_skill
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
   exit 0
@@ -269,7 +311,7 @@ do_uninstall() {
 
 do_status() {
   if [ ! -f "$SETTINGS_FILE" ]; then
-    echo '{"subcommand": "status", "installed": false, "activityHooks": false, "mcpConfigured": false}'
+    echo '{"subcommand": "status", "installed": false, "activityHooks": false, "skillInstalled": false}'
     exit 0
   fi
 
@@ -295,13 +337,13 @@ do_status() {
     ((.hooks.UserPromptSubmit // []) | [.[].hooks[]?.command] | any(test("atrium/hook-port|atrium-runtime-hook|/resolve|atrium hook emit")))
   ' "$SETTINGS_FILE" 2>/dev/null)" || has_activity_hooks="false"
 
-  # Check if MCP server config is present
-  local has_mcp="false"
-  if command -v claude &>/dev/null && claude mcp get atrium &>/dev/null; then
-    has_mcp="true"
+  # Check if skill is installed
+  local has_skill="false"
+  if [ -f "${HOME}/.claude/skills/atrium/skill.md" ]; then
+    has_skill="true"
   fi
 
-  echo "{\"subcommand\": \"status\", \"installed\": ${has_hooks}, \"activityHooks\": ${has_activity_hooks}, \"mcpConfigured\": ${has_mcp}}"
+  echo "{\"subcommand\": \"status\", \"installed\": ${has_hooks}, \"activityHooks\": ${has_activity_hooks}, \"skillInstalled\": ${has_skill}}"
   exit 0
 }
 
