@@ -11,7 +11,7 @@ CMD='["gemini"'
 if command -v jq &>/dev/null; then
   YOLO="$(echo "$FLAGS" | jq -r '.yolo // false' 2>/dev/null)" || YOLO="false"
   if [ "$YOLO" = "true" ]; then
-    CMD="${CMD}, \"--approval-mode\", \"yolo\""
+    CMD="${CMD}, \"--yolo\""
   fi
 
   EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""

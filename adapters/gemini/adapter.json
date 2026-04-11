@@ -5,7 +5,7 @@
   "description": "Google's AI coding assistant",
   "accent": "#4285f4",
   "binary": "gemini",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "skillInstallPath": "~/.gemini/skills/atrium/SKILL.md",
   "binaryDiscovery": {
     "commands": ["gemini"],
@@ -15,10 +15,6 @@
       "~/.local/bin/gemini",
       "~/.npm/bin/gemini"
     ]
-  },
-  "launch": {
-    "command": ["gemini"],
-    "resumeFlag": "--resume"
   },
   "hooks": {
     "session-start": "atrium://hooks/gemini/session-start",

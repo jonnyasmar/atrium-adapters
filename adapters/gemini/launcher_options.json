@@ -3,7 +3,7 @@
     {
       "key": "yolo",
       "label": "\ud83d\udc6e\u200d\u2642\ufe0f",
-      "description": "--approval-mode yolo",
+      "description": "--yolo",
       "type": "toggle",
       "default": false
     },
