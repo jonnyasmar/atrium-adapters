@@ -29,11 +29,11 @@ You control all of it through the `atrium` CLI.
 Each bucket below maps to one top-level verb of the CLI. Run `<verb> --help` to see its full surface.
 
 - **`task`** — Kanban-style task cards with statuses, priorities, labels, comments, and workspace scoping. Every task has a human-readable ID like `ATR-12` in addition to its UUID.
-- **`pane`** — Create, read, write, focus, close, rename, resize, and split panes. Panes include terminals, editors, browsers, and AI adapter sessions.
+- **`pane`** — Create, read, write, focus, close, rename, resize, and split panes. Panes include terminals, editors, browsers, and AI adapter sessions. `pane read` returns rendered text from the xterm.js buffer (what the user actually sees), with `--lines N` (default 200, most recent) and `--offset N` (skip N most recent to page backward through scrollback).
 - **`room`** — List, switch, and close rooms (the user-facing name for tabs).
 - **`workspace`** — List, create, switch, and delete workspaces. Workspaces are project directories with their own pane layouts.
 - **`browser`** — Drive the browser panes: navigate, click, fill, type, press keys, select, scroll, eval JS, screenshot, snapshot, wait for conditions, read attributes. Always prefer this over any Playwright or browser MCP.
-- **`agent`** — List active AI agent panes and send framed messages between agents. Use this for agent-to-agent coordination.
+- **`agent`** — List active AI agent panes and send framed messages between agents. Use this for agent-to-agent coordination. See **Agent-to-agent messaging** below for the reply pattern — do **not** use `pane read` to check for responses.
 - **`theme`** — List and switch themes.
 - **`config`** — Read and write atrium settings.
 - **`hook`** — Emit adapter lifecycle events (session-start, session-stop, etc.) manually. Niche; usually you don't need this.
@@ -71,6 +71,21 @@ If a prefix matches more than one ID, the CLI lists the candidates and fails lou
 
 **"Room" not "tab" in user-facing text.** The backend still uses `tab` in some internal contexts, but the user sees "room" everywhere. When you narrate what you're doing, say "room".
 
+**Agent-to-agent messaging is framed and asynchronous.** When you call `agent message <pane-id> "<text>"`, atrium wraps your text in a frame before injecting it into the recipient's stdin:
+
+```
+[Message from "<your name>" (<your adapter>) via atrium]
+
+<your text>
+
+[Reply with the command: "$ATRIUM_CLI_PATH" agent message <your-short-id> "your reply"]
+```
+
+The recipient sees exactly that block — they know who sent it and how to reply. This has two important consequences for how you coordinate:
+
+1. **You do not need to introduce yourself or paste instructions on how to reply.** atrium does both for you. Just write the message content.
+2. **Do not poll `pane read` to look for the other agent's response.** `agent message` is fire-and-forget from your side, but the reply path is *not* — when the other agent replies via `agent message` back to you, atrium injects the framed reply straight into your own stdin as a new turn. The correct pattern is: send your message, finish your current turn, and wait. The reply will arrive as a fresh user turn in your next invocation. Treat it like sending a message to a human collaborator: you do not screen-scrape their terminal, you wait for them to respond to you.
+
 **Browser snapshot → ref → action loop.** Before you can click, fill, type, or select on a browser pane, run `browser snapshot <pane-id>`. It returns an accessibility tree where every interactable element has a short ref (`e1`, `e2`, ...). Pass those refs to `browser click`, `browser fill`, etc. Re-snapshot whenever the DOM changes — refs are not stable across navigations.
 
 **Installing or configuring anything adapter-side.** atrium owns the adapter install flow. Don't hand-edit files under `~/.atrium/adapters/` or attempt to seed skills yourself — reinstall the adapter from Settings instead.
@@ -100,7 +115,8 @@ If a prefix matches more than one ID, the CLI lists the candidates and fails lou
   --type browser --url "https://example.com" \
   --split "$ATRIUM_PANE_ID"
 
-# Send a framed message to another agent
+# Send a framed message to another agent — then end your turn and wait
+# for their reply to arrive as a new turn. Do NOT pane-read to check.
 "$ATRIUM_CLI_PATH" agent message <agent-id-prefix> "I'm picking up ATR-12, taking the frontend half."
 ```
 
