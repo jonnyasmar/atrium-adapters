@@ -6,6 +6,7 @@
   "accent": "#4285f4",
   "binary": "gemini",
   "version": "0.1.1",
+  "skillInstallPath": "~/.gemini/skills/atrium/SKILL.md",
   "binaryDiscovery": {
     "commands": ["gemini"],
     "wellKnownPaths": [

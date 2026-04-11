@@ -83,20 +83,6 @@ install_context_file() {
   cp "$source_file" "$dest_dir/agent-context.txt"
 }
 
-install_skill() {
-  local skill_dir="${HOME}/.claude/skills/atrium"
-  local source_dir
-  source_dir="$(cd "$(dirname "$0")" && pwd)/skills/atrium"
-  [ -f "${source_dir}/skill.md" ] || return 0
-  mkdir -p "$skill_dir"
-  cp "${source_dir}/skill.md" "${skill_dir}/skill.md"
-}
-
-uninstall_skill() {
-  local skill_dir="${HOME}/.claude/skills/atrium"
-  [ -d "$skill_dir" ] && rm -rf "$skill_dir"
-}
-
 uninstall_mcp_server() {
   if command -v claude &>/dev/null; then
     claude mcp remove -s user atrium 2>/dev/null || true
@@ -143,7 +129,6 @@ do_install() {
   mv "$tmp" "$SETTINGS_FILE"
 
   uninstall_mcp_server
-  install_skill
   install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
@@ -151,7 +136,6 @@ do_install() {
 
 do_uninstall() {
   if [ ! -f "$SETTINGS_FILE" ]; then
-    uninstall_skill
     echo '{"subcommand": "uninstall", "uninstalled": true}'
     return
   fi
@@ -179,14 +163,13 @@ do_uninstall() {
   mv "$tmp" "$SETTINGS_FILE"
 
   uninstall_mcp_server
-  uninstall_skill
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
 }
 
 do_status() {
   if [ ! -f "$SETTINGS_FILE" ]; then
-    echo '{"subcommand": "status", "installed": false, "activityHooks": false, "skillInstalled": false}'
+    echo '{"subcommand": "status", "installed": false, "activityHooks": false}'
     return
   fi
 
@@ -204,10 +187,7 @@ do_status() {
   local activity
   activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop Notification UserPromptSubmit)"
 
-  local skill="false"
-  [ -f "${HOME}/.claude/skills/atrium/skill.md" ] && skill="true"
-
-  echo "{\"subcommand\": \"status\", \"installed\": ${session}, \"activityHooks\": ${activity}, \"skillInstalled\": ${skill}}"
+  echo "{\"subcommand\": \"status\", \"installed\": ${session}, \"activityHooks\": ${activity}}"
 }
 
 case "$SUBCOMMAND" in

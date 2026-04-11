@@ -69,20 +69,6 @@ ensure_settings_file() {
   [ -f "$SETTINGS_FILE" ] || echo '{}' > "$SETTINGS_FILE"
 }
 
-install_skill() {
-  local skill_dir="${HOME}/.gemini/skills/atrium"
-  local source_dir
-  source_dir="$(cd "$(dirname "$0")" && pwd)/skills/atrium"
-  [ -f "${source_dir}/SKILL.md" ] || return 0
-  mkdir -p "$skill_dir"
-  cp "${source_dir}/SKILL.md" "${skill_dir}/SKILL.md"
-}
-
-uninstall_skill() {
-  local skill_dir="${HOME}/.gemini/skills/atrium"
-  [ -d "$skill_dir" ] && rm -rf "$skill_dir"
-}
-
 has_atrium_hooks_in() {
   local keys_json
   keys_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
@@ -119,14 +105,11 @@ do_install() {
   printf '%s\n' "$updated" > "$tmp"
   mv "$tmp" "$SETTINGS_FILE"
 
-  install_skill
-
   echo '{"subcommand": "install", "installed": true}'
 }
 
 do_uninstall() {
   if [ ! -f "$SETTINGS_FILE" ]; then
-    uninstall_skill
     echo '{"subcommand": "uninstall", "uninstalled": true}'
     return
   fi
@@ -151,24 +134,19 @@ do_uninstall() {
   printf '%s\n' "$updated" > "$tmp"
   mv "$tmp" "$SETTINGS_FILE"
 
-  uninstall_skill
-
   echo '{"subcommand": "uninstall", "uninstalled": true}'
 }
 
 do_status() {
   if [ ! -f "$SETTINGS_FILE" ]; then
-    echo '{"subcommand": "status", "installed": false, "skillInstalled": false}'
+    echo '{"subcommand": "status", "installed": false}'
     return
   fi
 
   local session
   session="$(has_atrium_hooks_in SessionStart)"
 
-  local skill="false"
-  [ -f "${HOME}/.gemini/skills/atrium/SKILL.md" ] && skill="true"
-
-  echo "{\"subcommand\": \"status\", \"installed\": ${session}, \"skillInstalled\": ${skill}}"
+  echo "{\"subcommand\": \"status\", \"installed\": ${session}}"
 }
 
 case "$SUBCOMMAND" in

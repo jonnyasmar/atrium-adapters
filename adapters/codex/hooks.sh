@@ -137,20 +137,6 @@ install_context_file() {
   cp "$source_file" "$dest_dir/agent-context.txt"
 }
 
-install_skill() {
-  local skill_dir="${HOME}/.codex/skills/atrium"
-  local source_dir
-  source_dir="$(cd "$(dirname "$0")" && pwd)/skills/atrium"
-  [ -f "${source_dir}/SKILL.md" ] || return 0
-  mkdir -p "$skill_dir"
-  cp "${source_dir}/SKILL.md" "${skill_dir}/SKILL.md"
-}
-
-uninstall_skill() {
-  local skill_dir="${HOME}/.codex/skills/atrium"
-  [ -d "$skill_dir" ] && rm -rf "$skill_dir"
-}
-
 uninstall_mcp_server() {
   if command -v codex &>/dev/null; then
     codex mcp remove atrium 2>/dev/null || true
@@ -198,7 +184,6 @@ do_install() {
   mv "$tmp" "$HOOKS_JSON"
 
   uninstall_mcp_server
-  install_skill
   install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
@@ -209,7 +194,6 @@ do_uninstall() {
 
   if [ ! -f "$HOOKS_JSON" ]; then
     uninstall_mcp_server
-    uninstall_skill
     echo '{"subcommand": "uninstall", "uninstalled": true}'
     return
   fi
@@ -236,7 +220,6 @@ do_uninstall() {
   mv "$tmp" "$HOOKS_JSON"
 
   uninstall_mcp_server
-  uninstall_skill
 
   echo '{"subcommand": "uninstall", "uninstalled": true}'
 }
@@ -265,10 +248,7 @@ do_status() {
     installed="true"
   fi
 
-  local skill="false"
-  [ -f "${HOME}/.codex/skills/atrium/SKILL.md" ] && skill="true"
-
-  echo "{\"subcommand\": \"status\", \"installed\": ${installed}, \"activityHooks\": ${activity}, \"skillInstalled\": ${skill}}"
+  echo "{\"subcommand\": \"status\", \"installed\": ${installed}, \"activityHooks\": ${activity}}"
 }
 
 case "$SUBCOMMAND" in

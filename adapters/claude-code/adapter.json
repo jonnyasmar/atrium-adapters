@@ -6,6 +6,7 @@
   "accent": "#d97706",
   "binary": "claude",
   "version": "1.10.1",
+  "skillInstallPath": "~/.claude/skills/atrium/skill.md",
   "binaryDiscovery": {
     "commands": ["claude"],
     "wellKnownPaths": [
