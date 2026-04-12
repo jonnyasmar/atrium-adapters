@@ -120,4 +120,54 @@ The recipient sees exactly that block — they know who sent it and how to reply
 "$ATRIUM_CLI_PATH" agent message <agent-id-prefix> "I'm picking up ATR-12, taking the frontend half."
 ```
 
+## Task workflow
+
+When atrium launches you against a task, it sets two env vars in your shell so you don't have to pass ids around:
+
+- **`$ATRIUM_TASK_ID`** — the card id (a UUID, not ATR-N)
+- **`$ATRIUM_TASK_RUN_ID`** — the active run id bound to this pane
+
+You will also receive an initial prompt from atrium telling you your task number, the task title, and the commands below. Read the full task details first, then work, then signal your completion:
+
+```bash
+# 1. Read the task details (description, priority, current status, etc.)
+"$ATRIUM_CLI_PATH" task show "$ATRIUM_TASK_ID" --json
+
+# 2. Do the work. When finished, signal "ready for review" — this
+#    transitions the card to the review status configured at launch, so
+#    the user can review your changes before approving them.
+"$ATRIUM_CLI_PATH" task set-in-review
+
+# 3. ONLY if the user explicitly tells you to mark it done (skipping
+#    review), use set-done instead. This transitions the card to the
+#    completion status AND marks the run complete.
+"$ATRIUM_CLI_PATH" task set-done
+```
+
+`task set-in-review` and `task set-done` both read `$ATRIUM_TASK_RUN_ID` by default; you can override with `--run-id <id>` if you need to act on a different run.
+
+## Launching tasks
+
+Tasks also support manual lifecycle management from the CLI. Agents rarely need this — atrium launches you — but the primitives are here if you need them:
+
+```bash
+# Self-launch: bind the current pane to a task. --adapter is required
+# in non-interactive (piped / --json) mode.
+"$ATRIUM_CLI_PATH" task launch ATR-12 --pane-id "$ATRIUM_PANE_ID" --adapter claude-code
+
+# Read the card plus its currentPrimaryRunId
+"$ATRIUM_CLI_PATH" task show ATR-12 --json
+
+# Fetch a run's details + launch profile for progress context
+"$ATRIUM_CLI_PATH" run show <runId> --json
+
+# Low-level: mark a run completed without touching the card status
+"$ATRIUM_CLI_PATH" run complete <runId>
+
+# Pick up an interrupted run from a fresh pane (headless — no UI allocation)
+"$ATRIUM_CLI_PATH" run resume <runId> --pane-id "$ATRIUM_PANE_ID"
+```
+
+Use `atrium run list --workspace <id>` or `atrium run list --task ATR-N` to discover runs; pass `--state interrupted` to find runs that need a resume.
+
 Everything beyond these examples: **run `--help`**. That's the contract.
