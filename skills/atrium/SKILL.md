@@ -88,6 +88,8 @@ The recipient sees exactly that block — they know who sent it and how to reply
 
 **Installing or configuring anything adapter-side.** atrium owns the adapter install flow. Don't hand-edit files under `~/.atrium/adapters/` or attempt to seed skills yourself — reinstall the adapter from Settings instead.
 
+**`pane create --focus` is opt-in.** Do **not** pass `--focus` unless the user explicitly asked you to reveal, switch to, or focus the new pane/room immediately. If the user only asked you to create/split something, omit `--focus` so it opens in the background without stealing focus.
+
 **`$ATRIUM_CLI_PATH` always in double quotes.** The path can contain spaces depending on install location.
 
 ## Quick examples
@@ -112,6 +114,12 @@ The recipient sees exactly that block — they know who sent it and how to reply
 "$ATRIUM_CLI_PATH" pane create \
   --type browser --url "https://example.com" \
   --split "$ATRIUM_PANE_ID"
+
+# Only add --focus when the user explicitly wants to jump to the new pane
+"$ATRIUM_CLI_PATH" pane create \
+  --type terminal \
+  --split "$ATRIUM_PANE_ID" \
+  --focus
 
 # Send a framed message to another agent — then end your turn and wait
 # for their reply to arrive as a new turn. Do NOT pane-read to check.
