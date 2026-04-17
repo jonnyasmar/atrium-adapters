@@ -23,7 +23,13 @@
     "post-tool-use": "atrium://hooks/claude-code/post-tool-use",
     "stop": "atrium://hooks/claude-code/stop",
     "notification": "atrium://hooks/claude-code/notification",
-    "user-prompt-submit": "atrium://hooks/claude-code/user-prompt-submit"
+    "user-prompt-submit": "atrium://hooks/claude-code/user-prompt-submit",
+    "permission-request": "atrium://hooks/claude-code/permission-request",
+    "task-created": "atrium://hooks/claude-code/task-created",
+    "task-completed": "atrium://hooks/claude-code/task-completed",
+    "subagent-start": "atrium://hooks/claude-code/subagent-start",
+    "subagent-stop": "atrium://hooks/claude-code/subagent-stop",
+    "stop-failure": "atrium://hooks/claude-code/stop-failure"
   },
   "methods": {
     "list_recent_sessions": { "script": "list_recent_sessions.sh" },

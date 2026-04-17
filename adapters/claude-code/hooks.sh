@@ -28,7 +28,13 @@ pre-tool-use\tPreToolUse\t.*
 post-tool-use\tPostToolUse\t.*
 stop\tStop\t.*
 notification\tNotification\t.*
-user-prompt-submit\tUserPromptSubmit\t.*'
+user-prompt-submit\tUserPromptSubmit\t.*
+permission-request\tPermissionRequest\t.*
+task-created\tTaskCreated\t.*
+task-completed\tTaskCompleted\t.*
+subagent-start\tSubagentStart\t.*
+subagent-stop\tSubagentStop\t.*
+stop-failure\tStopFailure\t.*'
 
 # Build the hook command string for a given event. Resolved at hook-fire time
 # against the pane's injected env vars so stable/dev/beta can coexist. Trails
@@ -185,7 +191,7 @@ do_status() {
   fi
 
   local activity
-  activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop Notification UserPromptSubmit)"
+  activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop Notification UserPromptSubmit PermissionRequest TaskCreated TaskCompleted SubagentStart SubagentStop StopFailure)"
 
   echo "{\"subcommand\": \"status\", \"installed\": ${session}, \"activityHooks\": ${activity}}"
 }
