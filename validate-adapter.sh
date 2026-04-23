@@ -146,13 +146,15 @@ validate_manifest() {
 
   pass "adapter.json: all required fields present"
 
-  # Validate sdkVersion
+  # Validate sdkVersion. SDK v2 is the current shape used by every adapter
+  # in the registry (lean method set, binaryDiscovery + skillInstallPath on
+  # the manifest). v1 is still accepted for older community adapters.
   local sdk_version
   sdk_version=$(jq -r '.sdkVersion' "$MANIFEST")
-  if [[ "$sdk_version" != "1" ]]; then
-    fail "adapter.json: unsupported sdkVersion" "1" "$sdk_version"
+  if [[ "$sdk_version" != "1" ]] && [[ "$sdk_version" != "2" ]]; then
+    fail "adapter.json: unsupported sdkVersion" "1 or 2" "$sdk_version"
   else
-    pass "adapter.json: sdkVersion is 1"
+    pass "adapter.json: sdkVersion is $sdk_version"
   fi
 
   # Validate name pattern

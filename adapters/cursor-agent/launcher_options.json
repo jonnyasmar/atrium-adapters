@@ -1,0 +1,25 @@
+{
+  "options": [
+    {
+      "key": "yolo",
+      "label": "👮‍♂️",
+      "description": "--force (run everything without approval)",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "plan",
+      "label": "plan",
+      "description": "--plan (read-only planning mode)",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ]
+}

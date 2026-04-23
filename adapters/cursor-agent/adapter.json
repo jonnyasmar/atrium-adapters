@@ -1,0 +1,35 @@
+{
+  "sdkVersion": 2,
+  "name": "cursor-agent",
+  "displayName": "Cursor Agent",
+  "description": "Cursor's agent CLI",
+  "accent": "#6366f1",
+  "binary": "cursor-agent",
+  "version": "0.1.0",
+  "binaryDiscovery": {
+    "commands": ["cursor-agent", "agent"],
+    "wellKnownPaths": [
+      "~/.local/bin/cursor-agent",
+      "~/.local/bin/agent",
+      "/usr/local/bin/cursor-agent",
+      "/opt/homebrew/bin/cursor-agent"
+    ]
+  },
+  "hooks": {
+    "session-start": "atrium://hooks/cursor-agent/session-start",
+    "session-end": "atrium://hooks/cursor-agent/session-end",
+    "user-prompt-submit": "atrium://hooks/cursor-agent/user-prompt-submit",
+    "pre-tool-use": "atrium://hooks/cursor-agent/pre-tool-use",
+    "post-tool-use": "atrium://hooks/cursor-agent/post-tool-use",
+    "stop": "atrium://hooks/cursor-agent/stop",
+    "subagent-start": "atrium://hooks/cursor-agent/subagent-start",
+    "subagent-stop": "atrium://hooks/cursor-agent/subagent-stop"
+  },
+  "methods": {
+    "build_launch_command": { "script": "build_launch_command.sh" },
+    "build_resume_command": { "script": "build_resume_command.sh" },
+    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
+    "hooks": { "script": "hooks.sh" },
+    "launcher_options": { "static": "launcher_options.json" }
+  }
+}

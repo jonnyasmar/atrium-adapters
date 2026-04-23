@@ -18,21 +18,25 @@ Create `adapter.json`:
 
 ```json
 {
-  "sdkVersion": 1,
+  "sdkVersion": 2,
   "name": "mytool",
   "displayName": "My Tool",
   "description": "My AI coding assistant",
   "accent": "#3b82f6",
   "binary": "mytool",
   "version": "1.0.0",
+  "binaryDiscovery": {
+    "commands": ["mytool"],
+    "wellKnownPaths": [
+      "/usr/local/bin/mytool",
+      "/opt/homebrew/bin/mytool",
+      "~/.local/bin/mytool"
+    ]
+  },
   "methods": {
-    "detect_binary":        { "script": "detect_binary.sh" },
-    "detect_running":       { "script": "detect_running.sh" },
-    "extract_session_id":   { "script": "extract_session_id.sh" },
-    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
     "build_launch_command": { "script": "build_launch_command.sh" },
     "build_resume_command": { "script": "build_resume_command.sh" },
-    "check_auth":           { "script": "check_auth.sh" },
+    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
     "hooks":                { "script": "hooks.sh" },
     "launcher_options":     { "static": "launcher_options.json" }
   }
@@ -40,18 +44,6 @@ Create `adapter.json`:
 ```
 
 ### 2. Implement the minimum scripts
-
-**`detect_binary.sh`** -- finds the binary:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-if binary_path="$(which mytool 2>/dev/null)"; then
-  echo "{\"path\": \"${binary_path}\"}"
-else
-  echo '{"path": null}'
-fi
-```
 
 **`build_launch_command.sh`** -- starts a session:
 
@@ -76,21 +68,21 @@ Restart Atrium. Your adapter appears in the launcher if the binary is found.
 
 ## Adapter Structure
 
+SDK v2 (the current shape — see the adapters in `adapters/` for canonical examples):
+
 ```
 mytool/
   adapter.json                # Manifest (required)
-  detect_binary.sh            # Locates the CLI binary on disk
-  detect_running.sh           # Checks if tool is running in a pane
-  extract_session_id.sh       # Extracts session ID from a running process
-  list_recent_sessions.sh     # Lists recent sessions for a working directory
   build_launch_command.sh     # Builds command to start a new session
   build_resume_command.sh     # Builds command to resume a session
-  check_auth.sh               # Checks if tool is authenticated
+  list_recent_sessions.sh     # Lists recent sessions for a working directory
   hooks.sh                    # Manages hook install/uninstall/status
   launcher_options.json       # Static JSON for launcher UI toggles
 ```
 
-The manifest and `detect_binary` + `build_launch_command` are the minimum for a functional adapter. All other methods are optional.
+The manifest alone plus `build_launch_command.sh` is the minimum for a functional adapter; the rest are optional. Binary detection moved to the manifest's `binaryDiscovery` field in v2 (atrium walks `commands` on `PATH`, falls back to `wellKnownPaths`).
+
+SDK v1 shipped additional scripts (`detect_binary.sh`, `detect_running.sh`, `extract_session_id.sh`, `check_auth.sh`). They are still accepted by the validator for legacy community adapters but no longer required — atrium's runtime drives the same behavior from the v2 manifest fields.
 
 ### Script Conventions
 
@@ -106,7 +98,7 @@ The manifest and `detect_binary` + `build_launch_command` are the minimum for a 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `sdkVersion` | integer | Yes | SDK version. Currently `1`. |
+| `sdkVersion` | integer | Yes | SDK version. `2` is current; `1` is still accepted for legacy adapters. |
 | `name` | string | Yes | Machine identifier. Pattern: `^[a-z0-9-]+$` |
 | `displayName` | string | Yes | Human-readable name for the UI |
 | `description` | string | Yes | Short description |
@@ -115,6 +107,9 @@ The manifest and `detect_binary` + `build_launch_command` are the minimum for a 
 | `version` | string | Yes | Semver version of this adapter |
 | `author` | string | No | Author name |
 | `methods` | object | Yes | Map of method names to `{"script": "file.sh"}` or `{"static": "file.json"}` |
+| `binaryDiscovery` | object | No (v2) | `{commands: [...], wellKnownPaths: [...]}` — replaces v1 `detect_binary.sh`. atrium walks `commands` on `PATH`, then the fallback paths. |
+| `hooks` | object | No (v2) | Map of kebab-case event name → stable `atrium://` URI (e.g. `"session-start": "atrium://hooks/mytool/session-start"`). atrium exposes resolved URIs to `hooks.sh install` via `ATRIUM_HOOK_URI_*` env vars. |
+| `skillInstallPath` | string | No (v2) | Absolute or `~`-prefixed path where atrium installs the adapter's `SKILL.md` (e.g. `~/.claude/skills/atrium/skill.md`). |
 
 ---
 
@@ -129,7 +124,7 @@ Set before every script execution:
 | `ATRIUM_ADAPTER_DIR` | Absolute path to this adapter's directory | `~/.atrium/adapters/mytool` |
 | `ATRIUM_DATA_DIR` | Absolute path to Atrium's data directory | `~/.atrium` |
 | `ATRIUM_HOOK_PORT` | Port of the local hook HTTP server | `17322` |
-| `ATRIUM_SDK_VERSION` | SDK version the host app supports | `1` |
+| `ATRIUM_SDK_VERSION` | SDK version the host app supports | `2` |
 
 ### Exit Codes
 
@@ -328,7 +323,7 @@ Clone this repo and run `./validate-adapter.sh adapters/claude-code/` for a refe
   "description": "Short description",
   "accent": "#hexcolor",
   "binary": "yourtool",
-  "sdkVersion": 1,
+  "sdkVersion": 2,
   "platforms": ["macos"],
   "official": false,
   "version": "1.0.0",
@@ -348,6 +343,8 @@ Clone this repo and run `./validate-adapter.sh adapters/claude-code/` for a refe
 |------|-------------|--------|--------|
 | [claude-code](adapters/claude-code/) | Anthropic's AI coding assistant | `claude` | Official |
 | [codex](adapters/codex/) | OpenAI's AI coding assistant | `codex` | Official |
+| [gemini](adapters/gemini/) | Google's AI coding assistant | `gemini` | Official |
+| [cursor-agent](adapters/cursor-agent/) | Cursor's agent CLI | `cursor-agent` | Community |
 
 ---
 

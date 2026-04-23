@@ -36,6 +36,18 @@
       "official": true,
       "version": "0.1.0",
       "minAppVersion": "0.65.0"
+    },
+    {
+      "name": "cursor-agent",
+      "displayName": "Cursor Agent",
+      "description": "Cursor's agent CLI",
+      "accent": "#6366f1",
+      "binary": "cursor-agent",
+      "sdkVersion": 2,
+      "platforms": ["macos"],
+      "official": true,
+      "version": "0.1.0",
+      "minAppVersion": "0.65.0"
     }
   ]
 }

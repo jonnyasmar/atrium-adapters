@@ -17,7 +17,8 @@
     "sdkVersion": {
       "type": "integer",
       "minimum": 1,
-      "description": "SDK version this adapter targets."
+      "maximum": 2,
+      "description": "SDK version this adapter targets. v2 is current (lean method set, binaryDiscovery + skillInstallPath on the manifest); v1 is accepted for legacy adapters."
     },
     "name": {
       "type": "string",
@@ -86,11 +87,33 @@
     },
     "hooks": {
       "type": "object",
-      "description": "Optional map of hook event names to atrium:// URIs. When present, the hook installer provides resolved HTTP URLs as environment variables to hooks.sh.",
+      "description": "SDK v2. Optional map of hook event names (kebab-case, e.g. 'session-start') to stable atrium:// URIs. When present, atrium passes ATRIUM_HOOK_URI_* env vars to hooks.sh install so the installer can bake them into the tool's hook config.",
       "additionalProperties": {
         "type": "string",
         "pattern": "^atrium://"
       }
+    },
+    "binaryDiscovery": {
+      "type": "object",
+      "description": "SDK v2. Replaces the v1 detect_binary.sh method. atrium walks 'commands' against PATH and falls back to 'wellKnownPaths' to locate the CLI binary.",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "description": "Candidate binary names to search on PATH, in priority order.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "wellKnownPaths": {
+          "type": "array",
+          "description": "Absolute or ~-prefixed fallback paths probed when no command resolves on PATH.",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "skillInstallPath": {
+      "type": "string",
+      "minLength": 1,
+      "description": "SDK v2. Absolute or ~-prefixed path where atrium installs the adapter's SKILL.md (e.g. '~/.claude/skills/atrium/skill.md')."
     }
   },
   "additionalProperties": false
