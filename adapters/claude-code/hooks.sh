@@ -61,10 +61,10 @@ build_all_hooks() {
   done <<< "$EVENTS"
 
   # Claude-specific: a second SessionStart matcher whose stdout becomes
-  # session context. Reads agent-context.txt from the active channel's data
+  # session context. Reads agent-context.md from the active channel's data
   # dir at runtime (ATRIUM_DATA_DIR is injected per-pane).
   local ctx_cmd ctx_entry
-  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && cat "${ATRIUM_DATA_DIR:-$HOME/.atrium}/agent-context.txt" 2>/dev/null || true' \
+  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && cat "${ATRIUM_DATA_DIR:-$HOME/.atrium}/agent-context.md" 2>/dev/null || true' \
     "$ATRIUM_HOOK_MARKER_PREFIX")"
   ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
@@ -82,11 +82,13 @@ ensure_settings_file() {
 
 install_context_file() {
   local source_file
-  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.txt"
+  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.md"
   local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
   [ -f "$source_file" ] || return 0
   mkdir -p "$dest_dir"
-  cp "$source_file" "$dest_dir/agent-context.txt"
+  cp "$source_file" "$dest_dir/agent-context.md"
+  # Clean up legacy .txt destination from prior installs.
+  rm -f "$dest_dir/agent-context.txt"
 }
 
 uninstall_mcp_server() {

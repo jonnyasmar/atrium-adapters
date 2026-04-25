@@ -25,9 +25,10 @@ ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENTRY_SCRIPT="${ADAPTER_DIR}/cursor-hook-entry.sh"
 
 # Regex used by install/uninstall/status to identify hooks we own. Matches
-# the entry-script filename (current shape) plus the pre-entry-script
-# marker tokens so old installs still round-trip cleanly.
-ATRIUM_HOOK_MARKER_RE='cursor-hook-entry\.sh|atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
+# the entry-script filenames (cursor-hook-entry.sh for the activity flow,
+# context-entry.sh for the SessionStart context-inject) plus the pre-
+# entry-script marker tokens so old installs still round-trip cleanly.
+ATRIUM_HOOK_MARKER_RE='cursor-hook-entry\.sh|context-entry\.sh|atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
 
 # Event table: the atrium kebab-case event name we emit (passed to the
 # entry script as argv[1]), the Cursor camelCase event name we register
@@ -62,8 +63,9 @@ build_hook_command() {
   printf '%s %s' "$ENTRY_SCRIPT" "$event"
 }
 
-# Assemble the full hooks object by walking the event table. Emits JSON shaped
-# like { "sessionStart": [...], "preToolUse": [...], ... }.
+# Assemble the full hooks object by walking the event table, then append the
+# cursor-specific sessionStart context-inject entry whose stdout is parsed by
+# Cursor as JSON with `additional_context` (per cursor.com/docs/hooks).
 build_all_hooks() {
   local hooks='{}'
   local event key matcher cmd entry
@@ -75,6 +77,16 @@ build_all_hooks() {
     hooks="$(jq --arg key "$key" --argjson entry "$entry" \
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
+
+  # Second sessionStart entry: shared context-entry.sh emits the JSON shape
+  # Cursor consumes as initial system context. Resolved at hook-fire time
+  # against the adapter's installed location ($ADAPTER_DIR/../shared/).
+  local ctx_cmd ctx_entry
+  ctx_cmd="${ADAPTER_DIR}/../shared/context-entry.sh cursor"
+  ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
+    '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
+  hooks="$(jq --argjson ctx "$ctx_entry" '.sessionStart += $ctx' <<< "$hooks")"
+
   printf '%s' "$hooks"
 }
 
@@ -85,6 +97,21 @@ ensure_hooks_file() {
   if [ ! -f "$HOOKS_FILE" ]; then
     echo '{"version": 1, "hooks": {}}' > "$HOOKS_FILE"
   fi
+}
+
+# Seed the agent-context file from the adapter's bundled source into the
+# active channel's data dir, where the sessionStart ctx hook reads it at
+# runtime. Silent no-op when the source file is missing. The previous .txt
+# destination is also removed so legacy installs don't leave a stale
+# companion file behind.
+install_context_file() {
+  local source_file
+  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.md"
+  local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
+  [ -f "$source_file" ] || return 0
+  mkdir -p "$dest_dir"
+  cp "$source_file" "$dest_dir/agent-context.md"
+  rm -f "$dest_dir/agent-context.txt"
 }
 
 # Check whether any atrium-owned hook entries live under the listed event keys.
@@ -131,6 +158,8 @@ do_install() {
   local tmp="${HOOKS_FILE}.atrium-tmp"
   printf '%s\n' "$updated" > "$tmp"
   mv "$tmp" "$HOOKS_FILE"
+
+  install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
 }

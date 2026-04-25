@@ -15,9 +15,11 @@ fi
 
 # Marker embedded as the first statement of every atrium-owned hook command.
 # The regex matches both current and legacy command shapes so install and
-# uninstall can still clean up entries written by prior releases.
+# uninstall can still clean up entries written by prior releases. The
+# context-entry.sh path is matched by filename so the SessionStart context
+# injection entry is also recognized as atrium-owned.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve|context-entry\.sh'
 
 # Gemini sanitizes hook environments, stripping some ATRIUM_* vars at hook
 # fire time. We probe the filesystem at install time to bake the active
@@ -47,7 +49,9 @@ build_hook_command() {
     "$ATRIUM_HOOK_MARKER_PREFIX" "$ATRIUM_CLI_FALLBACK" "$event"
 }
 
-# Assemble the full hooks object by walking the event table.
+# Assemble the full hooks object by walking the event table, then append the
+# gemini-specific context-inject entry whose stdout is parsed by Gemini as JSON
+# with hookSpecificOutput.additionalContext (per Google's hooks reference).
 build_all_hooks() {
   local hooks='{}'
   local event key matcher cmd entry
@@ -59,6 +63,17 @@ build_all_hooks() {
     hooks="$(jq --arg key "$key" --argjson entry "$entry" \
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
+
+  # Second SessionStart matcher: shared context-entry.sh emits the JSON shape
+  # Gemini consumes as additional session context. Resolved at hook-fire time
+  # against the adapter's installed location ($ADAPTER_DIR/../shared/).
+  local ctx_cmd ctx_entry adapter_dir
+  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  ctx_cmd="${adapter_dir}/../shared/context-entry.sh gemini"
+  ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
+    '[{matcher: "startup", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
+  hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+
   printf '%s' "$hooks"
 }
 
@@ -67,6 +82,21 @@ ensure_settings_file() {
   dir="$(dirname "$SETTINGS_FILE")"
   [ -d "$dir" ] || mkdir -p "$dir"
   [ -f "$SETTINGS_FILE" ] || echo '{}' > "$SETTINGS_FILE"
+}
+
+# Seed the agent-context file from the adapter's bundled source into the
+# active channel's data dir, where the SessionStart ctx hook will read it
+# at runtime. Silent no-op when the source file is missing (e.g. running
+# from a partial checkout). The previous .txt destination is also removed
+# so legacy installs don't leave a stale companion file behind.
+install_context_file() {
+  local source_file
+  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.md"
+  local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
+  [ -f "$source_file" ] || return 0
+  mkdir -p "$dest_dir"
+  cp "$source_file" "$dest_dir/agent-context.md"
+  rm -f "$dest_dir/agent-context.txt"
 }
 
 has_atrium_hooks_in() {
@@ -104,6 +134,8 @@ do_install() {
   local tmp="${SETTINGS_FILE}.atrium-tmp"
   printf '%s\n' "$updated" > "$tmp"
   mv "$tmp" "$SETTINGS_FILE"
+
+  install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
 }
