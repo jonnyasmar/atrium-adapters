@@ -10,8 +10,13 @@ set -euo pipefail
 # parsing multi-MB image/multimodal payloads through jq.
 
 CWD="${1:?Usage: list_recent_sessions.sh <cwd>}"
+# Match Claude Code's project-dir encoding: leading '-', then '/', '.', and
+# spaces all collapse to '-'. Without '.' and space handling, workspaces like
+# '~/foo/.worktrees/bar' or '~/Developer/Personal Research' silently miss.
 ENCODED="-${CWD#/}"
 ENCODED="${ENCODED//\//-}"
+ENCODED="${ENCODED//./-}"
+ENCODED="${ENCODED// /-}"
 PROJECT_DIR="${HOME}/.claude/projects/${ENCODED}"
 
 if [ ! -d "$PROJECT_DIR" ]; then

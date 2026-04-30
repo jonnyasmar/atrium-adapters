@@ -5,7 +5,7 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97706",
   "binary": "claude",
-  "version": "1.10.1",
+  "version": "1.10.2",
   "skillInstallPath": "~/.claude/skills/atrium/skill.md",
   "binaryDiscovery": {
     "commands": ["claude"],
