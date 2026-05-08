@@ -18,7 +18,7 @@ fi
 # including legacy command shapes from prior releases. Add legacy alternates
 # when bumping the command format; prune once old releases age out.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve|pane-name-check\.sh'
 
 # Event table: kebab-case event name, Claude settings key, matcher.
 # Each event becomes one hook entry in the corresponding settings.json key.
@@ -69,6 +69,17 @@ build_all_hooks() {
   ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+
+  # Pane-name nudge: appended to UserPromptSubmit so the agent gets a
+  # per-prompt reminder until the pane is renamed off its default
+  # launcher name. Resolved at hook-fire time against the adapter's
+  # installed location ($adapter_dir/../shared/).
+  local rename_cmd rename_entry adapter_dir
+  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  rename_cmd="${adapter_dir}/../shared/pane-name-check.sh claude"
+  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
+    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

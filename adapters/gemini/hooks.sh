@@ -19,7 +19,7 @@ fi
 # context-entry.sh path is matched by filename so the SessionStart context
 # injection entry is also recognized as atrium-owned.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve|context-entry\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve|context-entry\.sh|pane-name-check\.sh'
 
 # Gemini sanitizes hook environments, stripping some ATRIUM_* vars at hook
 # fire time. We probe the filesystem at install time to bake the active
@@ -73,6 +73,17 @@ build_all_hooks() {
   ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
     '[{matcher: "startup", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
   hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+
+  # Pane-name nudge: appended to BeforeAgent (gemini's user-prompt-submit
+  # equivalent) so the agent gets a per-prompt reminder until the pane is
+  # renamed off its default launcher name. Emits the same JSON envelope
+  # used by the SessionStart context inject — hookSpecificOutput
+  # .additionalContext — pinned to hookEventName "BeforeAgent".
+  local rename_cmd rename_entry
+  rename_cmd="${adapter_dir}/../shared/pane-name-check.sh gemini"
+  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
+    '[{matcher: "*", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
+  hooks="$(jq --argjson r "$rename_entry" '.BeforeAgent += $r' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

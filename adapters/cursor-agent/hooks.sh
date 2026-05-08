@@ -28,7 +28,7 @@ ENTRY_SCRIPT="${ADAPTER_DIR}/cursor-hook-entry.sh"
 # the entry-script filenames (cursor-hook-entry.sh for the activity flow,
 # context-entry.sh for the SessionStart context-inject) plus the pre-
 # entry-script marker tokens so old installs still round-trip cleanly.
-ATRIUM_HOOK_MARKER_RE='cursor-hook-entry\.sh|context-entry\.sh|atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
+ATRIUM_HOOK_MARKER_RE='cursor-hook-entry\.sh|context-entry\.sh|pane-name-check\.sh|atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve'
 
 # Event table: the atrium kebab-case event name we emit (passed to the
 # entry script as argv[1]), the Cursor camelCase event name we register
@@ -86,6 +86,16 @@ build_all_hooks() {
   ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
     '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
   hooks="$(jq --argjson ctx "$ctx_entry" '.sessionStart += $ctx' <<< "$hooks")"
+
+  # Pane-name nudge: appended to beforeSubmitPrompt (Cursor's user-prompt
+  # equivalent) so the agent gets a per-prompt reminder until the pane is
+  # renamed off its default launcher name. Emits the same JSON envelope
+  # used by the sessionStart context inject — additional_context.
+  local rename_cmd rename_entry
+  rename_cmd="${ADAPTER_DIR}/../shared/pane-name-check.sh cursor"
+  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
+    '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
+  hooks="$(jq --argjson r "$rename_entry" '.beforeSubmitPrompt += $r' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }
