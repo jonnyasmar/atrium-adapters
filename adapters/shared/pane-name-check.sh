@@ -8,27 +8,84 @@
 #       SessionStart)
 #
 # Behavior:
-#   - Silent no-op outside atrium, when ATRIUM_PANE_ID is unset, when the
-#     CLI is not reachable, or when the pane name is already non-generic.
-#   - Otherwise emits a short instruction telling the agent to rename the
-#     pane via `pane rename`, in the per-adapter context-injection envelope.
+#   - Always emits valid JSON to stdout. Codex strictly parses every
+#     UserPromptSubmit hook fire as JSON; an empty/raw exit triggers
+#     "hook returned invalid user prompt submit JSON output". The script
+#     defaults to `{}` (no-op envelope) when the nudge shouldn't fire,
+#     and emits the per-shape additionalContext envelope when it should.
+#   - Silent (no nudge) when outside atrium, when ATRIUM_PANE_ID is unset,
+#     when the CLI is not reachable, when the pane name is already
+#     non-generic, or when ATRIUM_PANE_RENAME_NUDGE=0.
 #
 # Why no flag-file guard:
 #   The reminder must fire on every prompt while the pane is still generic.
 #   A "we already nudged" flag would let the agent skip the rename once
 #   and silence future reminders — which is exactly the failure mode we're
 #   trying to fix. Once the pane is renamed, the generic-name check fails
-#   and the script exits silently, so the steady-state cost is one CLI
-#   lookup per prompt.
+#   and the script emits an empty `{}`, so the steady-state cost is one
+#   CLI lookup per prompt and zero context injected.
 #
 # Escape hatch:
-#   ATRIUM_PANE_RENAME_NUDGE=0 disables this nudge entirely. Intended for
-#   power users who deliberately keep panes at their default names.
+#   ATRIUM_PANE_RENAME_NUDGE=0 disables the nudge entirely (still emits
+#   `{}` to keep Codex happy).
 
 set -u
 
 SHAPE="${1:?shape arg required (claude|codex|gemini|cursor)}"
 
+# Always emits valid JSON. The body decides what to put inside; this trap
+# guarantees the closing emit and exit so every code path stays JSON-safe.
+EMIT='{}'
+finish() {
+  printf '%s\n' "$EMIT"
+  exit 0
+}
+trap finish EXIT
+
+# Build the per-shape JSON envelope around a context string. Sets EMIT.
+build_envelope() {
+  local context="$1"
+  case "$SHAPE" in
+    claude)
+      # Claude UserPromptSubmit: hookEventName is PascalCase. Claude also
+      # tolerates raw stdout, but the JSON envelope unifies the four shapes
+      # and avoids accidental drift if the contract tightens later.
+      EMIT="$(jq -n --arg c "$context" \
+        '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}' \
+        2>/dev/null || printf '%s' '{}')"
+      ;;
+    codex)
+      # Codex UserPromptSubmitHookSpecificOutputWire: hookEventName is the
+      # snake_case HookEventNameWire variant ("user_prompt_submit"), per
+      # the JSON schema bundled in the codex binary.
+      EMIT="$(jq -n --arg c "$context" \
+        '{hookSpecificOutput: {hookEventName: "user_prompt_submit", additionalContext: $c}}' \
+        2>/dev/null || printf '%s' '{}')"
+      ;;
+    gemini)
+      # Gemini BeforeAgent: hookSpecificOutput.additionalContext, with
+      # hookEventName mirroring the firing event (same envelope shape as
+      # context-entry.sh's SessionStart inject).
+      EMIT="$(jq -n --arg c "$context" \
+        '{hookSpecificOutput: {hookEventName: "BeforeAgent", additionalContext: $c}}' \
+        2>/dev/null || printf '%s' '{}')"
+      ;;
+    cursor)
+      # Cursor beforeSubmitPrompt: additional_context (snake_case top-
+      # level field). Same envelope shape as context-entry.sh.
+      EMIT="$(jq -n --arg c "$context" \
+        '{additional_context: $c}' \
+        2>/dev/null || printf '%s' '{}')"
+      ;;
+    *)
+      echo "pane-name-check.sh: unknown shape '$SHAPE'" >&2
+      EMIT='{}'
+      ;;
+  esac
+}
+
+# Pre-conditions for the nudge. Each early return leaves EMIT='{}' so the
+# trap emits a no-op envelope.
 [ -n "${ATRIUM:-}" ] || exit 0
 [ -n "${ATRIUM_PANE_ID:-}" ] || exit 0
 [ "${ATRIUM_PANE_RENAME_NUDGE:-1}" != "0" ] || exit 0
@@ -66,28 +123,5 @@ read -r -d '' REMINDER <<'EOF' || true
 Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"), describe the work not your role, no status/timestamp/adapter name. If the user has already chosen a name, leave it alone.
 EOF
 
-case "$SHAPE" in
-  claude|codex)
-    # Stdout is appended to the user's prompt as additional context.
-    printf '%s\n' "$REMINDER"
-    ;;
-  gemini)
-    # Gemini: hookSpecificOutput.additionalContext — same envelope used
-    # for SessionStart context injection in context-entry.sh. The
-    # hookEventName mirrors the firing event (BeforeAgent for the
-    # user-prompt-submit equivalent in gemini's hook taxonomy).
-    jq -n --arg c "$REMINDER" \
-      '{hookSpecificOutput: {hookEventName: "BeforeAgent", additionalContext: $c}}' 2>/dev/null || true
-    ;;
-  cursor)
-    # Cursor: additional_context — same envelope used for SessionStart
-    # context injection in context-entry.sh.
-    jq -n --arg c "$REMINDER" \
-      '{additional_context: $c}' 2>/dev/null || true
-    ;;
-  *)
-    echo "pane-name-check.sh: unknown shape '$SHAPE'" >&2
-    ;;
-esac
-
+build_envelope "$REMINDER"
 exit 0
