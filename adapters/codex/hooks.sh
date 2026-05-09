@@ -34,10 +34,21 @@ user-prompt-submit\tUserPromptSubmit\t.*'
 # Build the hook command string for a given event. Resolved at hook-fire time
 # against the pane's injected env vars so stable/dev/beta can coexist. Trails
 # with `exit 0` so any CLI failure never breaks the agent session.
+#
+# Codex 0.120+ strictly parses UserPromptSubmit hook stdout as a JSON envelope
+# and reports "hook returned invalid user prompt submit JSON output" when the
+# stdout is empty. The atrium CLI suppresses its own stdout (so its status
+# object isn't misread as a hook result), so for that event we follow the
+# CLI call with a no-op `{}` envelope to satisfy the parser. Other events
+# tolerate empty stdout and don't need the trailing emit.
 build_hook_command() {
   local event="$1"
-  printf '%s; "${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter codex --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$event"
+  local trailer="exit 0"
+  if [ "$event" = "user-prompt-submit" ]; then
+    trailer='printf "{}\n"; exit 0'
+  fi
+  printf '%s; "${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter codex --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; %s' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$event" "$trailer"
 }
 
 # Assemble the full hooks object by walking the event table, then append the
