@@ -55,11 +55,17 @@ build_envelope() {
         2>/dev/null || printf '%s' '{}')"
       ;;
     codex)
-      # Codex UserPromptSubmitHookSpecificOutputWire: hookEventName is the
-      # snake_case HookEventNameWire variant ("user_prompt_submit"), per
-      # the JSON schema bundled in the codex binary.
+      # Codex UserPromptSubmitHookSpecificOutputWire is camelCase with
+      # deny_unknown_fields, and hookEventName is the HookEventNameWire
+      # enum whose accepted values are PascalCase ("UserPromptSubmit"),
+      # per codex-rs/hooks/schema/generated/user-prompt-submit.command.output.schema.json.
+      # An earlier revision of this script emitted snake_case here based
+      # on a misread of the schema dump in the codex binary; that produced
+      # an envelope that parsed as JSON but failed serde validation,
+      # triggering "hook returned invalid user prompt submit JSON output"
+      # for every prompt.
       EMIT="$(jq -n --arg c "$context" \
-        '{hookSpecificOutput: {hookEventName: "user_prompt_submit", additionalContext: $c}}' \
+        '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}' \
         2>/dev/null || printf '%s' '{}')"
       ;;
     gemini)
