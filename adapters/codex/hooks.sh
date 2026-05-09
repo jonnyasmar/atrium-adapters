@@ -220,6 +220,14 @@ EVENT_LABELS = {
     'Stop': 'stop',
 }
 
+# Codex hashes the identity *after* normalizing the matcher via
+# `matcher_pattern_for_event` (codex-rs/hooks/src/events/common.rs), which
+# unconditionally drops the matcher for these two events — they don't have
+# tool/session matchers conceptually. If we leave the hooks.json matcher in
+# the identity for these events, codex's current_hash diverges from ours and
+# the hook gets flagged "Modified" instead of "Trusted".
+NO_MATCHER_EVENTS = {'user_prompt_submit', 'stop'}
+
 def compute_hash(label, matcher, command, timeout_sec, status_message):
     # Mirrors NormalizedHookIdentity → toml::Value → serde_json::to_value →
     # canonical_json (recursive key sort) → serde_json::to_vec → sha256.
@@ -232,7 +240,7 @@ def compute_hash(label, matcher, command, timeout_sec, status_message):
     if status_message is not None:
         handler["statusMessage"] = status_message
     identity = {"event_name": label, "hooks": [handler]}
-    if matcher is not None:
+    if matcher is not None and label not in NO_MATCHER_EVENTS:
         identity["matcher"] = matcher
     canonical = json.dumps(identity, sort_keys=True, separators=(',', ':'))
     return f"sha256:{hashlib.sha256(canonical.encode()).hexdigest()}"
