@@ -3,7 +3,9 @@ set -euo pipefail
 
 # hooks.sh — Manage Codex hook installation for atrium.
 # Codex hooks require TWO config changes:
-#   1. Enable `codex_hooks = true` in ~/.codex/config.toml (feature flag)
+#   1. Enable `hooks = true` under `[features]` in ~/.codex/config.toml
+#      (feature flag; renamed from the deprecated `codex_hooks` key — install
+#      migrates the deprecated line to the new key when present)
 #   2. Write hook definitions into ~/.codex/hooks.json under .hooks.<Event>
 # Subcommands: install, uninstall, status
 # Output: JSON to stdout, diagnostics to stderr
@@ -99,39 +101,53 @@ ensure_hooks_file() {
   [ -f "$HOOKS_JSON" ] || echo '{}' > "$HOOKS_JSON"
 }
 
-# Enable the codex_hooks feature flag in config.toml. Handles three cases:
-# missing file, existing [features] section, and no [features] section.
+# Enable the hooks feature flag in config.toml. Handles four cases:
+# missing file, existing [features] section, no [features] section, and
+# legacy `codex_hooks = ...` lines (deprecated in current Codex; we strip
+# them so the deprecation warning stops firing).
 enable_hooks_feature() {
   ensure_codex_dir
 
   if [ ! -f "$CONFIG_TOML" ]; then
-    printf '[features]\ncodex_hooks = true\n' > "$CONFIG_TOML"
-    return 0
-  fi
-
-  if grep -qE '^\s*codex_hooks\s*=\s*true' "$CONFIG_TOML" 2>/dev/null; then
+    printf '[features]\nhooks = true\n' > "$CONFIG_TOML"
     return 0
   fi
 
   local tmp="${CONFIG_TOML}.atrium-tmp"
-  if grep -qE '^\[features\]' "$CONFIG_TOML" 2>/dev/null; then
-    if grep -qE '^\s*codex_hooks\s*=' "$CONFIG_TOML" 2>/dev/null; then
-      sed 's/^\([[:space:]]*codex_hooks[[:space:]]*=[[:space:]]*\).*/\1true/' "$CONFIG_TOML" > "$tmp"
+
+  # Drop any legacy `codex_hooks` line so codex no longer warns about it.
+  # Done as a first pass so the rest of the function sees a clean file.
+  sed '/^[[:space:]]*codex_hooks[[:space:]]*=/d' "$CONFIG_TOML" > "$tmp"
+
+  if grep -qE '^\s*hooks\s*=\s*true' "$tmp" 2>/dev/null; then
+    mv "$tmp" "$CONFIG_TOML"
+    return 0
+  fi
+
+  local tmp2="${CONFIG_TOML}.atrium-tmp2"
+  if grep -qE '^\[features\]' "$tmp" 2>/dev/null; then
+    if grep -qE '^\s*hooks\s*=' "$tmp" 2>/dev/null; then
+      sed 's/^\([[:space:]]*hooks[[:space:]]*=[[:space:]]*\).*/\1true/' "$tmp" > "$tmp2"
     else
       sed '/^\[features\]/a\
-codex_hooks = true' "$CONFIG_TOML" > "$tmp"
+hooks = true' "$tmp" > "$tmp2"
     fi
   else
-    printf '%s\n\n[features]\ncodex_hooks = true\n' "$(cat "$CONFIG_TOML")" > "$tmp"
+    printf '%s\n\n[features]\nhooks = true\n' "$(cat "$tmp")" > "$tmp2"
   fi
-  mv "$tmp" "$CONFIG_TOML"
+  mv "$tmp2" "$CONFIG_TOML"
+  rm -f "$tmp"
 }
 
 disable_hooks_feature() {
   [ -f "$CONFIG_TOML" ] || return 0
-  if grep -qE '^\s*codex_hooks\s*=' "$CONFIG_TOML" 2>/dev/null; then
+  if grep -qE '^\s*(codex_hooks|hooks)\s*=' "$CONFIG_TOML" 2>/dev/null; then
     local tmp="${CONFIG_TOML}.atrium-tmp"
-    sed 's/^\([[:space:]]*codex_hooks[[:space:]]*=[[:space:]]*\).*/\1false/' "$CONFIG_TOML" > "$tmp"
+    # Flip both legacy `codex_hooks` and current `hooks` to false. Leaving
+    # the legacy key behind would re-trigger the deprecation warning, but
+    # disable is non-destructive by contract — users who want it gone can
+    # delete the line manually.
+    sed -E 's/^([[:space:]]*(codex_hooks|hooks)[[:space:]]*=[[:space:]]*).*/\1false/' "$CONFIG_TOML" > "$tmp"
     mv "$tmp" "$CONFIG_TOML"
   fi
 }
@@ -252,7 +268,7 @@ do_status() {
   # Session is installed iff the feature flag is enabled AND both
   # SessionStart and SessionEnd carry atrium hooks.
   local has_feature=false
-  if [ -f "$CONFIG_TOML" ] && grep -qE '^\s*codex_hooks\s*=\s*true' "$CONFIG_TOML" 2>/dev/null; then
+  if [ -f "$CONFIG_TOML" ] && grep -qE '^\s*(codex_hooks|hooks)\s*=\s*true' "$CONFIG_TOML" 2>/dev/null; then
     has_feature=true
   fi
 
