@@ -184,6 +184,166 @@ uninstall_mcp_server() {
   remove_atrium_mcp_config
 }
 
+# Pre-trust every hook in hooks.json by writing [hooks.state."<key>"] entries
+# into config.toml. Without this, codex 0.129+ flags every hook as
+# "untrusted" on first launch and forces the user through a /hooks review
+# loop. The trusted_hash format is sha256 of the canonical-JSON form of a
+# NormalizedHookIdentity struct (verified byte-for-byte against codex's own
+# Rust implementation in codex-rs/config/src/fingerprint.rs and the test
+# fixtures in codex-rs/hooks/src/engine/mod_tests.rs).
+#
+# Strips any pre-existing [hooks.state.*] sections so a reinstall after a
+# hook-command change refreshes the hashes (otherwise codex would report
+# the hooks as "modified" and re-prompt for review).
+trust_all_hooks() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "atrium hooks: python3 not found, skipping auto-trust" >&2
+    return 0
+  fi
+  python3 - "$HOOKS_JSON" "$CONFIG_TOML" <<'PYEOF'
+import hashlib, json, os, re, sys
+from pathlib import Path
+
+hooks_path = Path(sys.argv[1])
+config_path = Path(sys.argv[2])
+
+# Map atrium's PascalCase event names to codex's snake_case state-key labels.
+# `hook_event_key_label` in codex-rs/hooks/src/lib.rs is the source of truth.
+EVENT_LABELS = {
+    'PreToolUse': 'pre_tool_use',
+    'PermissionRequest': 'permission_request',
+    'PostToolUse': 'post_tool_use',
+    'PreCompact': 'pre_compact',
+    'PostCompact': 'post_compact',
+    'SessionStart': 'session_start',
+    'UserPromptSubmit': 'user_prompt_submit',
+    'Stop': 'stop',
+}
+
+def compute_hash(label, matcher, command, timeout_sec, status_message):
+    # Mirrors NormalizedHookIdentity → toml::Value → serde_json::to_value →
+    # canonical_json (recursive key sort) → serde_json::to_vec → sha256.
+    # Fields with `Option::None` in Rust are omitted by toml (which can't
+    # represent null), so we omit them here too. `status_message` and
+    # `matcher` are the only optionals in our shape.
+    handler = {"type": "command", "command": command, "async": False}
+    if timeout_sec is not None:
+        handler["timeout"] = timeout_sec
+    if status_message is not None:
+        handler["statusMessage"] = status_message
+    identity = {"event_name": label, "hooks": [handler]}
+    if matcher is not None:
+        identity["matcher"] = matcher
+    canonical = json.dumps(identity, sort_keys=True, separators=(',', ':'))
+    return f"sha256:{hashlib.sha256(canonical.encode()).hexdigest()}"
+
+if not hooks_path.exists():
+    sys.exit(0)
+data = json.loads(hooks_path.read_text() or '{}')
+state_entries = {}
+for event_pascal, groups in (data.get('hooks') or {}).items():
+    label = EVENT_LABELS.get(event_pascal)
+    if not label:
+        # Codex doesn't have a SessionEnd event; any keys we don't recognize
+        # would never be matched by codex anyway, so skip silently.
+        continue
+    for gi, group in enumerate(groups or []):
+        matcher = group.get('matcher')
+        for hi, h in enumerate(group.get('hooks') or []):
+            if h.get('type') != 'command':
+                continue
+            command = h.get('command') or ''
+            if not command.strip():
+                continue
+            t = h.get('timeout')
+            timeout_sec = max(1, int(t)) if t is not None else 600
+            status_message = h.get('statusMessage')
+            key = f"{hooks_path}:{label}:{gi}:{hi}"
+            state_entries[key] = compute_hash(
+                label, matcher, command, timeout_sec, status_message
+            )
+
+# Strip every pre-existing [hooks.state] / [hooks.state."..."] section. We
+# rewrite the whole atrium-owned trust block from scratch each install, so
+# stale entries (e.g. from a prior install whose hooks have since changed)
+# don't accumulate. Lines outside hooks.state are preserved verbatim.
+text = config_path.read_text() if config_path.exists() else ''
+section_re = re.compile(r'^\s*\[\s*([^\]]+?)\s*\]\s*$')
+out, in_state = [], False
+for line in text.splitlines():
+    m = section_re.match(line)
+    if m:
+        section = m.group(1).strip()
+        # Match `hooks.state` and any subsection `hooks.state.<...>`. The
+        # subsection key is dotted/quoted by codex, e.g. hooks.state."..."
+        # — startswith covers both forms.
+        in_state = section == 'hooks.state' or section.startswith('hooks.state.')
+        if in_state:
+            continue
+    if not in_state:
+        out.append(line)
+while out and not out[-1].strip():
+    out.pop()
+text_clean = ('\n'.join(out) + '\n') if out else ''
+
+def toml_quoted_key(s: str) -> str:
+    return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+parts = [text_clean]
+if state_entries:
+    parts.append('\n')
+    for key in sorted(state_entries.keys()):
+        parts.append(f'[hooks.state.{toml_quoted_key(key)}]\n')
+        parts.append('enabled = true\n')
+        parts.append(f'trusted_hash = "{state_entries[key]}"\n')
+
+tmp = config_path.with_suffix(config_path.suffix + '.atrium-tmp')
+tmp.write_text(''.join(parts))
+tmp.replace(config_path)
+print(f"atrium hooks: pre-trusted {len(state_entries)} hook(s)", file=sys.stderr)
+PYEOF
+}
+
+# Strip every atrium-owned [hooks.state."<HOOKS_JSON>:..."] entry on uninstall.
+# We identify ours by the `key_source` prefix (the absolute path to our
+# hooks.json). User-managed trust entries for other hooks.json files would
+# never match this prefix and stay untouched.
+untrust_atrium_hooks() {
+  [ -f "$CONFIG_TOML" ] || return 0
+  if ! command -v python3 >/dev/null 2>&1; then
+    return 0
+  fi
+  python3 - "$HOOKS_JSON" "$CONFIG_TOML" <<'PYEOF'
+import re, sys
+from pathlib import Path
+
+hooks_path = Path(sys.argv[1])
+config_path = Path(sys.argv[2])
+prefix = str(hooks_path)
+if not config_path.exists():
+    sys.exit(0)
+text = config_path.read_text()
+section_re = re.compile(r'^\s*\[\s*hooks\.state\.\s*"([^"]+)"\s*\]\s*$')
+out, drop = [], False
+for line in text.splitlines():
+    m = section_re.match(line)
+    if m:
+        drop = m.group(1).startswith(prefix)
+        if drop:
+            continue
+    elif drop and re.match(r'^\s*\[', line):
+        drop = False
+    if not drop:
+        out.append(line)
+while out and not out[-1].strip():
+    out.pop()
+content = ('\n'.join(out) + '\n') if out else ''
+tmp = config_path.with_suffix(config_path.suffix + '.atrium-tmp')
+tmp.write_text(content)
+tmp.replace(config_path)
+PYEOF
+}
+
 has_atrium_hooks_in() {
   local keys_json
   keys_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
@@ -225,12 +385,14 @@ do_install() {
 
   uninstall_mcp_server
   install_context_file
+  trust_all_hooks
 
   echo '{"subcommand": "install", "installed": true}'
 }
 
 do_uninstall() {
   disable_hooks_feature
+  untrust_atrium_hooks
 
   if [ ! -f "$HOOKS_JSON" ]; then
     uninstall_mcp_server
