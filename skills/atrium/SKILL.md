@@ -28,6 +28,7 @@ Each bucket below maps to one top-level verb of the CLI. Run `<verb> --help` to 
 
 - **`task`** — Kanban-style task cards with statuses, priorities, labels, comments, and workspace scoping. Every task has a human-readable ID like `ATR-12` in addition to its UUID.
 - **`pane`** — Create, read, write, focus, close, rename, resize, and split panes. Panes include terminals, editors, browsers, and AI adapter sessions. `pane read` returns rendered text from the xterm.js buffer (what the user actually sees), with `--lines N` (default 200, most recent) and `--offset N` (skip N most recent to page backward through scrollback).
+- **`note`** — Create, list, read, write, search, open, delete, and view history of workspace-scoped notes across three modes (markdown, sketch, mermaid). Notes live on disk under `~/.atrium/notes/<workspaceId>/<noteId>/`; agent-authored notes carry `--source agent` so users can hide or filter them. SVG/PNG export available for sketch notes when the desktop app is running.
 - **`room`** — List, switch, and close rooms (the user-facing name for tabs).
 - **`workspace`** — List, create, switch, and delete workspaces. Workspaces are project directories with their own pane layouts.
 - **`browser`** — Drive the browser panes: navigate, click, fill, type, press keys, select, scroll, eval JS, screenshot, snapshot, wait for conditions, read attributes. Always prefer this over any Playwright or browser MCP.
@@ -66,6 +67,8 @@ If a prefix matches more than one ID, the CLI lists the candidates and fails lou
 ## Key conventions
 
 **The `--source` field on task operations.** Every task create/update/comment/label command takes a `--source` identifying who did it. Use `"adapter:<your adapter name>"` for actions you take as an agent (e.g. `"adapter:claude-code"`), and `"user:<name>"` only when acting on behalf of a human.
+
+**The `--source` field on note operations.** `atrium note new --source agent` and `atrium note write <id> --source agent` flag the note as agent-authored in `meta.json`. Use `agent` whenever you create or edit a note autonomously. Note: this is a flat enum (`user` | `agent`), NOT the freeform `"adapter:<name>"` string used by `task` operations — atrium's notes UI shows a small "agent" badge in the finder for `source: agent` notes, and users can hide them in bulk via the "Hide agent notes" toggle.
 
 **"Room" not "tab" in user-facing text.** The backend still uses `tab` in some internal contexts, but the user sees "room" everywhere. When you narrate what you're doing, say "room".
 
