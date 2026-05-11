@@ -39,10 +39,21 @@ stop-failure\tStopFailure\t.*'
 # Build the hook command string for a given event. Resolved at hook-fire time
 # against the pane's injected env vars so stable/dev/beta can coexist. Trails
 # with `exit 0` so any CLI failure never breaks the agent session.
+#
+# For `post-tool-use` events, the native payload is piped through
+# `normalize-hook-payload.sh` first so atrium consumes the canonical
+# `_atrium` envelope (see ../../HOOK_ENVELOPE.md). Other events stream
+# straight to `atrium hook emit`.
 build_hook_command() {
   local event="$1"
-  printf '%s; "${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter claude-code --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$event"
+  local adapter_dir
+  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local normalizer=""
+  if [ "$event" = "post-tool-use" ]; then
+    normalizer="\"${adapter_dir}/normalize-hook-payload.sh\" | "
+  fi
+  printf '%s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter claude-code --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$event"
 }
 
 # Assemble the full hooks object by walking the event table, then append the

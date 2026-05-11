@@ -49,8 +49,18 @@ build_hook_command() {
   if [ "$event" = "user-prompt-submit" ]; then
     trailer='printf "{}\n"; exit 0'
   fi
-  printf '%s; "${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter codex --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; %s' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$event" "$trailer"
+  # For `post-tool-use` events, the native payload is piped through
+  # `normalize-hook-payload.sh` first so atrium consumes the canonical
+  # `_atrium` envelope (see ../../HOOK_ENVELOPE.md). Other events
+  # stream straight to `atrium hook emit`.
+  local adapter_dir
+  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local normalizer=""
+  if [ "$event" = "post-tool-use" ]; then
+    normalizer="\"${adapter_dir}/normalize-hook-payload.sh\" | "
+  fi
+  printf '%s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter codex --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; %s' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$event" "$trailer"
 }
 
 # Assemble the full hooks object by walking the event table, then append the

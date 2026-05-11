@@ -52,8 +52,22 @@ case "$EVENT" in
     ;;
 esac
 
-jq -c "$BASE_FILTER | $EVENT_FILTER" 2>/dev/null \
-  | "$ATRIUM_CLI" hook emit "$EVENT" --adapter cursor-agent --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null
+# Resolve the adapter dir so we can locate `normalize-hook-payload.sh`.
+# Same `BASH_SOURCE` pattern hooks.sh uses for `pane-name-check.sh`.
+ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NORMALIZER="${ADAPTER_DIR}/normalize-hook-payload.sh"
+
+# For post-tool-use, route through the normalizer so atrium sees the
+# canonical `_atrium.filePaths` envelope (see ../../HOOK_ENVELOPE.md).
+# Other events skip it — they don't carry write information.
+if [ "$EVENT" = "post-tool-use" ] && [ -x "$NORMALIZER" ]; then
+  jq -c "$BASE_FILTER | $EVENT_FILTER" 2>/dev/null \
+    | "$NORMALIZER" 2>/dev/null \
+    | "$ATRIUM_CLI" hook emit "$EVENT" --adapter cursor-agent --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null
+else
+  jq -c "$BASE_FILTER | $EVENT_FILTER" 2>/dev/null \
+    | "$ATRIUM_CLI" hook emit "$EVENT" --adapter cursor-agent --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null
+fi
 
 # Trailing exit 0 so any downstream failure never breaks the agent session.
 exit 0
