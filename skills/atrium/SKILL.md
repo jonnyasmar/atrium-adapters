@@ -322,23 +322,71 @@ A canvas spec is a single JSON object stored as the note body in `note.canvas.js
 
 ### The component catalog
 
-atrium ships a **curated subset** of `@json-render/react` components — not the full json-render standard library. The components available to your spec are (with the props that matter for agent authoring):
+atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus `Label` (atrium-specific for a11y pairing). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
+
+**Layout & display:**
 
 | Component | Key props |
 |---|---|
-| `Card`     | `title?: string`, `description?: string` |
-| `Stack`    | `direction?: "row"\|"column"`, `gap?: number` |
-| `Heading`  | `text: string`, `level?: 1..6` |
-| `Button`   | `label: string`, `variant?: "default"\|"primary"\|"secondary"\|"destructive"\|"ghost"`. Fires `press`. |
-| `Input`    | `value?` (bind), `label?`, `placeholder?`, `type?: "text"\|"email"\|"url"\|"number"\|"password"` |
-| `Textarea` | `value?` (bind), `label?`, `placeholder?`, `rows?: number` |
-| `Select`   | `value?` (bind), `label?`, `placeholder?`, `options: { value: string, label: string }[]` |
-| `Text`     | `content: string`, `tone?: "default"\|"muted"\|"destructive"\|"success"` |
-| `Label`    | `text: string`, `htmlFor?: string` |
+| `Stack`     | `direction?: "row"\|"column"`, `gap?: number` |
+| `Grid`      | `columns?: 1..6`, `gap?: number` |
+| `Card`      | `title?: string`, `description?: string` |
+| `Carousel`  | `items: { title?, content? }[]` (scroll-snap row) |
+| `Separator` | `orientation?: "horizontal"\|"vertical"` |
+| `Heading`   | `text: string`, `level?: 1..6` |
+| `Text`      | `content: string`, `tone?: "default"\|"muted"\|"destructive"\|"success"\|"warning"` |
+| `Label`     | `text: string`, `htmlFor?: string` |
+| `Icon`      | `name: string` (Lucide), `size?: number`, `color?: string` |
+| `Image`     | `src?: string`, `alt?: string`, `width?`, `height?` |
 
-If your design needs a component not on that list (Grid, Tabs, Table, Form, Checkbox, Radio, etc.), the curated catalog can't express it — either compose with `Stack` + `Card` + the input components above, or fall back to `--type html`. The catalog is **stable across `@json-render/*` minor-version bumps by design**; do not assume components beyond this table exist.
+**Form inputs (all bind via `useBoundProp`):**
 
-For json-render conventions (visibility conditions, repeat, action bindings), see the catalog's upstream docs at https://json-render.dev — but only the components above are available in atrium.
+| Component | Key props |
+|---|---|
+| `Input`       | `value?` (bind), `label?`, `placeholder?`, `type?: "text"\|"email"\|"url"\|"number"\|"password"` |
+| `Textarea`    | `value?` (bind), `label?`, `placeholder?`, `rows?: number` |
+| `Select`      | `value?` (bind), `label?`, `placeholder?`, `options: { value, label }[]` |
+| `Checkbox`    | `checked?` (bind), `label?`, `disabled?` |
+| `Radio`       | `value?` (bind), `label?`, `options: { value, label }[]` |
+| `Switch`      | `checked?` (bind), `label?`, `disabled?` |
+| `Slider`      | `value?` (bind), `label?`, `min?`, `max?`, `step?` |
+| `Toggle`      | `pressed?` (bind), `label: string`, `variant?: "default"\|"outline"` |
+| `ToggleGroup` | `value?` (bind), `type?: "single"\|"multiple"`, `items: { value, label }[]` |
+
+**Interactive & disclosure:**
+
+| Component | Key props |
+|---|---|
+| `Button`       | `label: string`, `variant?: "default"\|"primary"\|"secondary"\|"destructive"\|"ghost"\|"outline"\|"link"`, `disabled?`. Fires `press`. |
+| `ButtonGroup`  | `buttons: { value, label, variant? }[]`, `selected?` (bind). Fires `change`. |
+| `Link`         | `label: string`, `href?: string`. Fires `press`. |
+| `DropdownMenu` | `label: string`, `items: { value, label }[]`. Fires `select`. |
+| `Popover`      | `trigger: string`, `content: string` |
+| `Dialog`       | `title?`, `description?`, `openPath: string` (state path to a boolean) |
+| `Drawer`       | `title?`, `description?`, `openPath: string` (bottom sheet) |
+| `Tabs`         | `tabs: { value, label }[]`, `value?` (bind), `defaultValue?`. Children render as panels in tab order. |
+| `Accordion`    | `items: { value, title }[]`, `type?: "single"\|"multiple"`. Children render as panels in item order. |
+| `Collapsible`  | `title: string`, `defaultOpen?: boolean` |
+| `Tooltip`      | `text: string` (trigger), `content: string` (hover) |
+
+**Feedback & data display:**
+
+| Component | Key props |
+|---|---|
+| `Alert`      | `message: string`, `title?`, `type?: "info"\|"success"\|"warning"\|"destructive"` |
+| `Badge`      | `text: string`, `variant?: "default"\|"success"\|"warning"\|"destructive"\|"muted"` |
+| `Spinner`    | `size?: number`, `label?: string` |
+| `Skeleton`   | `width?`, `height?`, `rounded?: boolean` |
+| `Avatar`     | `src?`, `name?` (initials fallback), `size?: number` |
+| `Progress`   | `value: number`, `max?: number`, `label?: string` |
+| `Metric`     | `label: string`, `value: string\|number`, `change?`, `changeType?: "positive"\|"negative"\|"neutral"`, `prefix?`, `suffix?` |
+| `Rating`     | `value?` (bind), `max?: number`, `label?`, `interactive?: boolean` |
+| `Table`      | `columns: { key, label, align? }[]`, `rows: Record<string, unknown>[]`, `caption?` |
+| `Pagination` | `totalPages: number`, `page?` (bind, 1-indexed). Fires `change`. |
+| `BarGraph`   | `title?: string`, `data: { name, ...numericSeries }[]` |
+| `LineGraph`  | `title?: string`, `data: { name, ...numericSeries }[]` |
+
+For json-render conventions (visibility conditions, repeat, action bindings), see the catalog's upstream docs at https://json-render.dev — atrium implements the same vocabulary. Renderers use atrium tokens (`var(--accent)`, `var(--surface)`, `scaledPx()`, etc.) so canvas notes match the rest of atrium's chrome and pick up theme changes automatically.
 
 ### Custom actions (atrium-specific)
 
