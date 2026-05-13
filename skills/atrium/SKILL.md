@@ -392,7 +392,7 @@ atrium implements the **full json-render standard catalog** — all 41 component
 | `Button`       | `label: string`, `variant?: "default"\|"primary"\|"secondary"\|"destructive"\|"ghost"\|"outline"\|"link"`, `disabled?`. Fires `press`. |
 | `ButtonGroup`  | `buttons: { value, label, variant? }[]`, `selected?` (bind). Fires `change`. |
 | `Link`         | `label: string`, `href?: string`. Fires `press`. |
-| `DropdownMenu` | `label: string`, `items: { value, label }[]`. Fires `select`. |
+| `DropdownMenu` | `label: string`, `items: { value, label }[]`, `value?` (bind). Picking an item writes its value through `value` and fires `select`. |
 | `Popover`      | `trigger: string`, `content: string` |
 | `Dialog`       | `title?`, `description?`, `openPath: string` (state path to a boolean) |
 | `Drawer`       | `title?`, `description?`, `openPath: string` (bottom sheet) |
