@@ -360,7 +360,7 @@ atrium implements the **full json-render standard catalog** — all 41 component
 
 | Component | Key props |
 |---|---|
-| `Stack`     | `direction?: "row"\|"column"`, `gap?: number` |
+| `Stack`     | `direction?: "row"\|"column"`, `gap?: number`, `padding?: number`, `align?: "start"\|"center"\|"end"\|"stretch"\|"baseline"`, `justify?: "start"\|"center"\|"end"\|"between"\|"around"\|"evenly"`. Row stacks default `align: "center"`; column stacks default `align: "stretch"`. |
 | `Grid`      | `columns?: 1..6`, `gap?: number` |
 | `Card`      | `title?: string`, `description?: string` |
 | `Carousel`  | `items: { title?, content? }[]` (scroll-snap row) |
