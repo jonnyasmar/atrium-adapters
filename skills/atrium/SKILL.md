@@ -28,7 +28,7 @@ Each bucket below maps to one top-level verb of the CLI. Run `<verb> --help` to 
 
 - **`task`** — Kanban-style task cards with statuses, priorities, labels, comments, and workspace scoping. Every task has a human-readable ID like `ATR-12` in addition to its UUID.
 - **`pane`** — Create, read, write, focus, close, rename, resize, and split panes. Panes include terminals, editors, browsers, and AI adapter sessions. `pane read` returns rendered text from the xterm.js buffer (what the user actually sees), with `--lines N` (default 200, most recent) and `--offset N` (skip N most recent to page backward through scrollback).
-- **`note`** — Create, list, read, write, search, open, delete, and view history of workspace-scoped notes across five modes (markdown, sketch, mermaid, canvas, html). Notes live on disk under `~/.atrium/notes/<workspaceId>/<noteId>/`; agent-authored notes carry `--source agent` so users can hide or filter them. SVG/PNG export available for sketch notes when the desktop app is running. See the **Notes — canvas & html interactive UIs** section below for the agent-authoring vocabulary for canvas/html (interactive UIs the user can fill in and send back).
+- **`note`** — Create, list, read, write, search, open, delete, and view history of workspace-scoped notes across four modes (markdown, sketch, canvas, html). Notes live on disk under `~/.atrium/notes/<workspaceId>/<noteId>/`; agent-authored notes carry `--source agent` so users can hide or filter them. SVG/PNG export available for sketch notes when the desktop app is running. Markdown notes support mermaid diagrams via fenced code blocks — no separate note type for them. See the **Notes — canvas & html interactive UIs** section below for the agent-authoring vocabulary for canvas/html (interactive UIs the user can fill in and send back).
 - **`room`** — List, switch, and close rooms (the user-facing name for tabs).
 - **`workspace`** — List, create, switch, and delete workspaces. Workspaces are project directories with their own pane layouts.
 - **`browser`** — Drive the browser panes: navigate, click, fill, type, press keys, select, scroll, eval JS, screenshot, snapshot, wait for conditions, read attributes. Always prefer this over any Playwright or browser MCP.
@@ -181,7 +181,7 @@ Use `atrium run list --workspace <id>` or `atrium run list --task ATR-N` to disc
 
 ## Notes — canvas & html interactive UIs
 
-atrium notes have five modes. Three (markdown, sketch, mermaid) are agent-readable content. Two (**canvas**, **html**) are **interactive UIs the user fills in and sends back to you**. Use canvas/html when you need the user to:
+atrium notes have four modes. Two (markdown, sketch) are agent-readable content. Two (**canvas**, **html**) are **interactive UIs the user fills in and sends back to you**. Use canvas/html when you need the user to:
 
 - Triage a list (e.g. 40 PRs with a priority dropdown + notes field per row).
 - Confirm a destructive operation with structured input (e.g. select which files to delete).
@@ -193,7 +193,7 @@ The bidirectional model:
 1. You author a UI (JSON spec for canvas, raw HTML for html) and ship it via `atrium note new`.
 2. atrium auto-opens a notepad pane in the user's current room showing the UI (when you pass `--open`).
 3. The user interacts (fills fields, clicks buttons).
-4. The user clicks "Send to agent" (or your UI's own send button) — atrium applies the framing template and injects the result into your stdin as a fresh user turn.
+4. **You MUST include a submit affordance in your spec** — atrium does not render a default "Send to agent" footer. For canvas: a `Button` with `on.press: { action: "send_to_agent", params: { payload: { "$state": "" } } }`. For html: a `<button onclick="parent.postMessage({type:'send', payload:{...}}, '*')">`. Without one, the user has no way to send the form state back. Including multiple submit buttons (e.g. "Approve" vs "Reject" with different payloads) is fine — each fires its own `send_to_agent` with its own params.
 
 ### Choosing canvas vs html
 
@@ -283,7 +283,7 @@ HTML creation (body from a file):
 
 Flag notes:
 
-- `--type {markdown|sketch|mermaid|canvas|html}`. For `canvas` you MUST pass `--spec`; for `html` you MUST pass `--body`. The two are mutually exclusive (clap-enforced) and rejected for the other three types.
+- `--type {markdown|sketch|canvas|html}`. For `canvas` you MUST pass `--spec`; for `html` you MUST pass `--body`. The two are mutually exclusive (clap-enforced) and rejected for the other two types.
 - `--spec` / `--body` accept either a file path or `-` (read piped stdin). Refusing TTY stdin is intentional — it avoids the "agent froze waiting for input" footgun.
 - `--send-framing "<template>"` stores the framing in `meta.json` as `sendFraming`. The Send-to-agent chrome reads it back. Variables: `{payload}`, `{noteId}`, `{noteTitle}`, `{actionId}` — see **Framing template syntax** below.
 - `--open` is opt-in (default false). For canvas/html you almost always want it — without `--open` the note is durable on disk but no pane is opened.
