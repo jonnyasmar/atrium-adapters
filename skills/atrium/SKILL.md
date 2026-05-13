@@ -466,7 +466,15 @@ Two custom actions extend the catalog beyond the standard json-render set:
   | `atrium://commands/file.open` | `path` (or `filePath`), `workspaceId?` | Open a file in an editor pane |
   | `atrium://commands/adapter.list` | — | List installed adapters (read-only) |
 
-  Params are passed in `params.params` (yes, the binding's `params` field carries the command's params object — atrium unwraps it):
+  **Params go in the URI's query string** — not as siblings of `uri` in the action binding. The `atrium_command` action only forwards the URI; the protocol parser reads params from `?key=val&key=val` on the URI itself. URL-encode any values that need it (spaces, slashes, etc.).
+
+  ```json
+  {"action": "atrium_command", "params": {
+    "uri": "atrium://commands/notepad.open?noteId=019e1d…&workspaceId=25b5cba7-…"
+  }}
+  ```
+
+  ❌ Wrong (silently strips `noteId`/`workspaceId`, then the command fails with "missing required param: noteId"):
 
   ```json
   {"action": "atrium_command", "params": {
