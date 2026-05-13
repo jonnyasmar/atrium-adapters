@@ -258,7 +258,7 @@ cat <<'EOF' | "$ATRIUM_CLI_PATH" note new \
       "on": {
         "press": {
           "action": "send_to_agent",
-          "params": {"payload": {"$bindState": "$state"}}
+          "params": {"payload": {"$state": ""}}
         }
       }
     }
@@ -317,8 +317,40 @@ A canvas spec is a single JSON object stored as the note body in `note.canvas.js
 - `root` — the key of the root element in the `elements` map.
 - `elements` — a flat map of element key → element. Each element has `type` (one of the components below), `props` (the component's prop shape), optional `children` (an array of element keys), and optional `on` event bindings.
 - `state` — optional object that seeds the renderer's state model.
-- **State binding**: a prop value of the form `{"$bindState": "/jsonPointer"}` reads/writes that JSON Pointer path on the canvas's state. Use `{"$bindState": "$state"}` to bind the whole state (typically as a `send_to_agent` payload).
 - **`repeat`**: render children once per item in a state array. Inside repeated children, use `{"$item": "field"}` to read a field of the current item, `{"$index": true}` for the index, and `{"$bindItem": "field"}` for two-way binding to an item field.
+
+#### Reading state — two different directives
+
+json-render has TWO state-access directives. Mixing them up is the #1 source of "my button doesn't do anything" bugs:
+
+- **`{"$bindState": "/jsonPointer"}`** — **render-time, two-way binding** for input PROPS. Read AND write the JSON Pointer path. Use ONLY on prop values that interact with form-control state — `value` on Input/Textarea/Select/Slider/Radio, `checked` on Checkbox/Switch, `pressed` on Toggle, `value` on ToggleGroup/Tabs, etc.
+
+  ```json
+  { "type": "Input", "props": { "value": { "$bindState": "/email" } } }
+  ```
+
+- **`{"$state": "/jsonPointer"}`** — **action-time, read-only** for action params. Resolved when the action fires; reads the JSON Pointer path from the current state. Use empty string `""` to read the whole state.
+
+  ```json
+  { "on": { "press": { "action": "send_to_agent", "params": {
+    "payload": { "$state": "" }
+  }}}}
+  ```
+
+**Wrong** (silent no-op — `$bindState` is render-only, action params won't resolve it):
+
+```json
+"params": { "payload": { "$bindState": "$state" } }
+```
+
+**Right** (action params use `$state`):
+
+```json
+"params": { "payload": { "$state": "" } }         // whole state
+"params": { "payload": { "$state": "/multiline" } } // single field
+```
+
+atrium hardens the `send_to_agent` handler against this mistake — if `params.payload` doesn't resolve, the handler falls back to the live canvas state. But other actions (or third-party handlers) won't have that safety net.
 
 ### The component catalog
 
@@ -396,11 +428,13 @@ Two custom actions extend the catalog beyond the standard json-render set:
 
   ```json
   {"action": "send_to_agent", "params": {
-    "payload": {"$bindState": "$state"},
+    "payload": {"$state": ""},
     "framing": "Optional override of the note's sendFraming",
     "target": "Optional pane id; default is originAgentPaneId"
   }}
   ```
+
+  **Action params use `{"$state": "<jsonPointer>"}` to read state — NOT `{"$bindState": ...}` (which is render-only).** See the State binding subsection above.
 
   All three params are optional. Fallback chain:
   - `payload` omitted → the current canvas state is sent.
