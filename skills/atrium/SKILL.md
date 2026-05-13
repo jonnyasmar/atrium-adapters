@@ -413,7 +413,36 @@ Two custom actions extend the catalog beyond the standard json-render set:
   {"action": "atrium_command", "params": {"uri": "atrium://..."}}
   ```
 
-  The `uri` is required and MUST start with `atrium://` (Zod-refined; malformed URIs throw at action-fire time and surface in DevTools). Use this for "Open file" buttons, "Switch room" buttons, "Create another note" buttons, etc.
+  The `uri` is required and MUST start with `atrium://` (Zod-refined; malformed URIs throw at action-fire time and surface a toast in the canvas). Failures show a `toast.error` on the canvas surface; successes are silent (most commands have a visible side effect).
+
+  **Available commands** (use ONLY these — guessing a URI that isn't registered will toast a "Command failed" error):
+
+  | URI | Params | Effect |
+  |---|---|---|
+  | `atrium://commands/workspace.create` | `name?: string` | Create a new workspace |
+  | `atrium://commands/workspace.delete` | `workspaceId: string` | Delete a workspace |
+  | `atrium://commands/theme.switch` | — | Cycle through atrium themes |
+  | `atrium://commands/config.set` | `key, value` | Update a config setting |
+  | `atrium://commands/pane.create` | `workspaceId, type, position?` | Open a new pane (`type` ∈ `"terminal" \| "browser" \| ...`) |
+  | `atrium://commands/pane.close` | `paneId` | Close a pane |
+  | `atrium://commands/pane.resize` | `paneId, direction` | Resize a pane |
+  | `atrium://commands/pane.split` | `paneId, type, direction` | Split a pane |
+  | `atrium://commands/pane.rename` | `paneId, name` | Rename a pane |
+  | `atrium://commands/notepad.open` | `noteId, workspaceId` | Open a specific note in a notepad pane |
+  | `atrium://commands/file.open` | `path` (or `filePath`), `workspaceId?` | Open a file in an editor pane |
+  | `atrium://commands/adapter.list` | — | List installed adapters (read-only) |
+
+  Params are passed in `params.params` (yes, the binding's `params` field carries the command's params object — atrium unwraps it):
+
+  ```json
+  {"action": "atrium_command", "params": {
+    "uri": "atrium://commands/notepad.open",
+    "noteId": "019e1d…",
+    "workspaceId": "25b5cba7-…"
+  }}
+  ```
+
+  (Note: there is NO `notes.open` or "open the notes finder" command today. To create a note from a canvas action, use `pane.create` with the appropriate type or wire `send_to_agent` with a "please create a note" instruction.)
 
 ### HTML postMessage protocol
 
