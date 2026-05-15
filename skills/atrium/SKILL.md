@@ -28,7 +28,7 @@ Each bucket below maps to one top-level verb of the CLI. Run `<verb> --help` to 
 
 - **`task`** — Kanban-style task cards with statuses, priorities, labels, comments, and workspace scoping. Every task has a human-readable ID like `ATR-12` in addition to its UUID.
 - **`pane`** — Create, read, write, focus, close, rename, resize, and split panes. Panes include terminals, editors, browsers, and AI adapter sessions. `pane read` returns rendered text from the xterm.js buffer (what the user actually sees), with `--lines N` (default 200, most recent) and `--offset N` (skip N most recent to page backward through scrollback).
-- **`note`** — Create, list, read, write, search, open, delete, and view history of workspace-scoped notes across four modes (markdown, sketch, canvas, html). Notes live on disk under `~/.atrium/notes/<workspaceId>/<noteId>/`; agent-authored notes carry `--source agent` so users can hide or filter them. SVG/PNG export available for sketch notes when the desktop app is running. Markdown notes support mermaid diagrams via fenced code blocks — no separate note type for them. **CLI is canonical for lifecycle (new / delete / list / search) and metadata; for iterating on body content, you can also `Read`/`Edit`/`Write` the body file directly — see the "Editing notes" section below.** See the **Notes — canvas & html interactive UIs** section for the agent-authoring vocabulary for canvas/html.
+- **`note`** — Create, list, read, write, search, open, delete, stream RFC 6902 patches (`canvas-patch`), and view history of workspace-scoped notes across four modes (markdown, sketch, canvas, html). Notes live on disk under `~/.atrium/notes/<workspaceId>/<noteId>/`; agent-authored notes carry `--source agent` so users can hide or filter them. SVG/PNG export available for sketch notes when the desktop app is running. Markdown notes support mermaid diagrams via fenced code blocks — no separate note type for them. **CLI is canonical for lifecycle (new / delete / list / search) and metadata; for iterating on body content, you can also `Read`/`Edit`/`Write` the body file directly — see the "Editing notes" section below.** See the **Notes — canvas & html interactive UIs** section for the agent-authoring vocabulary for canvas/html.
 - **`room`** — List, switch, and close rooms (the user-facing name for tabs).
 - **`workspace`** — List, create, switch, and delete workspaces. Workspaces are project directories with their own pane layouts.
 - **`browser`** — Drive the browser panes: navigate, click, fill, type, press keys, select, scroll, eval JS, screenshot, snapshot, wait for conditions, read attributes. Always prefer this over any Playwright or browser MCP.
@@ -198,6 +198,7 @@ This gives you **two ways to mutate a note**. Pick by what you're doing, not by 
 | Read a body when you're not about to edit it (and want filters, render-via-app, sketch SVG/PNG export, etc.) | `atrium note read` |
 | Bulk-replace a body in one shot | `atrium note write` (with `--content`, `--from-file`, or piped stdin) |
 | **Incremental edits to a body** — append a section, fix a typo, refactor a heading | **`Edit` / `Write` directly on the body file** |
+| **Stream a canvas spec into existence** — open the canvas beside the user, then build it section-by-section live | `atrium note canvas-patch <id>` (one RFC 6902 op per JSONL line on stdin; or `--op '<json>'` / `--from-file <path>`). See **Streaming a canvas spec** in `references/notes-interactive-ui.md`. |
 
 atrium watches the notes tree and reconciles automatically: when you write the body file directly, the FTS index updates and any open notepad pane refetches in real-time. **Direct file edits are a first-class workflow, not a backdoor.** For incremental changes, `Edit` with `old_string` / `new_string` is much cheaper than `atrium note read` → mutate-in-memory → `atrium note write` round-trips.
 
@@ -210,10 +211,15 @@ Rules:
 
 ## Notes — canvas & html interactive UIs
 
-atrium notes have four modes:
+atrium notes have four modes — pick by what you're producing, not by habit:
 
-- **markdown** and **sketch** — agent-readable content.
-- **canvas** and **html** — interactive UIs the user fills in and sends back to you. Use these when you need the user to triage a list, confirm a destructive op with structured input, or provide multi-field feedback that would be high cognitive load as a wall of terminal text.
+- **Use markdown when** the output is mostly prose, doesn't need interactive widgets, and the user just needs to read it. This is the default for any narrative output.
+- **Use sketch when** you need a hand-drawn whiteboard / diagram surface (Excalidraw).
+- **Use canvas when:**
+  - The user needs to fill in structured fields and send the result back (forms, triage, confirmations) — the bidirectional submit-back-to-agent pattern below.
+  - You want to **show your work live** as you build a multi-section output (dashboard, plan, comparison, review report). Open the canvas beside yourself, then stream the spec in via `atrium note canvas-patch` so the user watches it materialize. See **Streaming a canvas spec** in `references/notes-interactive-ui.md`.
+  - The output benefits from atrium's component vocabulary (cards, tabs, accordions, charts) — i.e. it's structured enough that markdown would feel cramped.
+- **Use html when** you need fully custom layout / styling / interaction that the json-render component catalog doesn't cover.
 
 The bidirectional model:
 

@@ -173,6 +173,69 @@ json-render has TWO state-access directives. Mixing them up is the #1 source of 
 
 atrium hardens the `send_to_agent` handler against this mistake — if `params.payload` doesn't resolve, the handler falls back to the live canvas state. But other actions (or third-party handlers) won't have that safety net.
 
+## Streaming a canvas spec
+
+**Default agent behavior for canvas: open the canvas in a pane beside yourself FIRST, then stream the spec into it.** A canvas that builds in front of the user is a collaboration; a canvas that appears fully-formed at the end is just a generated document. Default to live; one-shot writes are the exception (use when the user explicitly asked for a *deliverable*, not a live build).
+
+The two-step flow:
+
+```bash
+# 1. Open an empty canvas beside the agent — the user sees the pane immediately.
+NOTE_ID=$(atrium note new --title "Plan: X" --type canvas --open --source agent \
+  --spec - --json <<'EOF' | jq -r .id
+{
+  "root": "rootStack",
+  "elements": {
+    "rootStack": {
+      "type": "Stack",
+      "props": { "direction": "column", "gap": 16 },
+      "children": []
+    }
+  },
+  "state": {}
+}
+EOF
+)
+
+# 2. Stream RFC 6902 patches into the now-visible note as you generate them.
+{
+  echo '{"op":"add","path":"/elements/heading","value":{"type":"Heading","props":{"text":"Plan"},"children":[]}}'
+  echo '{"op":"add","path":"/elements/rootStack/children/-","value":"heading"}'
+  echo '{"op":"add","path":"/elements/section1","value":{"type":"Card","props":{"title":"Step 1"},"children":[]}}'
+  echo '{"op":"add","path":"/elements/rootStack/children/-","value":"section1"}'
+  # ... emit more ops as you think
+} | atrium note canvas-patch "$NOTE_ID"
+```
+
+### Wire format
+
+- **One RFC 6902 op per line of JSONL on stdin.** Each line is a standalone JSON object: `{"op":"add|remove|replace|move|copy|test","path":"/json/pointer","value":...,"from":"/path"}` (`value` for add/replace/test, `from` for move/copy).
+- Alternative input modes for the same verb:
+  - `atrium note canvas-patch <id> --op '<json>'` — single op, one-shot. Use for scripted edits to an existing canvas.
+  - `atrium note canvas-patch <id> --from-file <path>` — JSONL file, single batch. Use for prebuilt patch sets.
+- atrium **throttles disk writes server-side to ~50ms** (20 Hz). Emit patches as fast as you generate them — the throttle protects the FTS index and event channel from flooding, without making the experience feel laggy (well below human flicker threshold).
+- Patches target the **flat element map** form documented in **Canvas spec format** above (`root` + `elements: { id: {type, props, children: ["id"]} }` + optional `state`). Patches against `/state/foo` seed the form state — useful for setting initial Select values, etc., mid-stream.
+
+### Order tolerance
+
+Streaming patches are forgiving — you don't have to emit elements in strict dependency order:
+
+- **Forward references work.** A parent can declare `"children": ["futureCard"]` before `/elements/futureCard` exists in the map. The Renderer renders nothing for the missing id until the element lands in a later patch.
+- **Partial-path adds auto-create intermediate parents.** `add /elements/foo/props/text "hi"` succeeds even if `foo` doesn't exist — the patch crate creates `foo` as a partial object. Cost: that element is structurally invalid (no `type`) until you fill it in.
+- **`test` op mismatches don't abort the batch.** Failed ops are logged and skipped server-side; the stream continues. This is by design — agents emit speculatively, and a stalled half-built canvas is worse than a noisy stream.
+- **Empty stdin lines are ignored** — safe to use blank lines for readability in long pipelines.
+
+### Common patterns
+
+- **Skeleton-first**: emit the layout structure (Stacks, Cards) with empty `children`, then fill the children in. The user sees the shape land immediately and watches each section populate.
+- **State-bound inputs**: emit `Input` / `Textarea` / `Select` elements with `"value": {"$bindState": "/fieldName"}`. The user can start typing as soon as the input appears — typed values survive subsequent patches because the Renderer's state model is separate from the spec.
+- **Cleanup mid-stream**: if you change your mind about an element, emit `{"op":"remove","path":"/elements/foo"}` plus `{"op":"remove","path":"/elements/parent/children/<index>"}` to retract it. The user sees the removal smoothly.
+
+### When NOT to stream
+
+- If the user explicitly asked for a canvas *deliverable* (e.g. "give me the canvas spec for X" — they want the artifact, not the build process), use `atrium note new --type canvas --spec <full-json>` and skip the patch stream entirely.
+- If the canvas is trivially small (3-4 elements), a one-shot `note new --spec` is fine. Streaming below a couple seconds of build time isn't a meaningful UX win.
+
 ## The component catalog
 
 atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus `Label` (atrium-specific for a11y pairing). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
