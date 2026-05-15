@@ -18,7 +18,7 @@ fi
 # including legacy command shapes from prior releases. Add legacy alternates
 # when bumping the command format; prune once old releases age out.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve|pane-name-check\.sh'
 
 # Event table: kebab-case event name, Claude settings key, matcher.
 # Each event becomes one hook entry in the corresponding settings.json key.
@@ -78,10 +78,13 @@ build_all_hooks() {
   done <<< "$EVENTS"
 
   # Claude-specific: a second SessionStart matcher whose stdout becomes
-  # session context. Reads agent-context.md from the active channel's data
-  # dir at runtime (ATRIUM_DATA_DIR is injected per-pane).
+  # session context. Calls `atrium skills resolve-manifest` at hook-fire
+  # time so the injected context is the pane-specific v1 manifest emitted
+  # by SkillsHandler::manifest() (per-adapter envelope normalization lives
+  # there per NFR18). The CLI writes raw bytes shaped for the target
+  # harness directly to stdout — no jq, no per-harness wrap here.
   local ctx_cmd ctx_entry
-  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && cat "${ATRIUM_DATA_DIR:-$HOME/.atrium}/agent-context.md" 2>/dev/null || true' \
+  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
     "$ATRIUM_HOOK_MARKER_PREFIX")"
   ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
@@ -106,17 +109,6 @@ ensure_settings_file() {
   dir="$(dirname "$SETTINGS_FILE")"
   [ -d "$dir" ] || mkdir -p "$dir"
   [ -f "$SETTINGS_FILE" ] || echo '{}' > "$SETTINGS_FILE"
-}
-
-install_context_file() {
-  local source_file
-  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.md"
-  local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
-  [ -f "$source_file" ] || return 0
-  mkdir -p "$dest_dir"
-  cp "$source_file" "$dest_dir/agent-context.md"
-  # Clean up legacy .txt destination from prior installs.
-  rm -f "$dest_dir/agent-context.txt"
 }
 
 uninstall_mcp_server() {
@@ -165,7 +157,6 @@ do_install() {
   mv "$tmp" "$SETTINGS_FILE"
 
   uninstall_mcp_server
-  install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
 }

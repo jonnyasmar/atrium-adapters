@@ -4,8 +4,8 @@
 #
 # Args:
 #   $1  shape — one of: claude | codex | gemini | cursor (controls stdout
-#       envelope shape; see context-entry.sh for analogous handling on
-#       SessionStart)
+#       envelope shape; mirrors the SessionStart context-inject envelope
+#       which now lives in SkillsHandler::manifest() per NFR18)
 #
 # Behavior:
 #   - Always emits valid JSON to stdout. Codex strictly parses every
@@ -71,14 +71,15 @@ build_envelope() {
     gemini)
       # Gemini BeforeAgent: hookSpecificOutput.additionalContext, with
       # hookEventName mirroring the firing event (same envelope shape as
-      # context-entry.sh's SessionStart inject).
+      # the SessionStart manifest inject emitted by SkillsHandler).
       EMIT="$(jq -n --arg c "$context" \
         '{hookSpecificOutput: {hookEventName: "BeforeAgent", additionalContext: $c}}' \
         2>/dev/null || printf '%s' '{}')"
       ;;
     cursor)
       # Cursor beforeSubmitPrompt: additional_context (snake_case top-
-      # level field). Same envelope shape as context-entry.sh.
+      # level field). Same envelope shape as the SessionStart manifest
+      # inject emitted by SkillsHandler.
       EMIT="$(jq -n --arg c "$context" \
         '{additional_context: $c}' \
         2>/dev/null || printf '%s' '{}')"

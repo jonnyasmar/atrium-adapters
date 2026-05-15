@@ -16,10 +16,14 @@ fi
 # Marker embedded as the first statement of every atrium-owned hook command.
 # The regex matches both current and legacy command shapes so install and
 # uninstall can still clean up entries written by prior releases. The
-# context-entry.sh path is matched by filename so the SessionStart context
-# injection entry is also recognized as atrium-owned.
+# context-entry.sh filename token is retained as a legacy-only fallback so
+# uninstall can still recognize hooks written by pre-59.7 releases that
+# routed SessionStart context-injection through shared/context-entry.sh.
+# Current installs never emit that path; the token is harmless because no
+# new hook command matches it. Remove in a future cleanup release once
+# pre-59.7 installs have aged out.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve|context-entry\.sh|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve|context-entry\.sh|pane-name-check\.sh'
 
 # Gemini sanitizes hook environments, stripping some ATRIUM_* vars at hook
 # fire time. We probe the filesystem at install time to bake the active
@@ -75,12 +79,19 @@ build_all_hooks() {
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
 
-  # Second SessionStart matcher: shared context-entry.sh emits the JSON shape
-  # Gemini consumes as additional session context. Resolved at hook-fire time
-  # against the adapter's installed location ($ADAPTER_DIR/../shared/).
-  local ctx_cmd ctx_entry adapter_dir
-  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  ctx_cmd="${adapter_dir}/../shared/context-entry.sh gemini"
+  # Second SessionStart matcher: calls `atrium skills resolve-manifest`
+  # which emits the Gemini hookSpecificOutput envelope (per-adapter
+  # normalized in SkillsHandler::manifest() per NFR18). printf bakes
+  # $ATRIUM_CLI_FALLBACK into the command at install time — gemini strips
+  # ATRIUM_* vars at hook-fire time, so the baked path is load-bearing;
+  # ${ATRIUM_CLI_PATH:-...} and ${ATRIUM_PANE_ID:-} stay literal in the
+  # printf format so they expand at hook-fire time. No `[ -n "${ATRIUM:-}" ]`
+  # guard: gemini's SessionStart only fires inside an atrium-managed pane,
+  # and the CLI's NFR8 fast-path (Story 59.6 AC5) writes an exit-0 warning
+  # when the runtime is unreachable — never blocks session start.
+  local ctx_cmd ctx_entry
+  ctx_cmd="$(printf '"${ATRIUM_CLI_PATH:-%s}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter gemini 2>/dev/null || true' \
+    "$ATRIUM_CLI_FALLBACK")"
   ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
     '[{matcher: "startup", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
   hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
@@ -90,7 +101,8 @@ build_all_hooks() {
   # renamed off its default launcher name. Emits the same JSON envelope
   # used by the SessionStart context inject — hookSpecificOutput
   # .additionalContext — pinned to hookEventName "BeforeAgent".
-  local rename_cmd rename_entry
+  local rename_cmd rename_entry adapter_dir
+  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   rename_cmd="${adapter_dir}/../shared/pane-name-check.sh gemini"
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: "*", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
@@ -104,21 +116,6 @@ ensure_settings_file() {
   dir="$(dirname "$SETTINGS_FILE")"
   [ -d "$dir" ] || mkdir -p "$dir"
   [ -f "$SETTINGS_FILE" ] || echo '{}' > "$SETTINGS_FILE"
-}
-
-# Seed the agent-context file from the adapter's bundled source into the
-# active channel's data dir, where the SessionStart ctx hook will read it
-# at runtime. Silent no-op when the source file is missing (e.g. running
-# from a partial checkout). The previous .txt destination is also removed
-# so legacy installs don't leave a stale companion file behind.
-install_context_file() {
-  local source_file
-  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.md"
-  local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
-  [ -f "$source_file" ] || return 0
-  mkdir -p "$dest_dir"
-  cp "$source_file" "$dest_dir/agent-context.md"
-  rm -f "$dest_dir/agent-context.txt"
 }
 
 has_atrium_hooks_in() {
@@ -156,8 +153,6 @@ do_install() {
   local tmp="${SETTINGS_FILE}.atrium-tmp"
   printf '%s\n' "$updated" > "$tmp"
   mv "$tmp" "$SETTINGS_FILE"
-
-  install_context_file
 
   echo '{"subcommand": "install", "installed": true}'
 }

@@ -23,7 +23,7 @@ fi
 # The regex matches both current and legacy command shapes so install and
 # uninstall can still clean up entries written by prior releases.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/resolve|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve|pane-name-check\.sh'
 
 # Event table: kebab-case event name, Codex settings key, matcher.
 EVENTS=$'session-start\tSessionStart\tstartup|resume
@@ -77,10 +77,12 @@ build_all_hooks() {
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
 
-  # Second SessionStart matcher that cats the agent-context file. Stdout is
-  # consumed as session context by Codex, same as the Claude Code flow.
+  # Second SessionStart matcher: calls `atrium skills resolve-manifest` at
+  # hook-fire time. Stdout (the pane-specific v1 manifest, per-adapter
+  # normalized in SkillsHandler::manifest() per NFR18) is consumed as
+  # session context by Codex, same as the Claude Code flow.
   local ctx_cmd ctx_entry
-  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && cat "${ATRIUM_DATA_DIR:-$HOME/.atrium}/agent-context.md" 2>/dev/null || true' \
+  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex 2>/dev/null || true' \
     "$ATRIUM_HOOK_MARKER_PREFIX")"
   ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
@@ -174,17 +176,6 @@ remove_atrium_mcp_config() {
     !skip { print }
   ' "$CONFIG_TOML" > "$tmp"
   mv "$tmp" "$CONFIG_TOML"
-}
-
-install_context_file() {
-  local source_file
-  source_file="$(cd "$(dirname "$0")" && pwd)/../shared/atrium-context.md"
-  local dest_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
-  [ -f "$source_file" ] || return 0
-  mkdir -p "$dest_dir"
-  cp "$source_file" "$dest_dir/agent-context.md"
-  # Clean up legacy .txt destination from prior installs.
-  rm -f "$dest_dir/agent-context.txt"
 }
 
 uninstall_mcp_server() {
@@ -402,7 +393,6 @@ do_install() {
   mv "$tmp" "$HOOKS_JSON"
 
   uninstall_mcp_server
-  install_context_file
   trust_all_hooks
 
   echo '{"subcommand": "install", "installed": true}'
