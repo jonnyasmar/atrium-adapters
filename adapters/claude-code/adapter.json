@@ -5,7 +5,7 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97706",
   "binary": "claude",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "skillInstallPath": "~/.claude/skills/atrium/skill.md",
   "binaryDiscovery": {
     "commands": ["claude"],
@@ -25,8 +25,6 @@
     "notification": "atrium://hooks/claude-code/notification",
     "user-prompt-submit": "atrium://hooks/claude-code/user-prompt-submit",
     "permission-request": "atrium://hooks/claude-code/permission-request",
-    "task-created": "atrium://hooks/claude-code/task-created",
-    "task-completed": "atrium://hooks/claude-code/task-completed",
     "subagent-start": "atrium://hooks/claude-code/subagent-start",
     "subagent-stop": "atrium://hooks/claude-code/subagent-stop",
     "stop-failure": "atrium://hooks/claude-code/stop-failure"

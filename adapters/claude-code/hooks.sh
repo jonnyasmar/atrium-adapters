@@ -22,6 +22,14 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|atrium/hook-port|/re
 
 # Event table: kebab-case event name, Claude settings key, matcher.
 # Each event becomes one hook entry in the corresponding settings.json key.
+#
+# `TaskCreated` / `TaskCompleted` are intentionally omitted: Claude Code
+# fires those on its INTERNAL todo-tracker (`TaskCreate`/`TaskUpdate`
+# tool ticks), not on atrium task-card lifecycle. Subscribing here
+# generated spurious "moved to review" PTY instructions every time the
+# agent ticked off a sub-todo. Atrium's canonical signal for card
+# transition is the explicit `atrium task set-in-review` / `set-done`
+# CLI commands.
 EVENTS=$'session-start\tSessionStart\tstartup|resume
 session-end\tSessionEnd\t*
 pre-tool-use\tPreToolUse\t.*
@@ -30,8 +38,6 @@ stop\tStop\t.*
 notification\tNotification\t.*
 user-prompt-submit\tUserPromptSubmit\t.*
 permission-request\tPermissionRequest\t.*
-task-created\tTaskCreated\t.*
-task-completed\tTaskCompleted\t.*
 subagent-start\tSubagentStart\t.*
 subagent-stop\tSubagentStop\t.*
 stop-failure\tStopFailure\t.*'
@@ -215,7 +221,7 @@ do_status() {
   fi
 
   local activity
-  activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop Notification UserPromptSubmit PermissionRequest TaskCreated TaskCompleted SubagentStart SubagentStop StopFailure)"
+  activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop Notification UserPromptSubmit PermissionRequest SubagentStart SubagentStop StopFailure)"
 
   echo "{\"subcommand\": \"status\", \"installed\": ${session}, \"activityHooks\": ${activity}}"
 }
