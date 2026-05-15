@@ -110,6 +110,49 @@ SDK v1 shipped additional scripts (`detect_binary.sh`, `detect_running.sh`, `ext
 | `binaryDiscovery` | object | No (v2) | `{commands: [...], wellKnownPaths: [...]}` — replaces v1 `detect_binary.sh`. atrium walks `commands` on `PATH`, then the fallback paths. |
 | `hooks` | object | No (v2) | Map of kebab-case event name → stable `atrium://` URI (e.g. `"session-start": "atrium://hooks/mytool/session-start"`). atrium exposes resolved URIs to `hooks.sh install` via `ATRIUM_HOOK_URI_*` env vars. |
 | `skillInstallPath` | string | No (v2) | Absolute or `~`-prefixed path where atrium installs the adapter's `SKILL.md` (e.g. `~/.claude/skills/atrium/skill.md`). |
+| `skillsDir` | string | No (v2) | Absolute or `~`-prefixed path that atrium **scans** for harness-installed skills (one `SKILL.md` per immediate subdirectory). See "skillsDir" section below. |
+
+---
+
+### `skillsDir` — harness-skill ingestion path
+
+`skillsDir` declares the directory atrium walks at registry-view time to surface
+the adapter's harness-installed skills. The scan is **read-only** — atrium
+never writes here.
+
+**Behavior:**
+
+- atrium walks `<skillsDir>/<skill-name>/SKILL.md` recursively (depth-capped at
+  2 to exclude nested `scripts/SKILL.md` bundled resources).
+- Each discovered `SKILL.md` is indexed as a registry entry with
+  `provenance = [harness:<adapter-name>]`. The skill name is the parent
+  directory name (e.g. `~/.claude/skills/code-review/SKILL.md` → `code-review`).
+- Per-skill failures (malformed YAML, missing description) don't fail the
+  scan — entries surface with a warning badge per atrium's
+  discovery-never-fails contract.
+- **Default fallback:** if `skillsDir` is absent, atrium falls back to
+  `parent(skillInstallPath)`. If both are absent, the adapter contributes zero
+  harness-scope entries.
+- **Tilde supported:** `~/.foo/skills` expands to `$HOME/.foo/skills` at
+  runtime.
+
+**Minimal example:**
+
+```json
+{
+  "sdkVersion": 2,
+  "name": "mytool",
+  "displayName": "My Tool",
+  "description": "My AI coding assistant",
+  "accent": "#3b82f6",
+  "binary": "mytool",
+  "version": "1.0.0",
+  "skillsDir": "~/.mytool/skills"
+}
+```
+
+A skill at `~/.mytool/skills/code-review/SKILL.md` surfaces in atrium's Skills
+view tagged `[harness:mytool]`.
 
 ---
 

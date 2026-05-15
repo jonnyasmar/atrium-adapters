@@ -7,6 +7,7 @@
   "binary": "codex",
   "version": "1.14.3",
   "skillInstallPath": "~/.codex/skills/atrium/SKILL.md",
+  "skillsDir": "~/.codex/skills",
   "binaryDiscovery": {
     "commands": ["codex"],
     "wellKnownPaths": [
