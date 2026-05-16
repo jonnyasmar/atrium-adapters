@@ -230,6 +230,83 @@ The bidirectional model:
 
 **When you actually need to build a canvas or HTML note, read `references/notes-interactive-ui.md` (sibling to this file).** It covers the canvas spec format, the full json-render component catalog, custom actions (`send_to_agent`, `atrium_command`), the HTML postMessage protocol, framing template syntax, and a worked end-to-end PR-triage example. Loading it on every invocation would bloat your context — pull it only when authoring.
 
+## Teaching mode
+
+When a user wants to learn atrium — either via the in-app **Ask an agent about atrium** launcher (a fresh room spawned with a framed teaching prompt) or by asking in plain English with phrases like *"teach me atrium"*, *"how do I do X in atrium?"*, *"what can atrium do?"*, *"show me how to..."* — switch into **teaching mode** instead of just answering directly. A drive-by answer leaves the user knowing one thing; an interactive walkthrough leaves them knowing how to discover the next ten things themselves.
+
+### The recommended teaching pattern: ONE journal canvas per session
+
+You author **exactly one** canvas note for the whole teaching session and mutate it in place across every turn. The canvas grows downward as a journal: chapter intro → chosen topic's narrated section → fresh picker → next topic's section → fresh picker → … At the end of the lesson, the user has a single self-contained transcript they can scroll, not five orphan pickers cluttering their mosaic.
+
+**Why not a fresh canvas per turn?** Because that pattern spawns a new pane every time the user picks "what next", and the user ends up with a horizontal carousel of dead pickers. The canvas IS the conversation; treat it like one.
+
+#### Turn 1 — open the journal
+
+1. Mint the canvas and **stash the note id in your working context immediately**. The framed payload that comes back when the user submits does NOT carry the note id today, so you must remember it yourself:
+
+   ```bash
+   atrium note new --type canvas --spec - --open --source agent \
+     --send-framing "Teaching follow-up — user picked: {payload}" \
+     --json   # ← capture the noteId from the JSON response
+   ```
+
+2. Stream in an initial body containing:
+   - A short heading + one-line orienting paragraph (NOT a wall of text).
+   - A `Radio` bound to `/topic` listing 3–6 sub-topics derived from what they asked.
+   - A `Textarea` bound to `/notes` so they can refine.
+   - A primary `Button` whose `press` action is `send_to_agent` with `params.payload: {"$state": ""}`.
+
+   See **Streaming a canvas spec** in `references/notes-interactive-ui.md` for the JSONL `canvas-patch` op format.
+
+3. End your turn. Keep your text response to ONE sentence ("Picker's on the canvas — pick a thread and hit Continue."). The canvas is the artifact; don't duplicate it in your narration.
+
+#### Turn 2+ — append, don't replace, don't re-create
+
+When the user's selection arrives as your next user turn, do all of the following against the **same** `noteId` from turn 1, in a single `canvas-patch` invocation:
+
+1. **Append a section for the chosen topic**: a heading (`H2`), then your narrated answer (markdown text, code blocks, screenshots, sub-canvases inline if useful). Use RFC 6902 `add` ops with `path` ending in `/-` to push elements onto `/elements/rootStack/children`.
+2. **Re-stamp the picker at the bottom**: `replace` the existing picker elements with a fresh set whose options reflect what's been covered so far (cross off finished topics, surface adjacent ones). Or, if the lesson is converging, swap the picker for a "wrap up — what else?" widget.
+3. **Reset the form state** so the radio doesn't visually retain the previous selection: `replace` `/topic` and `/notes` with empty strings in the same patch batch.
+
+Keep your `canvas-patch` invocation noise-free: pipe the JSONL via a heredoc or `--from-file`, NOT echoed inline in your terminal output. The user shouldn't have to scroll past 200 lines of `{"op":"add",...}` in the agent pane.
+
+#### Showing work alongside the journal
+
+Some lessons need an actual demonstration (running a command, opening a browser pane, splitting the workspace). Do those in the **terminal pane** or via `atrium pane create` — keep the canvas as the lesson transcript. Reference the demo from the canvas section ("Watch the browser pane I just opened → ...") so the user knows where to look.
+
+If a topic genuinely needs its own dedicated canvas (e.g. an interactive PR triage form the user will keep using), open one in a NEW pane and link to it from the journal — that's a deliberate fork, not a follow-up picker.
+
+### Pulling live docs
+
+The website ships an LLM-friendly index at `https://getatrium.dev/docs/llms.txt` — one line per docs page, formatted as `<url> — <one-line description>`. Each page is also available as raw markdown by appending `.md` to its URL (e.g. `https://getatrium.dev/docs/panes.md`, `https://getatrium.dev/docs/agents/messaging.md`).
+
+**Pull docs lazily, not preemptively.** The index is small and cheap to fetch; the pages are not. The recipe:
+
+1. After the user picks a topic, fetch `https://getatrium.dev/docs/llms.txt` once.
+2. Scan the descriptions for pages relevant to the chosen sub-topic — usually 1–3 pages, rarely more.
+3. Fetch just those pages as `.md` and use them to ground your explanation alongside what you discover via `--help`. Cite the docs URL when it's useful for the user to know where to go next.
+
+Do **not** dump the whole docs into context or fetch pages "in case they come up later." The point of the lazy index is that you can be precise.
+
+### Spawned-from-launcher recognition
+
+When atrium spawns you via the help launcher, the very first user turn you receive starts with a recognizable framing along these lines:
+
+> I'm new to atrium (or rediscovering it) and want to learn:
+>
+>   "<their picked topic or free-text question>"
+>
+> Please follow the **Teaching mode** section of the atrium skill ...
+
+When you see that framing, go straight to the canvas picker in step 2 above — don't re-introduce yourself, don't ask "what would you like to know?" in the terminal first. The canvas IS the question.
+
+### What teaching mode is NOT
+
+- **Not a lecture.** No 2000-word "Welcome to atrium!" essays. Show, don't tell.
+- **Not a guided tour with locked steps.** Let them jump around — the canvas gives them the steering wheel.
+- **Not a sales pitch.** "atrium can also do A, and B, and C, and D, and..." kills curiosity. Answer their actual question first; let them surface the next one themselves.
+- **Not a substitute for `--help`.** If they ask "what does X do?", run `atrium X --help` and respond from the actual surface, not from memory.
+
 ## Propagation note
 
 This skill file and the `references/` directory both live at `skills/atrium/` in the `atrium-adapters` sibling repo. atrium re-fetches them at every launch and hash-gates the writes, so changes propagate to your local skill directory (`~/.claude/skills/atrium/`, `~/.codex/skills/atrium/`, etc.) automatically. **Do NOT trigger reinstall yourself** — only the user does that.
