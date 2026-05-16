@@ -234,9 +234,26 @@ The bidirectional model:
 
 When a user wants to learn atrium — either via the in-app **Ask an agent about atrium** launcher (a fresh room spawned with a framed teaching prompt) or by asking in plain English with phrases like *"teach me atrium"*, *"how do I do X in atrium?"*, *"what can atrium do?"*, *"show me how to..."* — switch into **teaching mode** instead of just answering directly. A drive-by answer leaves the user knowing one thing; an interactive walkthrough leaves them knowing how to discover the next ten things themselves.
 
-### The recommended teaching pattern: ONE journal canvas per session
+### Calibrate effort to the question
 
-You author **exactly one** canvas note for the whole teaching session and mutate it in place across every turn. The canvas grows downward as a journal: chapter intro → chosen topic's narrated section → fresh picker → next topic's section → fresh picker → … At the end of the lesson, the user has a single self-contained transcript they can scroll, not five orphan pickers cluttering their mosaic.
+Teaching mode is not maximal teaching. The canvas is a tool, not a requirement — match the medium *and* the elaboration to what was actually asked. A one-step lookup should not feel like a guided tour with five branching gates, and it shouldn't spawn a notepad pane either if a three-line terminal answer would do.
+
+Pick the medium first:
+
+- **Plain terminal answer (no canvas).** Right for questions with a single short answer the user will read once and move on — "how do I rename a workspace?", "where is the command palette?", "what does `atrium pane --help` show?". Authoring a canvas adds a pane, a file in `~/.atrium/`, and a navigation step the user didn't ask for. Just answer.
+- **Canvas journal.** Right when there's genuinely more than one thread worth pulling, the user is exploring rather than looking up, or you expect the conversation to span several turns. The canvas pays for itself when there's something to scroll back through later.
+
+Then calibrate elaboration *within* the chosen medium:
+
+- **Narrow, factual questions** → terminal answer, or a canvas with just a heading + steps and at most one adjacent-thread offer. Skip the 3–6 option radio + free-text intake; that intake belongs on questions where you don't already know which thread to pull.
+- **Mid-weight questions** ("how does pane persistence work?", "workspace vs project?") → canvas, answer first, then a small picker (2–3 options) for adjacent topics. The picker is the invitation to keep going, not a gate the user has to clear before they get the first answer.
+- **Open-ended or new-to-atrium questions** ("teach me atrium", "what can this do?") → full journal pattern below: canvas with a real picker (3–6 branches), optional free-text, brief orienting paragraph. The user is browsing, not looking up a fact.
+
+Default toward the lighter end. A focused terminal answer with one well-chosen "want to also know about X?" beats a maximalist canvas every time. If the user wants more, they'll ask — that's what the journal pattern is built for.
+
+### When a canvas IS warranted: ONE journal per session
+
+Once you've decided the question warrants a canvas (see calibration above), author **exactly one** canvas note for the whole teaching session and mutate it in place across every turn. The canvas grows downward as a journal: chapter intro → chosen topic's narrated section → fresh picker → next topic's section → fresh picker → … At the end of the lesson, the user has a single self-contained transcript they can scroll, not five orphan pickers cluttering their mosaic.
 
 **Why not a fresh canvas per turn?** Because that pattern spawns a new pane every time the user picks "what next", and the user ends up with a horizontal carousel of dead pickers. The canvas IS the conversation; treat it like one.
 
@@ -298,13 +315,14 @@ When atrium spawns you via the help launcher, the very first user turn you recei
 >
 > Please follow the **Teaching mode** section of the atrium skill ...
 
-When you see that framing, go straight to the canvas picker in step 2 above — don't re-introduce yourself, don't ask "what would you like to know?" in the terminal first. The canvas IS the question.
+When you see that framing, calibrate first (see "Calibrate effort to the question"). If the question warrants a canvas, go straight to the picker in step 2 above — don't re-introduce yourself, don't ask "what would you like to know?" in the terminal first. If it's a narrow factual question, just answer it in the terminal; the launcher framing isn't a contract to open a canvas.
 
 ### What teaching mode is NOT
 
 - **Not a lecture.** No 2000-word "Welcome to atrium!" essays. Show, don't tell.
 - **Not a guided tour with locked steps.** Let them jump around — the canvas gives them the steering wheel.
 - **Not a sales pitch.** "atrium can also do A, and B, and C, and D, and..." kills curiosity. Answer their actual question first; let them surface the next one themselves.
+- **Not a gate.** A direct question doesn't deserve a 5-option radio + free-text intake before they see the answer. See "Calibrate effort to the question" above.
 - **Not a substitute for `--help`.** If they ask "what does X do?", run `atrium X --help` and respond from the actual surface, not from memory.
 
 ## Propagation note
