@@ -114,6 +114,43 @@
       "type": "string",
       "minLength": 1,
       "description": "SDK v2. Absolute or ~-prefixed path where atrium installs the adapter's SKILL.md (e.g. '~/.claude/skills/atrium/skill.md')."
+    },
+    "retention": {
+      "type": "object",
+      "description": "SDK v2. Optional. Declares the underlying tool's session retention knobs so atrium can render a 'click to extend' chip in the adapter pane footer and write new values via the tool's own config file. Adapters whose tool has no retention cap omit this field entirely; the chip is skipped.",
+      "required": ["fields", "readScript", "writeScript"],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "description": "List of retention knobs. Each entry describes one numeric setting (days, max sessions, etc.) the user can extend.",
+          "items": {
+            "type": "object",
+            "required": ["key", "label", "default", "recommended"],
+            "properties": {
+              "key": { "type": "string", "minLength": 1, "description": "Identifier passed back to the writeScript as key=value." },
+              "label": { "type": "string", "minLength": 1, "description": "Human-readable label shown in the modal." },
+              "unit": { "type": "string", "description": "Short suffix shown after the value in the chip (e.g. 'd' for days, 's' for sessions)." },
+              "default": { "type": "integer", "minimum": 0, "description": "Documented default the underlying tool uses out of the box." },
+              "recommended": { "type": "integer", "minimum": 1, "description": "Threshold at or above which the retention chip is hidden. Also pre-filled in the modal." },
+              "min": { "type": "integer", "minimum": 0 },
+              "max": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "readScript": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path (relative to the adapter dir) of a script that prints the current retention values as a JSON object keyed by field key. Missing keys are treated as the field's default."
+        },
+        "writeScript": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path (relative to the adapter dir) of a script that accepts key=value pairs as positional args (e.g. 'days=365 maxCount=9999') and updates the tool's config file."
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

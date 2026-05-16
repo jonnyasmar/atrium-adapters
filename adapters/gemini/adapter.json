@@ -5,7 +5,7 @@
   "description": "Google's AI coding assistant",
   "accent": "#4285f4",
   "binary": "gemini",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "skillInstallPath": "~/.gemini/skills/atrium/SKILL.md",
   "binaryDiscovery": {
     "commands": ["gemini"],
@@ -31,5 +31,28 @@
     "list_recent_sessions": { "script": "list_recent_sessions.sh" },
     "hooks": { "script": "hooks.sh" },
     "launcher_options": { "static": "launcher_options.json" }
+  },
+  "retention": {
+    "fields": [
+      {
+        "key": "days",
+        "label": "Max age",
+        "unit": "d",
+        "default": 30,
+        "recommended": 365,
+        "min": 1,
+        "max": 99999
+      },
+      {
+        "key": "maxCount",
+        "label": "Max sessions",
+        "default": 100,
+        "recommended": 1000,
+        "min": 1,
+        "max": 999999
+      }
+    ],
+    "readScript": "retention.read.sh",
+    "writeScript": "retention.write.sh"
   }
 }
