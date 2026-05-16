@@ -324,6 +324,154 @@ When you see that framing, calibrate first (see "Calibrate effort to the questio
 - **Not a sales pitch.** "atrium can also do A, and B, and C, and D, and..." kills curiosity. Answer their actual question first; let them surface the next one themselves.
 - **Not a gate.** A direct question doesn't deserve a 5-option radio + free-text intake before they see the answer. See "Calibrate effort to the question" above.
 - **Not a substitute for `--help`.** If they ask "what does X do?", run `atrium X --help` and respond from the actual surface, not from memory.
+## Authoring atrium skills
+
+When the user asks you to *create a skill*, *save this as a skill*, *turn this pattern into a skill*, or *add a skill for X*, you write a new skill on their behalf. An atrium skill is a folder containing a `SKILL.md` file with spec-conformant YAML frontmatter — atrium owns this convention; follow it byte-for-byte or the save will fail.
+
+### Folder-based layout
+
+Skills live in one of two scope directories on disk:
+
+- **`~/.atrium/skills/<skill-name>/SKILL.md`** — user scope. Always writable.
+- **`<repo>/.atrium/skills/<skill-name>/SKILL.md`** — project scope. Only valid when an atrium workspace is open; this scope is the project's `.atrium/skills/` directory under the repo root.
+
+The frontmatter `name` field **must equal the parent folder name**. A skill named `code-review` lives in a folder called `code-review/`. Mismatches are rejected on save.
+
+**Do NOT write to harness-owned paths** — `~/.claude/skills/`, `~/.codex/skills/`, `~/.gemini/skills/`, `~/.cursor/skills/`. atrium reads from those directories (so users can author skills in their tool of choice and atrium will surface them) but atrium itself never writes there. Treat them as read-only from inside atrium.
+
+### Frontmatter — the byte-locked template
+
+Every SKILL.md starts with this exact frontmatter shape:
+
+```yaml
+---
+name: <kebab-case-slug>
+description: "<one or two sentences describing what this skill does and when an agent should activate it>"
+metadata:
+  atrium-activate-when: ""
+  atrium-created: "<ISO-8601 UTC timestamp>"
+---
+```
+
+Constraints the validator enforces (one error per failure, accumulated and surfaced inline in the editor — no short-circuit):
+
+- `name` must match `^[a-z0-9-]{1,64}$` — lowercase letters, digits, hyphens only; 1–64 characters. AND `name` must equal the parent folder name.
+- `description` is required, ≤ 1024 Unicode characters (counted as characters, not bytes — multi-byte scripts are fine).
+- `metadata.atrium-activate-when` is optional but conventional. Empty string `""` is valid — atrium falls back to `description` for the M2 SessionStart activation hint. When populated, it becomes the literal "Activate when:" line in the manifest.
+- `metadata.atrium-created` is an ISO-8601 UTC timestamp. The in-app scaffolder populates this automatically. When hand-authoring, use the current UTC instant.
+- **No top-level proprietary fields.** Anything atrium-specific lives under `metadata.atrium-*` — for example `metadata.atrium-tags`, `metadata.atrium-last-used`. The validator rejects `kind:`, `atrium-favorite:`, `tags:`, or any other non-spec top-level field with this error:
+
+  > `Skills: validation — <top-level: atrium-foo> — top-level field not in agentskills.io spec; atrium-private fields belong under metadata.atrium-* (spec §frontmatter)`
+
+  The field marker `<top-level: foo>` distinguishes the disallowed top-level case from valid `metadata.atrium-foo`. If you need to attach atrium-specific persistent data, nest it under `metadata.`.
+
+### `metadata.atrium-activate-when` usage
+
+This field carries the discovery-mode activation hint atrium emits into each adapter's SessionStart manifest. It tells downstream agents *when* this skill becomes relevant. Write it short, imperative, and conditional:
+
+- `"the user asks to summarize a git diff or generate a changelog entry"`
+- `"the user is reviewing a PR and wants structured feedback"`
+- `"code being edited touches React component files"`
+
+Leave it empty when the `description` already reads like an activation hint — atrium falls back to `description` automatically, so duplicating the same sentence in both fields is noise.
+
+Atrium-managed fields under `metadata.atrium-*` (for example `metadata.atrium-last-used`) are written by atrium itself when the user interacts with the skill in the UI. Do not hand-author or hand-edit them.
+
+### Body convention
+
+The body is free-form Markdown — only frontmatter is validated. The in-app scaffolder writes this canonical skeleton, and you should follow the same shape unless you have a reason not to:
+
+```markdown
+# <Title-Case Name>
+
+Describe what this skill does and when the agent should activate it.
+
+## When to use
+
+…
+
+## How to apply
+
+…
+```
+
+The `# Title` is the title-cased form of the slug (`summarize-git-diff` → `Summarize Git Diff`). The two H2 sections are the canonical pair: triggers / signals / phrases / file shapes under `## When to use`; step-by-step or principle-driven guidance under `## How to apply`. Replace the `…` placeholders with real content.
+
+### Heavy resources go on-activation-only
+
+Keep the SKILL.md body small and high-level. When a skill needs more than fits cleanly inline, drop the bulky content into sibling subdirectories and tell the agent to load them on activation:
+
+- **`<skill-name>/scripts/`** — executable helpers (Python, shell, Node) the skill invokes at activation time.
+- **`<skill-name>/references/`** — companion Markdown docs the skill pulls in on demand (a long spec, an API reference, a worked example). atrium's own canonical skill ships `references/notes-interactive-ui.md` as an exemplar — see the **Notes — canvas & html interactive UIs** section above for how it's referenced.
+- **`<skill-name>/assets/`** — non-text resources (images, fonts, fixtures, sample data).
+
+Reference these from the SKILL.md body lazily: *"read `references/long-diff-strategy.md` when the diff exceeds 500 lines"*. atrium's discovery mode loads SKILL.md eagerly at SessionStart but does NOT preload `scripts/`, `references/`, or `assets/` — those load only when the agent reads them at runtime. A 30-line SKILL.md with three 500-line references is cheaper at SessionStart than a 1500-line SKILL.md, and behaves identically once the skill activates.
+
+### Scaffold via the in-app UI when you can
+
+atrium ships a scaffolding modal reachable via the workspace-sidebar Skills view's **+ New skill** button. The modal creates the folder, prefills the frontmatter with a fresh `atrium-created` timestamp, writes the canonical body skeleton, and auto-opens the file in the editor. **If the user can run that UI flow, prefer it** — the modal guarantees byte-for-byte parity with the validator and saves you from drafting the timestamp by hand.
+
+Fall back to writing the file directly (via your `Write` tool) only when:
+
+- The UI path isn't reachable (no atrium window is focused, or the user is in a context that can't run the modal).
+- The user explicitly asked you to author the file directly.
+
+### Worked example: `summarize-git-diff`
+
+When the user says *"create a skill called `summarize-git-diff` that runs when I ask you to summarize a diff"*, write this file:
+
+**Path:** `~/.atrium/skills/summarize-git-diff/SKILL.md`
+
+````markdown
+---
+name: summarize-git-diff
+description: "Summarize a git diff with a structured changelog (added / changed / removed / risk notes). Activate when the user asks to summarize a diff, review changes, or generate a changelog entry."
+metadata:
+  atrium-activate-when: "the user asks to summarize a git diff, review changes, or generate a changelog entry"
+  atrium-created: "2026-05-16T14:32:00Z"
+---
+
+# Summarize Git Diff
+
+Summarize a git diff into a structured changelog grouped by impact area, with optional risk notes.
+
+## When to use
+
+- User pastes a diff and asks for a summary or changelog entry.
+- User says "review these changes" or "what changed?".
+- A CI / PR-review pane is open and the user wants a one-paragraph rollup.
+
+## How to apply
+
+1. Fetch the diff:
+   ```bash
+   git diff <range>
+   ```
+2. Group changes by impact area (frontend / backend / docs / tests / infra).
+3. For each area, list: **Added**, **Changed**, **Removed**, **Risk notes** (only when non-empty).
+4. End with a one-line rollup sentence.
+
+When the diff exceeds 500 lines, read `references/long-diff-strategy.md` for the chunking convention.
+````
+
+Why each field is the way it is:
+
+- `name: summarize-git-diff` matches the folder `summarize-git-diff/` (validator requires equality).
+- `description` doubles as the human-readable hint surfaced in the picker.
+- `metadata.atrium-activate-when` is populated because the description is descriptive rather than conditional — the activate-when line gives atrium a sharper trigger phrase to inject into the SessionStart manifest.
+- `metadata.atrium-created` is a UTC ISO-8601 instant from the moment of authoring.
+- The body uses the canonical scaffolder shape — title, one-paragraph summary, `## When to use`, `## How to apply`.
+- The `references/long-diff-strategy.md` mention demonstrates the heavy-resources convention: bulky chunking logic stays out of the SKILL.md body and loads only when the skill needs it.
+
+### What NOT to do
+
+- **Don't write to `~/.claude/skills/`, `~/.codex/skills/`, `~/.gemini/skills/`, or `~/.cursor/skills/`.** Those are harness-owned. atrium reads them but never writes — your authoring belongs under `~/.atrium/skills/` (user scope) or `<repo>/.atrium/skills/` (project scope).
+- **Don't add top-level fields outside the agentskills.io spec.** Any atrium-specific persistent data goes under `metadata.atrium-*`. The validator rejects `kind:`, `tags:`, `atrium-favorite:`, and similar with the error template quoted above.
+- **Don't pick a `name` that doesn't match the folder.** The validator fails save and the editor shows an inline banner.
+- **Don't dump giant blocks into the SKILL.md body.** Heavy content (long specs, dataset samples, generated diagrams) goes in `references/` and the SKILL.md tells the agent to read it on activation.
+- **Don't hand-edit `metadata.atrium-last-used`, `metadata.atrium-favorite`, or other atrium-managed fields under `metadata.atrium-*`.** atrium writes those when the user interacts with the skill in the UI; hand-edits get clobbered on the next write.
+
+See the **Propagation note** below for how this very skill — the one teaching you to author skills — reaches you in the first place.
 
 ## Propagation note
 
