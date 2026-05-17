@@ -18,7 +18,7 @@ fi
 # including legacy command shapes from prior releases. Add legacy alternates
 # when bumping the command format; prune once old releases age out.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh'
 
 # Event table: kebab-case event name, Claude settings key, matcher.
 # Each event becomes one hook entry in the corresponding settings.json key.
@@ -100,6 +100,20 @@ build_all_hooks() {
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
+
+  # `+name@scope` sigil auto-resolve: appended to UserPromptSubmit so the
+  # CLI scans the prompt for sigils, resolves bodies via the registry,
+  # and emits `{"hookSpecificOutput": {"additionalContext": <bodies>},
+  # "systemMessage": "↻ loaded: ..."}` for Claude Code to inject as
+  # this-turn context. Empty prompts and prompts without sigils emit
+  # `{}\n` (no-op envelope). The `|| true` trailer guarantees the hook
+  # never blocks prompt submission (NFR8-style fail-open).
+  local sigil_cmd sigil_entry
+  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
+    "$ATRIUM_HOOK_MARKER_PREFIX")"
+  sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
+    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

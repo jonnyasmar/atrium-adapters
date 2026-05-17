@@ -23,7 +23,7 @@ fi
 # new hook command matches it. Remove in a future cleanup release once
 # pre-59.7 installs have aged out.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve|context-entry\.sh|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|context-entry\.sh|pane-name-check\.sh'
 
 # Gemini sanitizes hook environments, stripping some ATRIUM_* vars at hook
 # fire time. We probe the filesystem at install time to bake the active
@@ -107,6 +107,20 @@ build_all_hooks() {
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: "*", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.BeforeAgent += $r' <<< "$hooks")"
+
+  # `+name@scope` sigil auto-resolve: appended to BeforeAgent so the CLI
+  # scans the prompt for sigils, resolves bodies via the registry, and
+  # emits `{"hookSpecificOutput": {"hookEventName": "BeforeAgent",
+  # "additionalContext": <bodies>}, "systemMessage": "↻ loaded: ..."}`
+  # for Gemini to inject as this-turn context (per Google's hooks
+  # reference). Empty prompts emit `{}\n` (no-op envelope). The `|| true`
+  # trailer guarantees the hook never blocks prompt submission.
+  local sigil_cmd sigil_entry
+  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-%s}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter gemini 2>/dev/null || true' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$ATRIUM_CLI_FALLBACK")"
+  sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
+    '[{matcher: "*", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
+  hooks="$(jq --argjson s "$sigil_entry" '.BeforeAgent += $s' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

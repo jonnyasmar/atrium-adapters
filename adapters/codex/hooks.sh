@@ -23,7 +23,7 @@ fi
 # The regex matches both current and legacy command shapes so install and
 # uninstall can still clean up entries written by prior releases.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh'
 
 # Event table: kebab-case event name, Codex settings key, matcher.
 EVENTS=$'session-start\tSessionStart\tstartup|resume
@@ -98,6 +98,23 @@ build_all_hooks() {
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
+
+  # `+name@scope` sigil auto-resolve: appended to UserPromptSubmit so the
+  # CLI scans the prompt for sigils, resolves bodies via the registry,
+  # and emits `{"hookSpecificOutput": {"additionalContext": <bodies>}}`
+  # for Codex to inject as this-turn context. systemMessage is omitted
+  # for Codex — its only status primitive is the static per-hook
+  # `statusMessage` field, which fires on every prompt regardless of
+  # whether sigils were present (silence beats misleading noise). Empty
+  # prompts emit `{}\n` (no-op envelope) so Codex 0.120+'s strict JSON
+  # parser is satisfied. The `|| true` trailer is NOT needed here
+  # because the CLI always exits 0 on NFR8 failure.
+  local sigil_cmd sigil_entry
+  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex 2>/dev/null || printf "{}\\n"' \
+    "$ATRIUM_HOOK_MARKER_PREFIX")"
+  sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
+    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

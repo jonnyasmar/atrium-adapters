@@ -11,21 +11,38 @@ If you have been assigned an ATR-# task (check $ATRIUM\_TASK\_ID — it is set w
 atrium uses the `+` sigil for skill references in chat. Two forms:
 
 - **`+<name>`** — atrium auto-resolves the best-match provenance.
-  - Run: `$ATRIUM_CLI_PATH skills load <name>` (no `--provenance` flag).
 - **`+<name>@<scope>`** — explicit provenance. Use when the user gives one,
-  or when auto-resolve returned an ambiguity error.
-  - Run: `$ATRIUM_CLI_PATH skills load <name> --provenance <scope>`
-  - Scopes: `atrium-user`, `atrium-project`, `harness-<adapter>`,
-    `harness-project-<adapter>`, `vercel-labs-skills`.
+  or when auto-resolve returned an ambiguity error. Scopes:
+  `atrium-user`, `atrium-project`, `harness-<adapter>`,
+  `harness-project-<adapter>`, `vercel-labs-skills`.
 
-When you see a `+token` in user input (including chrome-inserted tokens
-from the atrium "mention" button) that names an atrium skill, run the
-CLI form first to load the skill body, then follow its instructions
-verbatim. The CLI prints the SKILL.md body (frontmatter stripped) to
-stdout.
+**How sigil resolution works (Claude Code / Codex / Gemini):** when the
+user types a `+sigil` in their prompt, atrium's UserPromptSubmit hook
+intercepts the prompt, resolves every sigil's SKILL.md body, and
+**injects it directly into your this-turn context** as a system block
+marked `=== ATRIUM SIGIL CONTEXT ===`. **You should not shell out to
+`atrium skills load` for sigils** — the body is already in your input.
+Just use it. A user-visible "↻ loaded: name1, name2" status line confirms
+the injection.
 
-Examples (verbatim, in any chat turn):
-- "use +pipeline-report to check pipeline status" → run
-  `$ATRIUM_CLI_PATH skills load pipeline-report` first.
-- "load +brainstorming@harness-claude-code" → run
-  `$ATRIUM_CLI_PATH skills load brainstorming --provenance harness-claude-code`.
+**Do NOT invoke Claude Code's native `Skill` tool for atrium-named
+skills when an `=== ATRIUM SIGIL CONTEXT ===` block is already present
+in your input.** Doing so duplicates the body wastefully and surfaces
+it twice in the chat. The native `Skill` tool is for harness-managed
+skills outside the `+sigil` pathway; atrium sigils route through
+hook-injection only.
+
+If the user typed a sigil but you do NOT see a corresponding
+`=== ATRIUM SIGIL CONTEXT ===` block in your context (hook failure /
+runtime unreachable / Cursor adapter — see below), fall back to:
+
+- `+<name>` → `$ATRIUM_CLI_PATH skills load <name>` (auto-resolves)
+- `+<name>@<scope>` → `$ATRIUM_CLI_PATH skills load <name> --provenance <scope>`
+
+The CLI prints the SKILL.md body (frontmatter stripped) to stdout.
+Follow its instructions verbatim.
+
+**Cursor Agent CLI:** Cursor's `beforeSubmitPrompt` hook cannot inject
+same-turn context (capability gap as of May 2026). On Cursor, sigils
+ALWAYS require the `atrium skills load` fallback above. Other adapters
+should not need it.
