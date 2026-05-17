@@ -7,6 +7,7 @@
   "binary": "claude",
   "version": "1.13.0",
   "skillInstallPath": "~/.claude/skills/atrium/skill.md",
+  "skillsDir": "~/.claude/skills",
   "binaryDiscovery": {
     "commands": ["claude"],
     "wellKnownPaths": [

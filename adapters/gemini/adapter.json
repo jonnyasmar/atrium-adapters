@@ -7,6 +7,7 @@
   "binary": "gemini",
   "version": "0.3.0",
   "skillInstallPath": "~/.gemini/skills/atrium/SKILL.md",
+  "skillsDir": "~/.gemini/skills",
   "binaryDiscovery": {
     "commands": ["gemini"],
     "wellKnownPaths": [

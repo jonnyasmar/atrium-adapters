@@ -5,7 +5,8 @@
   "description": "Cursor's agent CLI",
   "accent": "#6366f1",
   "binary": "cursor-agent",
-  "version": "0.2.0",
+  "version": "0.2.1",
+  "skillsDir": "~/.cursor/skills",
   "binaryDiscovery": {
     "commands": ["cursor-agent", "agent"],
     "wellKnownPaths": [
