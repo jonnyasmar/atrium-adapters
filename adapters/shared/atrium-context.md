@@ -46,3 +46,39 @@ Follow its instructions verbatim.
 same-turn context (capability gap as of May 2026). On Cursor, sigils
 ALWAYS require the `atrium skills load` fallback above. Other adapters
 should not need it.
+
+## atrium agent references (`++slug` syntax)
+
+atrium uses the `++` sigil for **agent (named-profile) references** in
+chat. Agents are first-class objects in atrium: each one bundles a
+system-prompt body plus an ordered set of skill selections. Typing
+`++<slug>` is a one-token way to load an agent's full identity into
+your context.
+
+- **`++<slug>`** — atrium expands the agent by inlining its prompt
+  followed by every enabled skill body. There is no `@scope` form for
+  agents — agent slugs are globally unique within an atrium install.
+
+**How agent-sigil resolution works (Claude Code / Codex / Gemini):**
+when the user types a `++sigil` in their prompt, atrium's
+UserPromptSubmit hook resolves the agent profile, concatenates the
+agent's prompt with the bodies of every selected skill (skipping
+`disabled` selections), and **injects the combined body directly into
+your this-turn context** as part of the `=== ATRIUM SIGIL CONTEXT ===`
+block. **You should not shell out to `atrium agents load` for sigils
+when the block is already present** — adopt the agent identity from
+the injected body and respond as that agent.
+
+If the user typed an agent sigil but you do NOT see a corresponding
+`=== ATRIUM SIGIL CONTEXT ===` block (hook failure / runtime
+unreachable / Cursor adapter — see below), fall back to:
+
+- `++<slug>` → `$ATRIUM_CLI_PATH agents load <slug>`
+
+The CLI prints the agent's expanded body (the prompt followed by every
+enabled skill body under a `# Skills` header) to stdout. Adopt the
+agent identity and apply the listed skills.
+
+**Cursor Agent CLI:** Cursor's `beforeSubmitPrompt` hook cannot inject
+same-turn context. On Cursor, `++<slug>` ALWAYS requires the
+`atrium agents load <slug>` fallback above.
