@@ -5,12 +5,12 @@
       "name": "claude-code",
       "displayName": "Claude Code",
       "description": "Anthropic's AI coding assistant",
-      "accent": "#d97706",
+      "accent": "#d97757",
       "binary": "claude",
       "sdkVersion": 2,
       "platforms": ["macos"],
       "official": true,
-      "version": "1.14.0",
+      "version": "1.14.1",
       "minAppVersion": "0.65.0"
     },
     {
@@ -22,8 +22,8 @@
       "sdkVersion": 2,
       "platforms": ["macos"],
       "official": true,
-      "version": "1.15.0",
-      "minAppVersion": "0.65.0"
+      "version": "1.16.0",
+      "minAppVersion": "0.152.0"
     },
     {
       "name": "gemini",
@@ -41,13 +41,13 @@
       "name": "antigravity",
       "displayName": "Antigravity",
       "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
-      "accent": "#ea4335",
+      "accent": "#14b8a6",
       "binary": "agy",
       "sdkVersion": 2,
       "platforms": ["macos"],
       "official": true,
-      "version": "0.1.0",
-      "minAppVersion": "0.65.0"
+      "version": "0.3.0",
+      "minAppVersion": "0.152.0"
     },
     {
       "name": "cursor-agent",
@@ -70,8 +70,8 @@
       "sdkVersion": 2,
       "platforms": ["macos"],
       "official": true,
-      "version": "0.1.0",
-      "minAppVersion": "0.65.0"
+      "version": "0.2.0",
+      "minAppVersion": "0.152.0"
     },
     {
       "name": "pi",
@@ -82,8 +82,8 @@
       "sdkVersion": 2,
       "platforms": ["macos"],
       "official": true,
-      "version": "0.1.0",
-      "minAppVersion": "0.65.0"
+      "version": "0.2.0",
+      "minAppVersion": "0.152.0"
     }
   ]
 }
