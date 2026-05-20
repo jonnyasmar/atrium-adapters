@@ -1,0 +1,11 @@
+{
+  "session_id": "conv-uuid-123",
+  "tool_name": "write_to_file",
+  "tool_input": "{\"TargetFile\":\"/Users/test/dev/myproject/README.md\",\"CodeContent\":\"# Hello\\n\",\"Overwrite\":true}",
+  "_atrium": {
+    "writeKind": "write",
+    "filePaths": ["/Users/test/dev/myproject/README.md"],
+    "lineStart": null,
+    "lineEnd": null
+  }
+}

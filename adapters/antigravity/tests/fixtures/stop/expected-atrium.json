@@ -1,0 +1,6 @@
+{
+  "session_id": "conv-uuid-123",
+  "fullyIdle": true,
+  "terminationReason": "NO_TOOL_CALL",
+  "last_assistant_message": "All done — README updated and tests added."
+}

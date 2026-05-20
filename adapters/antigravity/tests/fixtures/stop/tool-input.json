@@ -1,0 +1,10 @@
+{
+  "artifactDirectoryPath": "/Users/test/.gemini/antigravity-cli/brain/conv-uuid-123",
+  "conversationId": "conv-uuid-123",
+  "error": "",
+  "executionNum": 0,
+  "fullyIdle": true,
+  "terminationReason": "NO_TOOL_CALL",
+  "transcriptPath": "/tmp/atrium-test-transcript.jsonl",
+  "workspacePaths": ["/Users/test/dev/myproject"]
+}

@@ -1,0 +1,15 @@
+{
+  "artifactDirectoryPath": "/Users/test/.gemini/antigravity-cli/brain/conv-uuid-123",
+  "conversationId": "conv-uuid-123",
+  "stepIdx": 1,
+  "toolCall": {
+    "name": "write_to_file",
+    "args": {
+      "TargetFile": "/Users/test/dev/myproject/README.md",
+      "CodeContent": "# Hello\n",
+      "Overwrite": true
+    }
+  },
+  "workspacePaths": ["/Users/test/dev/myproject"],
+  "transcriptPath": "/Users/test/.gemini/antigravity-cli/brain/conv-uuid-123/transcript.jsonl"
+}

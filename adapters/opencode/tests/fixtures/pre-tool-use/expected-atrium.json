@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_test_abc123",
+  "tool_name": "edit",
+  "tool_input": "{\"filePath\":\"/test/README.md\",\"oldString\":\"foo\",\"newString\":\"bar\"}"
+}
