@@ -3,7 +3,7 @@
   "name": "antigravity",
   "displayName": "Antigravity",
   "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
-  "accent": "#ea4335",
+  "accent": "#14b8a6",
   "binary": "agy",
   "version": "0.2.0",
   "icon": "icon.svg",
