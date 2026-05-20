@@ -246,6 +246,11 @@ else
 fi
 
 # ── Phase 4: /resolve acceptance ─────────────────────────────────────
+# Synthetic events go in under a single throwaway test-pane-id so Phase 5
+# can read them back in isolation. Random suffix avoids overlap across
+# concurrent harness runs.
+TEST_PANE_ID="atrium-test-${ADAPTER_NAME}-$$"
+
 section "Phase 4: /resolve acceptance"
 
 if [[ "${ATRIUM_TEST_NO_HTTP:-0}" = "1" ]]; then
@@ -262,7 +267,11 @@ else
     [[ -f "$expected_file" ]] || continue
 
     uri="atrium://hooks/${ADAPTER_NAME}/${event}"
-    payload="$(jq -n --arg uri "$uri" --argjson params "$(cat "$expected_file")" '{uri: $uri, params: $params}')"
+    payload="$(jq -n \
+      --arg uri "$uri" \
+      --arg pane "$TEST_PANE_ID" \
+      --argjson params "$(cat "$expected_file")" \
+      '{uri: $uri, paneId: $pane, params: $params}')"
     response="$(curl -sS -X POST "http://127.0.0.1:${RESOLVE_PORT}/resolve" \
       -H 'Content-Type: application/json' \
       -d "$payload" 2>&1)"
@@ -273,6 +282,82 @@ else
       fail "$event: /resolve rejected" "$response"
     fi
   done
+fi
+
+# ── Phase 5: atrium state captured what we sent ──────────────────────
+# Reads back the events atrium stored for our throwaway test pane via
+# `atrium://hooks/_state?paneId=<id>`. This moves the harness from
+# "atrium accepted the event" to "atrium stored it with the right shape".
+# Optional per-adapter `tests/state.assert.sh` receives the JSON state
+# document on stdin and the adapter name as $1 — exit 0 if assertions pass.
+section "Phase 5: atrium captured state"
+
+if [[ "${ATRIUM_TEST_NO_HTTP:-0}" = "1" ]]; then
+  skip "atrium state (ATRIUM_TEST_NO_HTTP=1)"
+elif [[ -z "$RESOLVE_PORT" ]]; then
+  skip "no atrium-dev hook-port file"
+else
+  state_response="$(curl -sS -X POST "http://127.0.0.1:${RESOLVE_PORT}/resolve" \
+    -H 'Content-Type: application/json' \
+    -d "$(jq -n --arg pane "$TEST_PANE_ID" '{uri: ("atrium://hooks/_state?paneId=" + $pane + "&limit=100")}')" 2>&1)"
+
+  if ! echo "$state_response" | jq -e '.events | type == "array"' >/dev/null 2>&1; then
+    fail "_state returned invalid shape" "$state_response"
+  else
+    captured_count=$(echo "$state_response" | jq '.count')
+    expected_count=0
+    for event_dir in "$FIXTURES_DIR"/*/; do
+      [[ -d "$event_dir" ]] || continue
+      [[ -f "$event_dir/expected-atrium.json" ]] && expected_count=$((expected_count + 1))
+    done
+
+    if [[ "$captured_count" -eq "$expected_count" ]]; then
+      pass "atrium captured $captured_count event(s) (matches $expected_count fixture(s))"
+    else
+      fail "atrium captured $captured_count event(s) but $expected_count fixture(s) were posted" \
+        "$(echo "$state_response" | jq -c '.events | map({event: .eventName, payloadKeys: (.payload | keys)})')"
+    fi
+
+    # Per-event field assertion: every fixture's session_id (or tool_name)
+    # should round-trip through atrium intact.
+    for event_dir in "$FIXTURES_DIR"/*/; do
+      [[ -d "$event_dir" ]] || continue
+      expected_file="$event_dir/expected-atrium.json"
+      [[ -f "$expected_file" ]] || continue
+      event="$(basename "$event_dir")"
+
+      diff_out=$(echo "$state_response" | jq -c \
+        --arg event "$event" \
+        --argjson expected "$(cat "$expected_file")" \
+        '
+        ([.events[] | select(.eventName == $event)] | last) as $stored
+        | if $stored == null then
+            { error: "no event of type \($event) was captured" }
+          else
+            [$expected | to_entries[] | {
+              key: .key,
+              expected: .value,
+              actual: $stored.payload[.key]
+            } | select(.actual != .expected)]
+          end
+        ')
+
+      if echo "$diff_out" | jq -e '. == []' >/dev/null 2>&1; then
+        pass "$event: all expected fields stored correctly"
+      else
+        fail "$event: field mismatch in stored payload" "$diff_out"
+      fi
+    done
+
+    # Adapter-specific assertions (optional).
+    if [[ -x "$TESTS_DIR/state.assert.sh" ]]; then
+      if assert_out="$(echo "$state_response" | "$TESTS_DIR/state.assert.sh" "$ADAPTER_NAME" 2>&1)"; then
+        pass "state.assert.sh"
+      else
+        fail "state.assert.sh failed" "$assert_out"
+      fi
+    fi
+  fi
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────

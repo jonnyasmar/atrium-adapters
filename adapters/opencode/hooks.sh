@@ -74,15 +74,24 @@ register_plugin_in_config() {
     return 1
   fi
 
-  if has_jsonc_comments "$cfg"; then
-    echo "register: $cfg contains JSONC comments; skipping registration. Add this manually to your config:" >&2
-    echo "  \"plugin\": [\"file://${PLUGIN_FILE}\"]" >&2
-    return 0
-  fi
-
   if ! command -v jq &>/dev/null; then
     echo "register: jq required" >&2
     return 1
+  fi
+
+  # If the file is empty or unparseable (zero bytes from a prior aborted
+  # install, scratch file, etc.) seed it with `{}` so jq has something
+  # to merge into. Pre-existing JSON content stays untouched.
+  if [ ! -s "$cfg" ] || ! jq empty "$cfg" >/dev/null 2>&1; then
+    if has_jsonc_comments "$cfg" && [ -s "$cfg" ]; then
+      # Non-empty but unparseable — likely real JSONC with comments. Bail
+      # rather than clobber the user's config.
+      echo "register: $cfg contains JSONC comments; skipping registration. Add this manually to your config:" >&2
+      echo "  \"plugin\": [\"file://${PLUGIN_FILE}\"]" >&2
+      return 0
+    fi
+    # Empty file → safe to seed.
+    printf '{\n  "$schema": "https://opencode.ai/config.json"\n}\n' > "$cfg"
   fi
 
   # Append our plugin file:// URI to the `plugin` array if not present.
