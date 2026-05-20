@@ -5,7 +5,7 @@
   "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
   "accent": "#ea4335",
   "binary": "agy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "skillInstallPath": "~/.gemini/antigravity-cli/skills/atrium/SKILL.md",
   "skillsDir": "~/.gemini/antigravity-cli/skills",
   "binaryDiscovery": {
@@ -18,13 +18,10 @@
     ]
   },
   "hooks": {
-    "session-start": "atrium://hooks/antigravity/session-start",
-    "session-end": "atrium://hooks/antigravity/session-end",
-    "user-prompt-submit": "atrium://hooks/antigravity/user-prompt-submit",
     "pre-tool-use": "atrium://hooks/antigravity/pre-tool-use",
     "post-tool-use": "atrium://hooks/antigravity/post-tool-use",
-    "stop": "atrium://hooks/antigravity/stop",
-    "notification": "atrium://hooks/antigravity/notification"
+    "user-prompt-submit": "atrium://hooks/antigravity/user-prompt-submit",
+    "stop": "atrium://hooks/antigravity/stop"
   },
   "methods": {
     "build_launch_command": { "script": "build_launch_command.sh" },
@@ -32,28 +29,5 @@
     "list_recent_sessions": { "script": "list_recent_sessions.sh" },
     "hooks": { "script": "hooks.sh" },
     "launcher_options": { "static": "launcher_options.json" }
-  },
-  "retention": {
-    "fields": [
-      {
-        "key": "days",
-        "label": "Max age",
-        "unit": "d",
-        "default": 30,
-        "recommended": 365,
-        "min": 1,
-        "max": 99999
-      },
-      {
-        "key": "maxCount",
-        "label": "Max sessions",
-        "default": 100,
-        "recommended": 1000,
-        "min": 1,
-        "max": 999999
-      }
-    ],
-    "readScript": "retention.read.sh",
-    "writeScript": "retention.write.sh"
   }
 }

@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
-# normalize-hook-payload.sh — Antigravity adapter.
+# normalize-hook-payload.sh — Antigravity (agy) adapter.
 #
-# Reads agy's native PostToolUse payload from stdin, enriches it with
-# the `_atrium` envelope (see ../../HOOK_ENVELOPE.md), and writes the
-# augmented payload to stdout.
+# Wired only into the PreToolUse hook command. agy's PostToolUse stdin
+# does NOT carry tool info (only stepIdx + optional error), so atrium
+# relies on the pre-tool-use envelope for file-touch attribution. Per
+# atrium's HOOK_ENVELOPE.md contract (../../HOOK_ENVELOPE.md), the
+# `_atrium` key carries the canonical write summary that downstream
+# consumers read.
 #
-# Antigravity preserves Gemini CLI's tool surface; the documented write
-# tools are:
-#   - `replace`    — hunk-level edit (`file_path` + `old_string` + `new_string`)
-#   - `write_file` — full-file write (`file_path` + `content`)
+# agy PreToolUse stdin shape (per Antigravity hooks docs):
+#   { toolCall: { name: "write_to_file"|..., args: {...} },
+#     stepIdx, conversationId, workspacePaths, ... }
 #
-# Read tools and shell commands pass through unchanged.
+# agy's documented write-tool surface:
+#   - `write_to_file`             — full-file write (args.TargetFile)
+#   - `replace_file_content`      — single-block edit (args.TargetFile)
+#   - `multi_replace_file_content`— multiple non-contiguous edits (args.TargetFile)
+#
+# Read tools (`view_file`, `list_dir`, `find_by_name`, `grep_search`,
+# `read_url_content`), shell (`run_command`, `manage_task`, `schedule`),
+# permission/collab tools, and media tools pass through unchanged.
 
 set -euo pipefail
 
@@ -19,20 +28,27 @@ input="$(cat)"
 enriched="$(
   printf '%s' "$input" | jq -c '
     . as $p
-    | (.tool_name // "") as $tool
-    | (.tool_input // {}) as $ti
+    | (.toolCall.name // "") as $tool
+    | (.toolCall.args // {}) as $a
     | (
-        if $tool == "replace" then
+        if $tool == "write_to_file" then
           {
-            writeKind: "edit",
-            filePaths: ([$ti.file_path] | map(select(type == "string" and length > 0))),
+            writeKind: "write",
+            filePaths: ([$a.TargetFile] | map(select(type == "string" and length > 0))),
             lineStart: null,
             lineEnd: null
           }
-        elif $tool == "write_file" then
+        elif $tool == "replace_file_content" then
           {
-            writeKind: "write",
-            filePaths: ([$ti.file_path] | map(select(type == "string" and length > 0))),
+            writeKind: "edit",
+            filePaths: ([$a.TargetFile] | map(select(type == "string" and length > 0))),
+            lineStart: ($a.StartLine // null),
+            lineEnd: ($a.EndLine // null)
+          }
+        elif $tool == "multi_replace_file_content" then
+          {
+            writeKind: "multi-edit",
+            filePaths: ([$a.TargetFile] | map(select(type == "string" and length > 0))),
             lineStart: null,
             lineEnd: null
           }
