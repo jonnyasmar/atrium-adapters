@@ -1,0 +1,25 @@
+{
+  "options": [
+    {
+      "key": "model",
+      "label": "model",
+      "description": "Override the default model (e.g. anthropic/claude-sonnet-4)",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "agent",
+      "label": "agent",
+      "description": "Launch with a specific agent profile",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ]
+}

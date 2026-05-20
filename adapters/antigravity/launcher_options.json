@@ -1,0 +1,25 @@
+{
+  "options": [
+    {
+      "key": "dangerouslySkipPermissions",
+      "label": "👮‍♂️",
+      "description": "--dangerously-skip-permissions",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "sandbox",
+      "label": "sandbox",
+      "description": "--sandbox (terminal restrictions)",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ]
+}

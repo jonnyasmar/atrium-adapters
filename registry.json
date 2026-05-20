@@ -38,6 +38,18 @@
       "minAppVersion": "0.65.0"
     },
     {
+      "name": "antigravity",
+      "displayName": "Antigravity",
+      "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
+      "accent": "#ea4335",
+      "binary": "agy",
+      "sdkVersion": 2,
+      "platforms": ["macos"],
+      "official": true,
+      "version": "0.1.0",
+      "minAppVersion": "0.65.0"
+    },
+    {
       "name": "cursor-agent",
       "displayName": "Cursor Agent",
       "description": "Cursor's agent CLI",
@@ -47,6 +59,30 @@
       "platforms": ["macos"],
       "official": true,
       "version": "0.3.0",
+      "minAppVersion": "0.65.0"
+    },
+    {
+      "name": "opencode",
+      "displayName": "OpenCode",
+      "description": "Open-source AI coding agent built for the terminal (opencode.ai)",
+      "accent": "#a855f7",
+      "binary": "opencode",
+      "sdkVersion": 2,
+      "platforms": ["macos"],
+      "official": true,
+      "version": "0.1.0",
+      "minAppVersion": "0.65.0"
+    },
+    {
+      "name": "pi",
+      "displayName": "Pi",
+      "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
+      "accent": "#06b6d4",
+      "binary": "pi",
+      "sdkVersion": 2,
+      "platforms": ["macos"],
+      "official": true,
+      "version": "0.1.0",
       "minAppVersion": "0.65.0"
     }
   ]

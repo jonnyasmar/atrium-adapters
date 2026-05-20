@@ -1,0 +1,25 @@
+{
+  "options": [
+    {
+      "key": "model",
+      "label": "model",
+      "description": "Override the default model (e.g. claude-sonnet-4)",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "provider",
+      "label": "provider",
+      "description": "Override the LLM provider (anthropic, openai, gemini, ...)",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ]
+}

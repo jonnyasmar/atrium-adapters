@@ -1,0 +1,28 @@
+{
+  "sdkVersion": 2,
+  "name": "pi",
+  "displayName": "Pi",
+  "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
+  "accent": "#06b6d4",
+  "binary": "pi",
+  "version": "0.1.0",
+  "skillInstallPath": "~/.pi/agent/skills/atrium/SKILL.md",
+  "skillsDir": "~/.pi/agent/skills",
+  "binaryDiscovery": {
+    "commands": ["pi"],
+    "wellKnownPaths": [
+      "/opt/homebrew/bin/pi",
+      "/usr/local/bin/pi",
+      "~/.local/bin/pi",
+      "~/.npm/bin/pi",
+      "~/.bun/bin/pi"
+    ]
+  },
+  "methods": {
+    "build_launch_command": { "script": "build_launch_command.sh" },
+    "build_resume_command": { "script": "build_resume_command.sh" },
+    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
+    "hooks": { "script": "hooks.sh" },
+    "launcher_options": { "static": "launcher_options.json" }
+  }
+}
