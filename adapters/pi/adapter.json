@@ -18,6 +18,14 @@
       "~/.bun/bin/pi"
     ]
   },
+  "hooks": {
+    "session-start": "atrium://hooks/pi/session-start",
+    "session-end": "atrium://hooks/pi/session-end",
+    "pre-tool-use": "atrium://hooks/pi/pre-tool-use",
+    "post-tool-use": "atrium://hooks/pi/post-tool-use",
+    "stop": "atrium://hooks/pi/stop",
+    "user-prompt-submit": "atrium://hooks/pi/user-prompt-submit"
+  },
   "methods": {
     "build_launch_command": { "script": "build_launch_command.sh" },
     "build_resume_command": { "script": "build_resume_command.sh" },

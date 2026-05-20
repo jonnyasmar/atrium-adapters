@@ -1,35 +1,71 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# hooks.sh — Pi hook management.
+# hooks.sh — Manage Pi extension installation for atrium.
 #
-# Pi's hook surface is TypeScript-only (`pi.on("tool_call", ...)` in an
-# extension module under ~/.pi/agent/extensions/) and only one event
-# (`tool_call`) is publicly documented. atrium's SDK v2 expects a stable
-# command-string hook contract for install/uninstall, so we intentionally
-# leave hooks unwired for the pi adapter at this version. The adapter
-# still ships launch/resume/sessions, skills, and launcher options —
-# parity for everything except the activity-feed hook stream.
+# Pi has no shell-callable hook config (TS-only extension API). We install
+# a TS extension at ~/.pi/agent/extensions/atrium.ts that subscribes to
+# pi's documented lifecycle events (session_start, session_shutdown,
+# tool_call, tool_result, input, agent_end) and shells out to
+# `atrium hook emit`. pi loads the file via jiti — no build step.
 #
-# When Pi publishes a stable hook config surface (JSON or otherwise), this
-# script and the `hooks` map in adapter.json should be filled in to match
-# the Claude Code / Codex / Gemini shape.
-#
-# Subcommands: install, uninstall, status — all no-ops that report success.
-# Output: JSON to stdout.
+# Subcommands: install, uninstall, status
+# Output: JSON to stdout, diagnostics to stderr
 
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
+EXT_DIR="${HOME}/.pi/agent/extensions"
+EXT_FILE="${EXT_DIR}/atrium.ts"
+
+# Marker baked into the extension file so we can recognize ours (vs. a
+# user-authored extension that happens to share the name).
+ATRIUM_EXT_MARKER='ATRIUM_HOOK_MARKER=atrium-runtime-hook'
+
+ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXT_SOURCE="${ADAPTER_DIR}/extension/atrium.ts"
+
+is_atrium_extension() {
+  [ -f "$1" ] && grep -q "$ATRIUM_EXT_MARKER" "$1"
+}
+
+do_install() {
+  if [ ! -f "$EXT_SOURCE" ]; then
+    echo "{\"error\": \"extension template not found at ${EXT_SOURCE}\"}" >&2
+    exit 1
+  fi
+
+  mkdir -p "$EXT_DIR"
+
+  # If a foreign atrium.ts exists (no marker), bail rather than clobber the
+  # user's file.
+  if [ -f "$EXT_FILE" ] && ! is_atrium_extension "$EXT_FILE"; then
+    echo "{\"error\": \"~/.pi/agent/extensions/atrium.ts exists and was not created by atrium; refusing to overwrite\"}" >&2
+    exit 1
+  fi
+
+  cp "$EXT_SOURCE" "$EXT_FILE"
+
+  echo '{"subcommand": "install", "installed": true}'
+}
+
+do_uninstall() {
+  if [ -f "$EXT_FILE" ] && is_atrium_extension "$EXT_FILE"; then
+    rm -f "$EXT_FILE"
+  fi
+  echo '{"subcommand": "uninstall", "uninstalled": true}'
+}
+
+do_status() {
+  local installed="false"
+  if is_atrium_extension "$EXT_FILE"; then
+    installed="true"
+  fi
+  echo "{\"subcommand\": \"status\", \"installed\": ${installed}, \"activityHooks\": ${installed}}"
+}
 
 case "$SUBCOMMAND" in
-  install)
-    echo '{"subcommand": "install", "installed": true}'
-    ;;
-  uninstall)
-    echo '{"subcommand": "uninstall", "uninstalled": true}'
-    ;;
-  status)
-    echo '{"subcommand": "status", "installed": false, "activityHooks": false}'
-    ;;
+  install)   do_install ;;
+  uninstall) do_uninstall ;;
+  status)    do_status ;;
   *)
     echo "{\"error\": \"Unknown subcommand: ${SUBCOMMAND}\"}" >&2
     exit 2
