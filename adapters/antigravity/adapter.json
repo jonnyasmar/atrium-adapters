@@ -18,6 +18,8 @@
     ]
   },
   "hooks": {
+    "session-start": "atrium://hooks/antigravity/session-start",
+    "session-end": "atrium://hooks/antigravity/session-end",
     "pre-tool-use": "atrium://hooks/antigravity/pre-tool-use",
     "post-tool-use": "atrium://hooks/antigravity/post-tool-use",
     "user-prompt-submit": "atrium://hooks/antigravity/user-prompt-submit",
