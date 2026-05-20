@@ -6,6 +6,7 @@
   "accent": "#06b6d4",
   "binary": "pi",
   "version": "0.1.0",
+  "icon": "icon.svg",
   "skillInstallPath": "~/.pi/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.pi/agent/skills",
   "binaryDiscovery": {

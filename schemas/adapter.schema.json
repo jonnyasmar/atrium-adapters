@@ -115,6 +115,12 @@
       "minLength": 1,
       "description": "SDK v2. Absolute or ~-prefixed path where atrium installs the adapter's SKILL.md (e.g. '~/.claude/skills/atrium/skill.md')."
     },
+    "icon": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\.svg$",
+      "description": "SDK v2. Optional filename (relative to the adapter directory) of an SVG icon to display in atrium's UI. The file's contents are inlined into the adapter DTO at load time. Conventions: (1) root <svg> element with a viewBox attribute (atrium strips width/height and sets them at render time); (2) shapes use fill=\"currentColor\" (or stroke=\"currentColor\") so the icon recolors against the theme; (3) no <script>, no on* attributes, no <foreignObject>, no external references — atrium sanitizes but well-formed input avoids surprises. When omitted, the adapter falls back to atrium's curated brand-icon map keyed off the adapter name, then to a colored dot."
+    },
     "retention": {
       "type": "object",
       "description": "SDK v2. Optional. Declares the underlying tool's session retention knobs so atrium can render a 'click to extend' chip in the adapter pane footer and write new values via the tool's own config file. Adapters whose tool has no retention cap omit this field entirely; the chip is skipped.",

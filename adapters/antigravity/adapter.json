@@ -6,6 +6,7 @@
   "accent": "#ea4335",
   "binary": "agy",
   "version": "0.2.0",
+  "icon": "icon.svg",
   "skillInstallPath": "~/.gemini/antigravity-cli/skills/atrium/SKILL.md",
   "skillsDir": "~/.gemini/antigravity-cli/skills",
   "binaryDiscovery": {
