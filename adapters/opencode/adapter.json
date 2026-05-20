@@ -6,6 +6,7 @@
   "accent": "#a855f7",
   "binary": "opencode",
   "version": "0.1.0",
+  "icon": "icon.svg",
   "skillInstallPath": "~/.config/opencode/agent/atrium/SKILL.md",
   "skillsDir": "~/.config/opencode/agent",
   "binaryDiscovery": {
