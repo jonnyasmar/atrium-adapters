@@ -6,6 +6,13 @@
 // them on the fly via jiti — no build step. Event surface is documented
 // at https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/extensions.md.
 //
+// Field name remapping (pi-side → atrium-side): every emit translates
+// pi's camelCase keys (toolName, toolCallId, input) to atrium's
+// snake_case contract (session_id, tool_name, tool_input, tool_response,
+// user_prompt, last_assistant_message). Without this remap, atrium's
+// activity card shows the agent as a generic terminal pane and renders
+// no tool details.
+//
 // Marker comment below is what hooks.sh uses to detect a stale install.
 // ATRIUM_HOOK_MARKER=atrium-runtime-hook
 
@@ -13,14 +20,12 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { spawn } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 const ATRIUM_CLI = process.env.ATRIUM_CLI_PATH || "atrium";
 const ATRIUM_PANE_ID = process.env.ATRIUM_PANE_ID || "";
 const ATRIUM_ACTIVE = Boolean(process.env.ATRIUM) && Boolean(ATRIUM_PANE_ID);
 
-// Debug log path for verifying load + event flow. Disable with
-// ATRIUM_PI_EXTENSION_DEBUG=0.
 const DEBUG_LOG =
   process.env.ATRIUM_PI_EXTENSION_LOG || join(tmpdir(), "atrium-pi-extension.log");
 const DEBUG = process.env.ATRIUM_PI_EXTENSION_DEBUG !== "0";
@@ -40,6 +45,16 @@ function debug(...parts: unknown[]) {
 }
 
 debug("atrium pi extension loaded", { ATRIUM_ACTIVE, ATRIUM_CLI, ATRIUM_PANE_ID });
+
+function stringify(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
 
 function emit(event: string, payload?: Record<string, unknown>) {
   debug("emit", event, payload ?? {});
@@ -67,69 +82,140 @@ function emit(event: string, payload?: Record<string, unknown>) {
   }
 }
 
+// ── Module-level state ──────────────────────────────────────────────
+// pi extension modules are loaded once per session and stay alive, so
+// we use module-level state for:
+// - The current session_id (resolved from ctx.sessionManager).
+// - The last assistant message text (captured on message_end, shipped
+//   on stop / session_shutdown). pi doesn't surface assistant text in
+//   any single hook input; it lives on the `message` object passed to
+//   message_end events where role === "assistant".
+let sessionId: string | null = null;
+let lastAssistantMessage: string | null = null;
+
+// Derive a stable session id from the pi session file path. pi stores
+// sessions as `~/.pi/agent/sessions/<cwd-encoded>/<uuid>.jsonl`; the
+// basename minus extension is the session uuid. For brand-new ephemeral
+// sessions (file not written yet), fall back to the pane id so atrium
+// can still create the activity card.
+function resolveSessionId(ctx: { sessionManager?: { getSessionFile?: () => string | null } }): string {
+  const file = ctx?.sessionManager?.getSessionFile?.();
+  if (file && typeof file === "string") {
+    return basename(file).replace(/\.jsonl$/i, "");
+  }
+  return ATRIUM_PANE_ID || "pi-ephemeral";
+}
+
+// Extract the text content from a pi Message object. Messages carry
+// content as either a string or an array of parts; we concatenate text
+// parts and return the result (empty string if none).
+function extractMessageText(message: unknown): string {
+  if (!message || typeof message !== "object") return "";
+  const m = message as { content?: unknown };
+  const content = m.content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((p): p is { type?: string; text?: string } => !!p && typeof p === "object")
+      .filter((p) => p.type === "text" && typeof p.text === "string")
+      .map((p) => p.text as string)
+      .join("");
+  }
+  return "";
+}
+
 export default function (pi: ExtensionAPI) {
   // ── Session lifecycle ─────────────────────────────────────────────
-  // session_start fires with reason "startup" | "reload" | "new" |
-  // "resume" | "fork". atrium treats all of those as session-start.
-  pi.on("session_start", async (event) => {
-    emit("session-start", { reason: (event as { reason?: string })?.reason });
-  });
-
-  // session_shutdown fires before the extension runtime tears down.
-  // Reason "quit" is the true session end; everything else is a
-  // soft-reset that pi will follow with another session_start. We emit
-  // both stop and session-end so atrium's activity card finalizes
-  // regardless of which transition the user is in.
-  pi.on("session_shutdown", async (event) => {
-    const reason = (event as { reason?: string })?.reason;
-    emit("stop", { reason });
-    emit("session-end", { reason });
-  });
-
-  // ── Tool lifecycle ────────────────────────────────────────────────
-  // tool_call fires before the LLM-requested tool runs. We can return
-  // `{block, reason}` to gate it; atrium hooks deliberately do not gate
-  // (the user's permission UI keeps full control).
-  pi.on("tool_call", async (event) => {
-    const e = event as { toolName?: string; toolCallId?: string; input?: unknown };
-    emit("pre-tool-use", {
-      tool: e.toolName,
-      callID: e.toolCallId,
-      input: e.input,
+  pi.on("session_start", async (event, ctx) => {
+    sessionId = resolveSessionId(ctx as { sessionManager?: { getSessionFile?: () => string | null } });
+    lastAssistantMessage = null;
+    emit("session-start", {
+      session_id: sessionId,
+      reason: (event as { reason?: string })?.reason,
     });
   });
 
-  // tool_result fires after a tool finishes (success or error).
+  // session_shutdown fires before the extension runtime tears down.
+  // It's the cleanest "session is done" signal. Emit stop + session-end
+  // so atrium finalizes the activity card regardless of which signal
+  // its reducer listens to.
+  pi.on("session_shutdown", async (event) => {
+    const reason = (event as { reason?: string })?.reason;
+    emit("stop", {
+      session_id: sessionId,
+      reason,
+      last_assistant_message: lastAssistantMessage,
+    });
+    emit("session-end", { session_id: sessionId, reason });
+  });
+
+  // ── Tool lifecycle ────────────────────────────────────────────────
+  pi.on("tool_call", async (event) => {
+    const e = event as {
+      toolName?: string;
+      toolCallId?: string;
+      input?: unknown;
+    };
+    emit("pre-tool-use", {
+      session_id: sessionId,
+      tool_name: e.toolName,
+      tool_input: stringify(e.input),
+      tool_call_id: e.toolCallId,
+    });
+  });
+
   pi.on("tool_result", async (event) => {
     const e = event as {
       toolName?: string;
       toolCallId?: string;
       input?: unknown;
-      output?: unknown;
-      error?: unknown;
+      content?: unknown;
+      isError?: boolean;
     };
     emit("post-tool-use", {
-      tool: e.toolName,
-      callID: e.toolCallId,
-      input: e.input,
-      output: e.output,
-      error: e.error,
+      session_id: sessionId,
+      tool_name: e.toolName,
+      tool_input: stringify(e.input),
+      tool_response: stringify(e.content),
+      tool_call_id: e.toolCallId,
+      error: e.isError ? stringify(e.content) : "",
     });
   });
 
   // ── User prompt ───────────────────────────────────────────────────
-  // input fires when the user submits a prompt (and lets extensions
-  // intercept it). We don't modify; just forward as user-prompt-submit.
+  // input fires when the user submits a prompt. event.text is the raw
+  // input text (before skill/template expansion).
   pi.on("input", async (event) => {
-    const e = event as { input?: unknown; source?: string };
-    emit("user-prompt-submit", { source: e.source, input: e.input });
+    const e = event as { text?: string; source?: string };
+    // Reset assistant-message buffer so the previous turn's reply
+    // doesn't bleed into this turn's stop event.
+    lastAssistantMessage = null;
+    emit("user-prompt-submit", {
+      session_id: sessionId,
+      user_prompt: e.text ?? "",
+      source: e.source,
+    });
   });
 
-  // ── Turn boundary ─────────────────────────────────────────────────
+  // ── Assistant message capture ────────────────────────────────────
+  // message_end fires for user / assistant / toolResult messages.
+  // Capture text from assistant messages so we can attach it as
+  // last_assistant_message on the next stop event.
+  pi.on("message_end", async (event) => {
+    const e = event as { message?: { role?: string; content?: unknown } };
+    if (e.message?.role !== "assistant") return;
+    const text = extractMessageText(e.message);
+    if (text) lastAssistantMessage = text;
+  });
+
+  // ── Turn boundary ────────────────────────────────────────────────
   // agent_end fires when the agent finishes a turn. atrium uses `stop`
-  // for "turn complete" transitions in the activity card; session
-  // tear-down also emits stop above, but multiple stops are idempotent.
+  // for "turn complete" transitions.
   pi.on("agent_end", async () => {
-    emit("stop", { reason: "agent_end" });
+    emit("stop", {
+      session_id: sessionId,
+      reason: "agent_end",
+      last_assistant_message: lastAssistantMessage,
+    });
   });
 }

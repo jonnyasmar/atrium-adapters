@@ -3,3 +3,5 @@
 # touches. test-adapter.sh backs these up before testing and restores
 # on exit.
 echo "~/.config/opencode/plugins/atrium.js"
+echo "~/.config/opencode/opencode.jsonc"
+echo "~/.config/opencode/opencode.json"
