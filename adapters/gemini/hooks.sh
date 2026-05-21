@@ -27,12 +27,15 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manif
 
 # Gemini sanitizes hook environments, stripping some ATRIUM_* vars at hook
 # fire time. We probe the filesystem at install time to bake the active
-# channel's CLI path as a fallback to ${ATRIUM_CLI_PATH:-...} — runtime env
-# still wins when present, baked path kicks in when it doesn't.
+# channel's CLI + data-dir paths as fallbacks — runtime env still wins when
+# present, baked path kicks in when it doesn't. Dev install preferred when
+# both channels are present (matches the parallel-channel convention).
 if [ -d "${HOME}/.atrium-dev/adapters/gemini" ]; then
   ATRIUM_CLI_FALLBACK="${HOME}/.atrium-dev/bin/atrium-dev"
+  ATRIUM_DATA_DIR_FALLBACK="${HOME}/.atrium-dev"
 else
   ATRIUM_CLI_FALLBACK="${HOME}/.atrium/bin/atrium"
+  ATRIUM_DATA_DIR_FALLBACK="${HOME}/.atrium"
 fi
 
 # Event table: kebab-case event name, Gemini settings key, matcher.
@@ -54,11 +57,12 @@ notification\tNotification\t*'
 # straight to `atrium hook emit`.
 build_hook_command() {
   local event="$1"
-  local adapter_dir
-  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local normalizer=""
   if [ "$event" = "post-tool-use" ]; then
-    normalizer="\"${adapter_dir}/normalize-hook-payload.sh\" | "
+    # Resolve via ${ATRIUM_DATA_DIR:-<install-time fallback>} so the same
+    # hook works on either channel when env survives, and falls back to
+    # the channel we probed at install time when gemini strips it.
+    normalizer="$(printf '"${ATRIUM_DATA_DIR:-%s}/adapters/gemini/normalize-hook-payload.sh" | ' "$ATRIUM_DATA_DIR_FALLBACK")"
   fi
   printf '%s; %s"${ATRIUM_CLI_PATH:-%s}" hook emit %s --adapter gemini --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
     "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$ATRIUM_CLI_FALLBACK" "$event"
@@ -101,9 +105,8 @@ build_all_hooks() {
   # renamed off its default launcher name. Emits the same JSON envelope
   # used by the SessionStart context inject — hookSpecificOutput
   # .additionalContext — pinned to hookEventName "BeforeAgent".
-  local rename_cmd rename_entry adapter_dir
-  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  rename_cmd="${adapter_dir}/../shared/pane-name-check.sh gemini"
+  local rename_cmd rename_entry
+  rename_cmd="$(printf '${ATRIUM_DATA_DIR:-%s}/adapters/shared/pane-name-check.sh gemini' "$ATRIUM_DATA_DIR_FALLBACK")"
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: "*", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.BeforeAgent += $r' <<< "$hooks")"

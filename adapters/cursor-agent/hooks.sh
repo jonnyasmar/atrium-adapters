@@ -17,12 +17,13 @@ if ! command -v jq &>/dev/null; then
   exit 1
 fi
 
-# Absolute path to the companion entry script, resolved against this file's
-# installed location (e.g. ~/.atrium/adapters/cursor-agent/). Baked into
-# every hooks.json entry so Cursor's shellExecutor invokes a plain binary
-# rather than an inline shell one-liner (which it silently drops).
-ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENTRY_SCRIPT="${ADAPTER_DIR}/cursor-hook-entry.sh"
+# Path to the companion entry script, expanded at hook-fire time via
+# ${ATRIUM_DATA_DIR:-...} so the same hooks.json entry resolves to whichever
+# atrium channel (stable / dev / beta) launched the pane. Cursor's
+# shellExecutor still sees a `<binary> <args...>` shape — variable expansion
+# is fine, only multi-statement inline pipelines get dropped (see
+# cursor-hook-entry.sh for the why).
+ENTRY_SCRIPT="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/cursor-agent/cursor-hook-entry.sh"
 
 # Regex used by install/uninstall/status to identify hooks we own. Matches
 # the entry-script filenames (cursor-hook-entry.sh for the activity flow,
@@ -105,7 +106,7 @@ build_all_hooks() {
   # renamed off its default launcher name. Emits the same JSON envelope
   # used by the sessionStart context inject — additional_context.
   local rename_cmd rename_entry
-  rename_cmd="${ADAPTER_DIR}/../shared/pane-name-check.sh cursor"
+  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh cursor"
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
   hooks="$(jq --argjson r "$rename_entry" '.beforeSubmitPrompt += $r' <<< "$hooks")"

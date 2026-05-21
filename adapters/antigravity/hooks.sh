@@ -36,13 +36,17 @@ fi
 
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 
+# agy (like gemini) sanitizes hook environments. We probe the active channel
+# at install time and bake fallbacks for both ATRIUM_CLI_PATH and
+# ATRIUM_DATA_DIR — runtime env wins when it survives, baked path kicks in
+# when it doesn't. Dev install preferred when both channels are present.
 if [ -d "${HOME}/.atrium-dev/adapters/antigravity" ]; then
   ATRIUM_CLI_FALLBACK="${HOME}/.atrium-dev/bin/atrium-dev"
+  ATRIUM_DATA_DIR_FALLBACK="${HOME}/.atrium-dev"
 else
   ATRIUM_CLI_FALLBACK="${HOME}/.atrium/bin/atrium"
+  ATRIUM_DATA_DIR_FALLBACK="${HOME}/.atrium"
 fi
-
-ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ensure_hooks_file() {
   mkdir -p "$(dirname "$HOOKS_FILE")"
@@ -58,13 +62,13 @@ LOG='log() { [ "${ATRIUM_HOOK_DEBUG:-1}" = "0" ] && return; printf "[%s] [pane=%
 # adds session_id + tool_name + tool_input + _atrium envelope), forward
 # to atrium, output {"decision":"allow"} so agy doesn't block the call.
 build_pre_tool_use_command() {
-  printf '%s; %s; payload=$(cat); log "PreToolUse stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "%s/normalize-hook-payload.sh" pre-tool-use | "${ATRIUM_CLI_PATH:-%s}" hook emit pre-tool-use --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "PreToolUse emit rc=$?"; printf "{\\"decision\\":\\"allow\\"}\\n"; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ADAPTER_DIR" "$ATRIUM_CLI_FALLBACK"
+  printf '%s; %s; payload=$(cat); log "PreToolUse stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" pre-tool-use | "${ATRIUM_CLI_PATH:-%s}" hook emit pre-tool-use --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "PreToolUse emit rc=$?"; printf "{\\"decision\\":\\"allow\\"}\\n"; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK"
 }
 
 build_post_tool_use_command() {
-  printf '%s; %s; payload=$(cat); log "PostToolUse stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "%s/normalize-hook-payload.sh" post-tool-use | "${ATRIUM_CLI_PATH:-%s}" hook emit post-tool-use --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "PostToolUse emit rc=$?"; printf "{}\\n"; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ADAPTER_DIR" "$ATRIUM_CLI_FALLBACK"
+  printf '%s; %s; payload=$(cat); log "PostToolUse stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" post-tool-use | "${ATRIUM_CLI_PATH:-%s}" hook emit post-tool-use --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "PostToolUse emit rc=$?"; printf "{}\\n"; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK"
 }
 
 # PreInvocation: emit both session-start AND user-prompt-submit on every
@@ -84,8 +88,8 @@ build_pre_invocation_command() {
   # Gate user-prompt-submit on invocationNum=0; always emit session-start
   # (atrium handles duplicates idempotently — matches claude-code's
   # startup|resume SessionStart pattern).
-  printf '%s; %s; payload=$(cat); inv=$(printf "%%s" "$payload" | jq -r ".invocationNum // 0" 2>/dev/null || echo 0); log "PreInvocation inv=$inv stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "%s/normalize-hook-payload.sh" session-start | "${ATRIUM_CLI_PATH:-%s}" hook emit session-start --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "session-start emit rc=$?"; if [ "$inv" = "0" ]; then printf "%%s" "$payload" | "%s/normalize-hook-payload.sh" user-prompt-submit | "${ATRIUM_CLI_PATH:-%s}" hook emit user-prompt-submit --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "user-prompt-submit emit rc=$?"; else log "user-prompt-submit suppressed (continuation invocation)"; fi; printf "{}\\n"; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ADAPTER_DIR" "$ATRIUM_CLI_FALLBACK" "$ADAPTER_DIR" "$ATRIUM_CLI_FALLBACK"
+  printf '%s; %s; payload=$(cat); inv=$(printf "%%s" "$payload" | jq -r ".invocationNum // 0" 2>/dev/null || echo 0); log "PreInvocation inv=$inv stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" session-start | "${ATRIUM_CLI_PATH:-%s}" hook emit session-start --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "session-start emit rc=$?"; if [ "$inv" = "0" ]; then printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" user-prompt-submit | "${ATRIUM_CLI_PATH:-%s}" hook emit user-prompt-submit --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "user-prompt-submit emit rc=$?"; else log "user-prompt-submit suppressed (continuation invocation)"; fi; printf "{}\\n"; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK"
 }
 
 # PostInvocation fires per model-invocation, not per-turn. With agentic
@@ -102,8 +106,8 @@ build_pre_invocation_command() {
 # after every tool-execution sub-loop within a turn, causing the same
 # bouncing as a naive PostInvocation → stop mapping would.
 build_stop_command() {
-  printf '%s; %s; payload=$(cat); idle=$(printf "%%s" "$payload" | jq -r ".fullyIdle // false" 2>/dev/null || echo false); log "Stop fullyIdle=$idle stdin=$(printf %%s \"$payload\" | head -c 400)"; if [ "$idle" = "true" ]; then printf "%%s" "$payload" | "%s/normalize-hook-payload.sh" stop | "${ATRIUM_CLI_PATH:-%s}" hook emit stop --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "stop emit rc=$?"; fi; printf "{}\\n"; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ADAPTER_DIR" "$ATRIUM_CLI_FALLBACK"
+  printf '%s; %s; payload=$(cat); idle=$(printf "%%s" "$payload" | jq -r ".fullyIdle // false" 2>/dev/null || echo false); log "Stop fullyIdle=$idle stdin=$(printf %%s \"$payload\" | head -c 400)"; if [ "$idle" = "true" ]; then printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" stop | "${ATRIUM_CLI_PATH:-%s}" hook emit stop --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "stop emit rc=$?"; fi; printf "{}\\n"; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK"
 }
 
 build_atrium_hook_block() {

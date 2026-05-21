@@ -52,12 +52,12 @@ build_hook_command() {
   # For `post-tool-use` events, the native payload is piped through
   # `normalize-hook-payload.sh` first so atrium consumes the canonical
   # `_atrium` envelope (see ../../HOOK_ENVELOPE.md). Other events
-  # stream straight to `atrium hook emit`.
-  local adapter_dir
-  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # stream straight to `atrium hook emit`. Path is ${ATRIUM_DATA_DIR:-...}
+  # so the same hook entry resolves to whichever atrium channel launched
+  # the pane.
   local normalizer=""
   if [ "$event" = "post-tool-use" ]; then
-    normalizer="\"${adapter_dir}/normalize-hook-payload.sh\" | "
+    normalizer="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/codex/normalize-hook-payload.sh\" | "
   fi
   printf '%s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter codex --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; %s' \
     "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$event" "$trailer"
@@ -90,11 +90,11 @@ build_all_hooks() {
 
   # Pane-name nudge: appended to UserPromptSubmit so the agent gets a
   # per-prompt reminder until the pane is renamed off its default
-  # launcher name. Resolved at hook-fire time against the adapter's
-  # installed location ($adapter_dir/../shared/).
-  local rename_cmd rename_entry adapter_dir
-  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  rename_cmd="${adapter_dir}/../shared/pane-name-check.sh codex"
+  # launcher name. Resolved at hook-fire time via ${ATRIUM_DATA_DIR:-...}
+  # so stable / dev / beta installs on the same machine don't clobber
+  # each other's hook entries.
+  local rename_cmd rename_entry
+  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh codex"
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"

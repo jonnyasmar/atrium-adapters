@@ -52,11 +52,12 @@ stop-failure\tStopFailure\t.*'
 # straight to `atrium hook emit`.
 build_hook_command() {
   local event="$1"
-  local adapter_dir
-  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local normalizer=""
   if [ "$event" = "post-tool-use" ]; then
-    normalizer="\"${adapter_dir}/normalize-hook-payload.sh\" | "
+    # Use ${ATRIUM_DATA_DIR:-...} so the same hook entry resolves to whichever
+    # atrium channel (stable / dev / beta) launched the pane. The PTY layer
+    # injects ATRIUM_DATA_DIR at pane spawn (src-tauri/src/pty/manager.rs).
+    normalizer="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/normalize-hook-payload.sh\" | "
   fi
   printf '%s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter claude-code --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
     "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$event"
@@ -92,11 +93,11 @@ build_all_hooks() {
 
   # Pane-name nudge: appended to UserPromptSubmit so the agent gets a
   # per-prompt reminder until the pane is renamed off its default
-  # launcher name. Resolved at hook-fire time against the adapter's
-  # installed location ($adapter_dir/../shared/).
-  local rename_cmd rename_entry adapter_dir
-  adapter_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  rename_cmd="${adapter_dir}/../shared/pane-name-check.sh claude"
+  # launcher name. Resolved at hook-fire time via ${ATRIUM_DATA_DIR:-...}
+  # so stable / dev / beta installs on the same machine don't clobber
+  # each other's hook entries.
+  local rename_cmd rename_entry
+  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh claude"
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
