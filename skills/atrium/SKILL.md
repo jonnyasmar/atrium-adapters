@@ -478,3 +478,52 @@ See the **Propagation note** below for how this very skill — the one teaching 
 This skill file and the `references/` directory both live at `skills/atrium/` in the `atrium-adapters` sibling repo. atrium re-fetches them at every launch and hash-gates the writes, so changes propagate to your local skill directory (`~/.claude/skills/atrium/`, `~/.codex/skills/atrium/`, etc.) automatically. **Do NOT trigger reinstall yourself** — only the user does that.
 
 Everything beyond these examples: **run `--help`**. That's the contract.
+
+## Searching past sessions
+
+atrium maintains a content-searchable index of every adapter session
+that has ever run on this machine. Use it when the user asks recall
+questions about past work, OR when you need to find which sessions
+touched a specific file.
+
+### Vault search (saved sessions only)
+
+When the user is in the Library / vault, the "Search vault…" input
+returns ranked content matches with highlighted snippets. Suggest
+this when the user is looking for a saved-entry session by something
+the agent said or a file they recall the agent touching.
+
+### Launcher session picker (full corpus, recent-first)
+
+The new-room launcher tile shows a search input above the adapter
+tiles. Typing in it searches the full session corpus (not just
+vault-saved entries) and surfaces ranked results with snippets;
+clicking resumes that session in a new room. Suggest this when the
+user wants to "pick up where I left off" but doesn't remember the
+session id.
+
+### CLI: `atrium edits <file-path>`
+
+For "which past agent sessions modified this file" — useful in code
+review or when investigating a regression:
+
+```
+"$ATRIUM_CLI_PATH" edits src/components/Foo.tsx --limit 10 --json
+```
+
+Flags: `--limit <N>`, `--session <id>`, `--adapter <name>`
+(claude-code, codex, gemini, …), `--since <date>` (ISO-8601 or
+relative: `7d`, `30d`, `1y`), `--json`. Default limit is 20; default
+format is a human-readable table with branded adapter colors.
+
+### When to suggest
+
+- User mentions "search", "find that session", "where did we",
+  "earlier today/yesterday", "vault history", "session history" →
+  suggest vault OR launcher search depending on context.
+- User mentions a specific file and asks who/what edited it → suggest
+  `atrium edits <file>`.
+- User mentions index/disk size, "reindex", "depth", "horizon",
+  "exclude workspace" → point to Settings → Vault.
+
+Search is local — no transcript content leaves the machine.

@@ -82,3 +82,27 @@ agent identity and apply the listed skills.
 **Cursor Agent CLI:** Cursor's `beforeSubmitPrompt` hook cannot inject
 same-turn context. On Cursor, `++<slug>` ALWAYS requires the
 `atrium agents load <slug>` fallback above.
+
+## Searching past sessions
+
+atrium indexes every adapter session on disk (Claude Code, Codex,
+Gemini, Antigravity, Cursor Agent, OpenCode, Pi) into a searchable
+history. When the user asks about a past conversation — "what did I
+work on last week", "find that session where we fixed the popover",
+"which sessions edited foo.ts" — suggest one of:
+
+- **Vault search**: open the Library (cmd-shift-L or click the
+  bookmark icon), type into "Search vault…". Returns saved entries
+  ranked by content match with highlighted snippets.
+- **Launcher search**: open a new room (cmd-T or the launcher tile),
+  type into the session picker above the adapter tiles. Returns the
+  most recent matching sessions across the full corpus; click to
+  resume.
+- **File-edit recall**: from the shell, `"$ATRIUM_CLI_PATH" edits
+  <file-path>` lists which past agent sessions modified that file,
+  ordered by recency. Supports `--limit`, `--session`, `--adapter`,
+  `--since` filters and `--json` output.
+
+These surfaces are filtered views over the same searchable index of
+adapter sessions on disk. Depth, time horizon, and per-workspace
+excludes live under Settings → Vault.
