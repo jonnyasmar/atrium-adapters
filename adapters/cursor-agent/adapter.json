@@ -32,5 +32,10 @@
     "list_recent_sessions": { "script": "list_recent_sessions.sh" },
     "hooks": { "script": "hooks.sh" },
     "launcher_options": { "static": "launcher_options.json" }
+  },
+  "sessionExtractor": {
+    "script": "extract_session.sh",
+    "schemaVersion": 1,
+    "supportsDepths": ["quick", "standard", "deep"]
   }
 }

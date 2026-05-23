@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical Session Event",
+  "description": "One JSONL line emitted by an adapter's extract_session.sh. Five variants discriminated by 'type'. See _bmad-output/planning-artifacts/architecture-adapter-session-fts.md §\"Canonical Extracted Event Schema\" lines 256-286 in the atrium repo for the source-of-truth contract. The Rust enum at src-tauri/src/fts/extractors/canonical.rs must remain byte-equivalent to this schema — Story 66.10 ships a cross-repo drift-detection test. Per-variant subschemas intentionally do NOT set additionalProperties: false — adapters MAY evolve to emit richer payloads (e.g. prose.message_id, tool_use.duration_ms) without breaking older atrium versions. Story 66.2's CanonicalEvent enum does not use #[serde(deny_unknown_fields)] for the same reason.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["type", "session_id", "adapter", "cwd", "started_at"],
+      "properties": {
+        "type": { "const": "session_start" },
+        "session_id": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "cwd": { "type": "string" },
+        "started_at": { "type": "string", "format": "date-time" },
+        "title": { "type": ["string", "null"] }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "role", "text", "at"],
+      "properties": {
+        "type": { "const": "prose" },
+        "role": { "enum": ["user", "assistant"] },
+        "text": { "type": "string" },
+        "at": { "type": "string", "format": "date-time" }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "tool", "input", "at", "id"],
+      "properties": {
+        "type": { "const": "tool_use" },
+        "tool": { "type": "string", "minLength": 1 },
+        "input": { "type": "object" },
+        "at": { "type": "string", "format": "date-time" },
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "tool", "tool_use_id", "text", "at"],
+      "properties": {
+        "type": { "const": "tool_result" },
+        "tool": { "type": "string", "minLength": 1 },
+        "tool_use_id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string" },
+        "at": { "type": "string", "format": "date-time" },
+        "is_error": { "type": "boolean" }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["type", "session_id", "ended_at"],
+      "properties": {
+        "type": { "const": "session_end" },
+        "session_id": { "type": "string", "minLength": 1 },
+        "ended_at": { "type": "string", "format": "date-time" },
+        "event_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  ]
+}

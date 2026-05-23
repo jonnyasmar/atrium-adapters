@@ -1,0 +1,6 @@
+{"type":"session_meta","payload":{"id":"fixture-cdx-001","cwd":"/tmp","timestamp":"2026-05-23T18:00:00Z"},"timestamp":"2026-05-23T18:00:00Z"}
+{"type":"response_item","payload":{"role":"user","content":[{"type":"text","text":"list files in /tmp"}]},"timestamp":"2026-05-23T18:00:00Z"}
+{"type":"response_item","payload":{"role":"assistant","content":[{"type":"text","text":"I'll run ls /tmp"}]},"timestamp":"2026-05-23T18:00:01Z"}
+{"type":"response_item","payload":{"type":"function_call","name":"shell","arguments":{"command":["ls","/tmp"]},"call_id":"call_01"},"timestamp":"2026-05-23T18:00:01Z"}
+{"type":"response_item","payload":{"type":"function_call_output","call_id":"call_01","output":"file1.txt\nfile2.txt\n"},"timestamp":"2026-05-23T18:00:02Z"}
+{"type":"response_item","payload":{"role":"assistant","content":[{"type":"text","text":"There are 2 files in /tmp"}]},"timestamp":"2026-05-23T18:00:03Z"}

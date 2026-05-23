@@ -115,6 +115,11 @@
       "minLength": 1,
       "description": "SDK v2. Absolute or ~-prefixed path where atrium installs the adapter's SKILL.md (e.g. '~/.claude/skills/atrium/skill.md')."
     },
+    "skillsDir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "SDK v2. Absolute or ~-prefixed path to the underlying tool's skills directory (e.g. '~/.claude/skills'). Used by atrium for skill installation discovery."
+    },
     "icon": {
       "type": "string",
       "minLength": 1,
@@ -154,6 +159,31 @@
           "type": "string",
           "minLength": 1,
           "description": "Path (relative to the adapter dir) of a script that accepts key=value pairs as positional args (e.g. 'days=365 maxCount=9999') and updates the tool's config file."
+        }
+      },
+      "additionalProperties": false
+    },
+    "sessionExtractor": {
+      "type": "object",
+      "description": "SDK v2. Optional. Declares an adapter-owned script that extracts native-transcript content into the canonical event stream consumed by atrium's session FTS index. When present, atrium's indexer invokes the script per session at backfill + live-watch time. See canonical-event.schema.json for the JSONL contract.",
+      "required": ["script", "schemaVersion", "supportsDepths"],
+      "properties": {
+        "script": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path (relative to the adapter dir) of the extractor script. Convention: 'extract_session.sh'."
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Canonical-event schema version this script emits. Hashed into the FTS index row's extractor_version so version bumps trigger per-adapter reindex on idle."
+        },
+        "supportsDepths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["quick", "standard", "deep"] },
+          "description": "Depth presets this script supports. Adapters MAY declare a subset if their transcript format only supports a degraded extraction (e.g. ['quick'] for an unstable transcript format)."
         }
       },
       "additionalProperties": false

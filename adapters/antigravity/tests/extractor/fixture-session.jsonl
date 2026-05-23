@@ -1,0 +1,5 @@
+{"type":"USER_INPUT","content":"<USER_REQUEST>list files in /tmp</USER_REQUEST>","timestamp":"2026-05-23T18:00:00Z"}
+{"type":"AGENT_RESPONSE","content":"I'll run ls /tmp","timestamp":"2026-05-23T18:00:01Z"}
+{"type":"TOOL_CALL","name":"Bash","input":{"command":"ls /tmp"},"id":"agy_call_01","timestamp":"2026-05-23T18:00:01Z"}
+{"type":"TOOL_RESULT","name":"Bash","call_id":"agy_call_01","output":"file1.txt\nfile2.txt\n","timestamp":"2026-05-23T18:00:02Z"}
+{"type":"AGENT_RESPONSE","content":"There are 2 files in /tmp","timestamp":"2026-05-23T18:00:03Z"}

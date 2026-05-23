@@ -1,0 +1,5 @@
+{"role":"user","text":"list files in /tmp","timestamp":"2026-05-23T18:00:00Z","sessionId":"fixture-pi-001"}
+{"role":"assistant","text":"I'll run ls /tmp","timestamp":"2026-05-23T18:00:01Z"}
+{"type":"tool_use","name":"Bash","input":{"command":"ls /tmp"},"id":"pi_call_01","timestamp":"2026-05-23T18:00:01Z"}
+{"type":"tool_result","tool":"Bash","tool_use_id":"pi_call_01","output":"file1.txt\nfile2.txt\n","timestamp":"2026-05-23T18:00:02Z"}
+{"role":"assistant","text":"There are 2 files in /tmp","timestamp":"2026-05-23T18:00:03Z"}

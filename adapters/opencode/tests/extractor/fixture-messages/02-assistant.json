@@ -1,0 +1,12 @@
+{
+  "role": "assistant",
+  "content": "I'll run ls /tmp",
+  "time": 1748023201000,
+  "toolCalls": [
+    {
+      "id": "oc_call_01",
+      "name": "Bash",
+      "input": {"command": "ls /tmp"}
+    }
+  ]
+}

@@ -227,6 +227,73 @@ validate_scripts_exist() {
   done
 }
 
+# ── Phase 2b: sessionExtractor validation (Epic 66 Story 66.3) ────────────────
+
+validate_session_extractor() {
+  local extractor
+  extractor="$(jq -r '.sessionExtractor // empty' "$MANIFEST")"
+  if [[ -z "$extractor" || "$extractor" == "null" ]]; then
+    pass "No sessionExtractor declared (optional field)"
+    return 0
+  fi
+
+  local script
+  script="$(jq -r '.sessionExtractor.script // empty' "$MANIFEST")"
+  if [[ -z "$script" ]]; then
+    fail "sessionExtractor declared but missing .script" ".sessionExtractor.script (string)"
+    return
+  fi
+
+  local script_path="$ADAPTER_DIR/$script"
+  if [[ ! -f "$script_path" ]]; then
+    fail "sessionExtractor script missing: $script_path"
+    return
+  fi
+  if [[ ! -x "$script_path" ]]; then
+    fail "sessionExtractor script not executable: $script_path (run: chmod +x $script_path)"
+    return
+  fi
+
+  local schema_version
+  schema_version="$(jq -r '.sessionExtractor.schemaVersion // empty' "$MANIFEST")"
+  if ! [[ "$schema_version" =~ ^[0-9]+$ ]] || [[ "$schema_version" -lt 1 ]]; then
+    fail "sessionExtractor.schemaVersion must be integer >= 1 (got: $schema_version)"
+    return
+  fi
+
+  local depths_total
+  depths_total="$(jq -r '.sessionExtractor.supportsDepths // [] | length' "$MANIFEST")"
+  if [[ "$depths_total" -lt 1 ]]; then
+    fail "sessionExtractor.supportsDepths must be non-empty array"
+    return
+  fi
+
+  local depths_ok
+  depths_ok="$(jq -r '.sessionExtractor.supportsDepths // [] | map(select(. == "quick" or . == "standard" or . == "deep")) | length' "$MANIFEST")"
+  if [[ "$depths_ok" -ne "$depths_total" ]]; then
+    fail "sessionExtractor.supportsDepths contains invalid value (allowed: quick, standard, deep)"
+    return
+  fi
+
+  local depths_str
+  depths_str="$(jq -r '.sessionExtractor.supportsDepths | join(",")' "$MANIFEST")"
+  pass "sessionExtractor declared: script=$script schemaVersion=$schema_version depths=[$depths_str]"
+
+  # Non-fatal smoke-test if the fixture exists
+  local fixture_assert="$ADAPTER_DIR/tests/extractor/assert.sh"
+  if [[ -x "$fixture_assert" ]]; then
+    if ! command -v python3 &>/dev/null; then
+      printf '  %s\n' "[SKIP] python3 not available; skipping extractor fixture smoke-test"
+      return 0
+    fi
+    if bash "$fixture_assert" >/dev/null 2>&1; then
+      pass "sessionExtractor fixture smoke-test passed"
+    else
+      fail "sessionExtractor fixture smoke-test failed (run \`bash $fixture_assert\` to see output)"
+    fi
+  fi
+}
+
 # ── Phase 3: Schema validation helpers ────────────────────────────────────────
 
 # Get the JSON type of a value (string, number, boolean, null, array, object)
@@ -537,6 +604,10 @@ echo ""
 if [[ -f "$MANIFEST" ]] && jq empty "$MANIFEST" 2>/dev/null; then
   echo "${BOLD:-}Phase 2: Script and file checks${RESET:-}"
   validate_scripts_exist
+  echo ""
+
+  echo "${BOLD:-}Phase 2b: Session extractor (Epic 66)${RESET:-}"
+  validate_session_extractor
   echo ""
 
   echo "${BOLD:-}Phase 3: Output validation${RESET:-}"

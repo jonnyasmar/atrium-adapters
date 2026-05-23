@@ -55,5 +55,10 @@
     ],
     "readScript": "retention.read.sh",
     "writeScript": "retention.write.sh"
+  },
+  "sessionExtractor": {
+    "script": "extract_session.sh",
+    "schemaVersion": 1,
+    "supportsDepths": ["quick", "standard", "deep"]
   }
 }
