@@ -69,16 +69,41 @@ while True:
         break
     search = parent
 " "$CWD" "$PROJECTS_FILE" 2>/dev/null || true)
-  if [[ -z "$PROJECT_NAME" ]]; then
-    echo "extract_session: no gemini project mapping for cwd: $CWD" >&2
-    exit 1
+  # Try the direct path when we have a project mapping, but ALWAYS fall
+  # through to the find-scan if it doesn't resolve. The cwd → project
+  # mapping is fragile (worktrees, renamed dirs, sessions discovered by
+  # the backfill from a different cwd than where gemini ran them) — the
+  # find-scan is authoritative and bounded by the GEMINI_DIR/tmp size.
+  if [[ -n "$PROJECT_NAME" ]]; then
+    CANDIDATE="${GEMINI_DIR}/tmp/${PROJECT_NAME}/chats/session-${SESSION_ID}.json"
+    if [[ -f "$CANDIDATE" ]]; then
+      TRANSCRIPT="$CANDIDATE"
+    fi
   fi
-  CANDIDATE="${GEMINI_DIR}/tmp/${PROJECT_NAME}/chats/session-${SESSION_ID}.json"
-  if [[ -f "$CANDIDATE" ]]; then
-    TRANSCRIPT="$CANDIDATE"
-  else
-    # Fallback: scan for session-*.json containing our session ID
-    TRANSCRIPT=$(find "${GEMINI_DIR}/tmp" -name "session-*${SESSION_ID}*.json" -print -quit 2>/dev/null || true)
+  if [[ -z "$TRANSCRIPT" ]]; then
+    # Gemini filenames only carry the first 8 chars of the UUID
+    # (e.g. `session-2026-04-20T17-18-f48d75d6.json`) but the full
+    # UUID lives in the file's `sessionId` field. list_recent_sessions
+    # emits the full UUID; we have to match by prefix here. Then
+    # verify by reading the file's sessionId — guards against
+    # 8-char-prefix collisions (1 / 2^32 — vanishingly rare but
+    # cheap to confirm).
+    PREFIX="${SESSION_ID:0:8}"
+    while IFS= read -r CANDIDATE_PATH; do
+      [[ -z "$CANDIDATE_PATH" ]] && continue
+      FILE_SID=$(python3 -c "
+import json, sys
+try:
+    with open(sys.argv[1]) as f:
+        print(json.load(f).get('sessionId', ''))
+except Exception:
+    pass
+" "$CANDIDATE_PATH" 2>/dev/null || true)
+      if [[ "$FILE_SID" == "$SESSION_ID" ]]; then
+        TRANSCRIPT="$CANDIDATE_PATH"
+        break
+      fi
+    done < <(find "${GEMINI_DIR}/tmp" -name "session-*${PREFIX}*.json" 2>/dev/null)
   fi
 fi
 

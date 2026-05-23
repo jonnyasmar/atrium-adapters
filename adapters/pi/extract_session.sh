@@ -49,7 +49,9 @@ elif [[ -z "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]]; then
     echo "extract_session: pi sessions root not found: $ROOT" >&2
     exit 1
   fi
-  CANDIDATE=$(find "$ROOT" -name "${SESSION_ID}.jsonl" -print -quit 2>/dev/null || true)
+  # Pi files are timestamp-prefixed: `<ISO-timestamp>_<UUID>.jsonl`
+  # under per-cwd dash-encoded subdirs. Match the UUID suffix.
+  CANDIDATE=$(find "$ROOT" -name "*${SESSION_ID}.jsonl" -print -quit 2>/dev/null || true)
   if [[ -n "$CANDIDATE" ]]; then
     TRANSCRIPT="$CANDIDATE"
   fi
