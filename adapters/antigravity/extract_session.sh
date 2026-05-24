@@ -43,6 +43,21 @@ elif [[ -z "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]]; then
   if [[ -f "$AGY_BRAIN" ]]; then
     TRANSCRIPT="$AGY_BRAIN"
   fi
+  # Fallback: scan known antigravity roots for any path containing
+  # the SESSION_ID (handles future layout changes + cases where the
+  # brain dir is split across roots).
+  if [[ -z "$TRANSCRIPT" ]]; then
+    for ROOT in "${HOME}/.gemini/antigravity-cli" \
+                "${HOME}/.antigravity" \
+                "${HOME}/Library/Application Support/Antigravity"; do
+      [[ -d "$ROOT" ]] || continue
+      CANDIDATE=$(find "$ROOT" -type f \( -name "transcript.jsonl" -o -name "*.jsonl" \) -path "*${SESSION_ID}*" -print -quit 2>/dev/null || true)
+      if [[ -n "$CANDIDATE" ]]; then
+        TRANSCRIPT="$CANDIDATE"
+        break
+      fi
+    done
+  fi
 fi
 
 if [[ -z "$TRANSCRIPT" ]] || [[ ! -f "$TRANSCRIPT" ]]; then

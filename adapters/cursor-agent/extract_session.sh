@@ -57,6 +57,16 @@ print(hashlib.md5(resolved.encode('utf-8')).hexdigest())
       TRANSCRIPT="$CANDIDATE"
     fi
   fi
+  # Fallback: cwd → workspace hash is fragile (worktrees, renamed
+  # dirs, sessions enumerated from a cwd different from where the
+  # user ran cursor). Scan ~/.cursor/chats for any session dir
+  # whose name matches.
+  if [[ -z "$TRANSCRIPT" ]] && [[ -d "${HOME}/.cursor/chats" ]]; then
+    CANDIDATE=$(find "${HOME}/.cursor/chats" -mindepth 3 -maxdepth 3 -type f -name "store.db" -path "*/${SESSION_ID}/*" -print -quit 2>/dev/null || true)
+    if [[ -n "$CANDIDATE" ]]; then
+      TRANSCRIPT="$CANDIDATE"
+    fi
+  fi
 fi
 
 if [[ -z "$TRANSCRIPT" ]] || [[ ! -f "$TRANSCRIPT" ]]; then

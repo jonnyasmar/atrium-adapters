@@ -48,18 +48,30 @@ elif [[ -z "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]]; then
     echo "extract_session: opencode data dir not found: $DATA_DIR" >&2
     exit 1
   fi
-  # Find the project dir that contains a matching session
+  # opencode has shipped two storage layouts; scan both:
+  #   1. legacy: data/project/<encoded>/storage/session/info/<sid>.json
+  #      + messages/<sid>/<msg>.json
+  #   2. newer: data/storage/session_diff/ses_<sid>.json (no per-project)
+  # Walk both — first match wins.
   FOUND=$(python3 -c "
 import glob, os, sys
 data_dir = sys.argv[1]
 sid = sys.argv[2]
-for info in glob.glob(os.path.join(data_dir, 'project', '*', 'storage', 'session', 'info', '*.json')):
-    base = os.path.splitext(os.path.basename(info))[0]
-    if base == sid or base == 'ses_' + sid or base.endswith('_' + sid):
-        msg_dir = os.path.join(os.path.dirname(os.path.dirname(info)), 'messages', base)
-        print(info)
-        print(msg_dir if os.path.isdir(msg_dir) else '')
-        sys.exit(0)
+patterns = [
+    os.path.join(data_dir, 'project', '*', 'storage', 'session', 'info', '*.json'),
+    os.path.join(data_dir, 'storage', 'session_diff', '*.json'),
+    os.path.join(data_dir, 'storage', 'session', 'info', '*.json'),
+]
+for pattern in patterns:
+    for info in glob.glob(pattern):
+        base = os.path.splitext(os.path.basename(info))[0]
+        if base == sid or base == 'ses_' + sid or base.endswith('_' + sid):
+            # messages dir is sibling of info dir for the legacy layout;
+            # newer layouts may not have it (best-effort).
+            msg_dir = os.path.join(os.path.dirname(os.path.dirname(info)), 'messages', base)
+            print(info)
+            print(msg_dir if os.path.isdir(msg_dir) else '')
+            sys.exit(0)
 " "$DATA_DIR" "$SESSION_ID" 2>/dev/null || true)
   if [[ -n "$FOUND" ]]; then
     INFO_FILE=$(echo "$FOUND" | head -1)
