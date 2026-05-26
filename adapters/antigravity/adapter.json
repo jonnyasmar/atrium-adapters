@@ -5,7 +5,7 @@
   "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
   "accent": "#14b8a6",
   "binary": "agy",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "icon": "icon.svg",
   "skillInstallPath": "~/.gemini/antigravity-cli/skills/atrium/SKILL.md",
   "skillsDir": "~/.gemini/antigravity-cli/skills",
