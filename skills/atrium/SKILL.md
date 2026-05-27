@@ -28,7 +28,7 @@ Each bucket below maps to one top-level verb of the CLI. Run `<verb> --help` to 
 
 - **`task`** — Kanban-style task cards with statuses, priorities, labels, comments, and workspace scoping. Every task has a human-readable ID like `ATR-12` in addition to its UUID.
 - **`pane`** — Create, read, write, focus, close, rename, resize, and split panes. Panes include terminals, editors, browsers, and AI adapter sessions. `pane read` returns rendered text from the xterm.js buffer (what the user actually sees), with `--lines N` (default 200, most recent) and `--offset N` (skip N most recent to page backward through scrollback).
-- **`note`** — Create, list, read, write, search, open, delete, stream RFC 6902 patches (`canvas-patch`), and view history of workspace-scoped notes across four modes (markdown, sketch, canvas, html). Notes live on disk under `~/.atrium/notes/<workspaceId>/<noteId>/`; agent-authored notes carry `--source agent` so users can hide or filter them. SVG/PNG export available for sketch notes when the desktop app is running. Markdown notes support mermaid diagrams via fenced code blocks — no separate note type for them. **CLI is canonical for lifecycle (new / delete / list / search) and metadata; for iterating on body content, you can also `Read`/`Edit`/`Write` the body file directly — see the "Editing notes" section below.** See the **Notes — canvas & html interactive UIs** section for the agent-authoring vocabulary for canvas/html.
+- **`note`** — Create, list, read, write, search, open, delete, stream RFC 6902 patches (`canvas-patch`), and view history of workspace-scoped notes across four modes (markdown, sketch, canvas, html). Notes live on disk under `$ATRIUM_DATA_DIR/notes/$ATRIUM_WORKSPACE_ID/<noteId>/` (install root varies — `~/.atrium`, `~/.atrium-dev`, `~/.atrium-beta` — always use the env vars). Agent-authored notes carry `--source agent` so users can hide or filter them. SVG/PNG export available for sketch notes when the desktop app is running. Markdown notes support mermaid diagrams via fenced code blocks — no separate note type for them. **CLI is canonical for lifecycle (new / delete / list / search) and metadata; for iterating on body content, you can also `Read`/`Edit`/`Write` the body file directly — see the "Editing notes" section below.** See the **Notes — canvas & html interactive UIs** section for the agent-authoring vocabulary for canvas/html.
 - **`room`** — List, switch, and close rooms (the user-facing name for tabs).
 - **`workspace`** — List, create, switch, and delete workspaces. Workspaces are project directories with their own pane layouts.
 - **`browser`** — Drive the browser panes: navigate, click, fill, type, press keys, select, scroll, eval JS, screenshot, snapshot, wait for conditions, read attributes. Always prefer this over any Playwright or browser MCP.
@@ -181,7 +181,7 @@ Use `atrium run list --workspace <id>` or `atrium run list --task ATR-N` to disc
 
 ## Editing notes — file tools vs CLI
 
-Every note is file-backed under `~/.atrium/notes/<workspaceId>/[<folder>...]/<noteId>/`. Each note directory contains:
+Every note is file-backed under `$ATRIUM_DATA_DIR/notes/$ATRIUM_WORKSPACE_ID/[<folder>...]/<noteId>/`. Each note directory contains:
 
 - `meta.json` — title, type, tags, folder, timestamps, source.
 - one body file per type — `note.md` (markdown), `note.excalidraw` (sketch), `note.canvas.json` (canvas), `note.html` (html).
@@ -204,7 +204,10 @@ atrium watches the notes tree and reconciles automatically: when you write the b
 
 Rules:
 
-- **Find a note's directory** via `atrium note list --json` (returns `id`, `folder`, `type` per note). Compose the path as `~/.atrium/notes/<workspaceId>/<folder>/<noteId>/<body-filename>` (omit `<folder>/` when folder is empty).
+- **Always use the env vars for the path.** Read `$ATRIUM_DATA_DIR` for the install root (varies by channel: `~/.atrium`, `~/.atrium-dev`, `~/.atrium-beta`) and `$ATRIUM_WORKSPACE_ID` for the workspace. **Never hardcode `~/.atrium/`** — the dev / beta channels won't see your write, and `useNote` in the running app reads from the channel-correct root. If `$ATRIUM_DATA_DIR` is unset (rare), derive it: `dirname $(dirname "$ATRIUM_CLI_PATH")`.
+- **`workspaceId` ≠ `sessionId` ≠ `paneId`.** All three are UUIDs and all three appear near notes (`meta.json` carries `originSessionId` and `originAgentPaneId`; the workspace id is implicit in the directory layout). The path segment after `/notes/` is `workspaceId` (= `$ATRIUM_WORKSPACE_ID`), **never** the session or pane id from `meta.json`. Mixing them up writes a 0-byte phantom that no app reads.
+- **Find a note's directory** via `atrium note list --json` (returns `id`, `folder`, `type` per note). Compose the path as `$ATRIUM_DATA_DIR/notes/$ATRIUM_WORKSPACE_ID/<folder>/<noteId>/<body-filename>` (omit `<folder>/` when folder is empty).
+- **When in doubt, use `atrium note write`.** It resolves the install root and workspace from the CLI binary path automatically, so it can't be misrouted. Direct `Edit`/`Write` is for incremental edits where round-tripping through `read` → mutate → `write` is wasteful.
 - **Never touch `state.json` or `viewport.json`.** They back atrium UI contracts; hand-editing breaks them.
 - **Don't change `id`, `folder`, or `createdAt` in `meta.json`** — the directory layout is the truth for `folder` (renames are a directory move, not a meta-only patch). Editing `title`, `tags`, or `source` in `meta.json` is OK; the watcher will pick it up.
 - **Atomic writes are not required** — the watcher debounces and reconciles on any change. But avoid leaving partial writes (e.g. an interrupted shell redirect) since list operations may surface them.
