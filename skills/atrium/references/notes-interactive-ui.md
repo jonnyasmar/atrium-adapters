@@ -238,7 +238,7 @@ Streaming patches are forgiving — you don't have to emit elements in strict de
 
 ## The component catalog
 
-atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus `Label` (atrium-specific for a11y pairing). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
+atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus two atrium-specific additions: `Label` (for a11y pairing) and `Code` (Prism-highlighted source snippets). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
 
 **Layout & display:**
 
@@ -298,6 +298,7 @@ atrium implements the **full json-render standard catalog** — all 41 component
 | `Metric`     | `label: string`, `value: string\|number`, `change?`, `changeType?: "positive"\|"negative"\|"neutral"`, `prefix?`, `suffix?` |
 | `Rating`     | `value?` (bind), `max?: number`, `label?`, `interactive?: boolean` |
 | `Table`      | `columns: { key, label, align? }[]`, `rows: Record<string, unknown>[]`, `caption?` |
+| `Code`       | `code: string`, `language?: string` (Prism grammar id — `"typescript"`, `"rust"`, `"bash"`, ...), `filePath?: string` (used for language inference when `language` is absent), `startLine?: number` (gutter starting number; defaults to 1). Read-only, syntax-highlighted, with a line-number gutter. Unknown languages fall back to plain text. |
 | `Pagination` | `totalPages: number`, `page?` (bind, 1-indexed). Fires `change`. |
 | `BarGraph`   | `title?: string`, `data: { name, ...numericSeries }[]` |
 | `LineGraph`  | `title?: string`, `data: { name, ...numericSeries }[]` |
