@@ -5,12 +5,14 @@
   "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
   "accent": "#14b8a6",
   "binary": "agy",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "icon": "icon.svg",
   "skillInstallPath": "~/.gemini/antigravity-cli/skills/atrium/SKILL.md",
   "skillsDir": "~/.gemini/antigravity-cli/skills",
   "binaryDiscovery": {
-    "commands": ["agy"],
+    "commands": [
+      "agy"
+    ],
     "wellKnownPaths": [
       "/opt/homebrew/bin/agy",
       "/usr/local/bin/agy",
@@ -27,15 +29,37 @@
     "stop": "atrium://hooks/antigravity/stop"
   },
   "methods": {
-    "build_launch_command": { "script": "build_launch_command.sh" },
-    "build_resume_command": { "script": "build_resume_command.sh" },
-    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
-    "hooks": { "script": "hooks.sh" },
-    "launcher_options": { "static": "launcher_options.json" }
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
   },
   "sessionExtractor": {
     "script": "extract_session.sh",
     "schemaVersion": 1,
-    "supportsDepths": ["quick", "standard", "deep"]
+    "supportsDepths": [
+      "quick",
+      "standard",
+      "deep"
+    ]
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "none"
+    },
+    "userPromptSubmit": {
+      "kind": "none"
+    }
   }
 }

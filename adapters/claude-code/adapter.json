@@ -5,11 +5,13 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97757",
   "binary": "claude",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "skillInstallPath": "~/.claude/skills/atrium/skill.md",
   "skillsDir": "~/.claude/skills",
   "binaryDiscovery": {
-    "commands": ["claude"],
+    "commands": [
+      "claude"
+    ],
     "wellKnownPaths": [
       "~/.npm/bin/claude",
       "/usr/local/bin/claude",
@@ -31,11 +33,21 @@
     "stop-failure": "atrium://hooks/claude-code/stop-failure"
   },
   "methods": {
-    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
-    "build_launch_command": { "script": "build_launch_command.sh" },
-    "build_resume_command": { "script": "build_resume_command.sh" },
-    "hooks": { "script": "hooks.sh" },
-    "launcher_options": { "static": "launcher_options.json" }
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
   },
   "retention": {
     "fields": [
@@ -55,6 +67,20 @@
   "sessionExtractor": {
     "script": "extract_session.sh",
     "schemaVersion": 1,
-    "supportsDepths": ["quick", "standard", "deep"]
+    "supportsDepths": [
+      "quick",
+      "standard",
+      "deep"
+    ]
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "identity"
+    },
+    "userPromptSubmit": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "UserPromptSubmit",
+      "includeSystemMessage": true
+    }
   }
 }

@@ -5,12 +5,14 @@
   "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
   "accent": "#06b6d4",
   "binary": "pi",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "icon": "icon.svg",
   "skillInstallPath": "~/.pi/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.pi/agent/skills",
   "binaryDiscovery": {
-    "commands": ["pi"],
+    "commands": [
+      "pi"
+    ],
     "wellKnownPaths": [
       "/opt/homebrew/bin/pi",
       "/usr/local/bin/pi",
@@ -28,15 +30,37 @@
     "user-prompt-submit": "atrium://hooks/pi/user-prompt-submit"
   },
   "methods": {
-    "build_launch_command": { "script": "build_launch_command.sh" },
-    "build_resume_command": { "script": "build_resume_command.sh" },
-    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
-    "hooks": { "script": "hooks.sh" },
-    "launcher_options": { "static": "launcher_options.json" }
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
   },
   "sessionExtractor": {
     "script": "extract_session.sh",
     "schemaVersion": 1,
-    "supportsDepths": ["quick", "standard", "deep"]
+    "supportsDepths": [
+      "quick",
+      "standard",
+      "deep"
+    ]
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "none"
+    },
+    "userPromptSubmit": {
+      "kind": "none"
+    }
   }
 }

@@ -93,6 +93,46 @@
         "pattern": "^atrium://"
       }
     },
+    "hookEnvelopes": {
+      "type": "object",
+      "description": "SDK v2. Optional. Declares the per-event response envelope shape atrium core should emit when the underlying tool fires SessionStart and UserPromptSubmit hooks. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit — the Claude-Code-compatible defaults).",
+      "properties": {
+        "sessionStartManifest": {
+          "description": "Envelope wrapping the SessionStart manifest stdout. 'identity' = raw text/plain (Claude Code, Codex, Grok); 'hookSpecificOutput' = JSON {hookSpecificOutput: {hookEventName, additionalContext}} (Gemini); 'flatAdditionalContext' = JSON {additional_context} (Cursor); 'none' = empty body (skip injection).",
+          "oneOf": [
+            { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "identity" } }, "additionalProperties": false },
+            { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "flatAdditionalContext" } }, "additionalProperties": false },
+            { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "none" } }, "additionalProperties": false },
+            {
+              "type": "object",
+              "required": ["kind", "hookEventName"],
+              "properties": {
+                "kind": { "const": "hookSpecificOutput" },
+                "hookEventName": { "type": "string", "minLength": 1, "description": "Value placed in hookSpecificOutput.hookEventName (e.g. 'SessionStart', 'BeforeAgent')." }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "userPromptSubmit": {
+          "description": "Envelope wrapping the sigil-resolution response for the UserPromptSubmit (or equivalent) hook. 'hookSpecificOutput' is the Claude-Code-shaped envelope used by claude-code/codex/gemini/grok. 'none' is used by adapters with no same-turn injection primitive (cursor-agent).",
+          "oneOf": [
+            { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "none" } }, "additionalProperties": false },
+            {
+              "type": "object",
+              "required": ["kind", "hookEventName"],
+              "properties": {
+                "kind": { "const": "hookSpecificOutput" },
+                "hookEventName": { "type": "string", "minLength": 1, "description": "Value placed in hookSpecificOutput.hookEventName (e.g. 'UserPromptSubmit', 'BeforeAgent')." },
+                "includeSystemMessage": { "type": "boolean", "description": "When true, the envelope also includes a top-level 'systemMessage' field with the resolution status line. Defaults to false. Set true for claude-code/gemini/grok; false for codex." }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "binaryDiscovery": {
       "type": "object",
       "description": "SDK v2. Replaces the v1 detect_binary.sh method. atrium walks 'commands' against PATH and falls back to 'wellKnownPaths' to locate the CLI binary.",

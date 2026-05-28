@@ -5,12 +5,14 @@
   "description": "Open-source AI coding agent built for the terminal (opencode.ai)",
   "accent": "#a855f7",
   "binary": "opencode",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "icon": "icon.svg",
   "skillInstallPath": "~/.config/opencode/agent/atrium/SKILL.md",
   "skillsDir": "~/.config/opencode/agent",
   "binaryDiscovery": {
-    "commands": ["opencode"],
+    "commands": [
+      "opencode"
+    ],
     "wellKnownPaths": [
       "~/.opencode/bin/opencode",
       "/opt/homebrew/bin/opencode",
@@ -30,15 +32,37 @@
     "permission-request": "atrium://hooks/opencode/permission-request"
   },
   "methods": {
-    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
-    "build_launch_command": { "script": "build_launch_command.sh" },
-    "build_resume_command": { "script": "build_resume_command.sh" },
-    "hooks": { "script": "hooks.sh" },
-    "launcher_options": { "static": "launcher_options.json" }
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
   },
   "sessionExtractor": {
     "script": "extract_session.sh",
     "schemaVersion": 1,
-    "supportsDepths": ["quick", "standard", "deep"]
+    "supportsDepths": [
+      "quick",
+      "standard",
+      "deep"
+    ]
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "none"
+    },
+    "userPromptSubmit": {
+      "kind": "none"
+    }
   }
 }

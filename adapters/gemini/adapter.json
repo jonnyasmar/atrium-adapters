@@ -5,11 +5,13 @@
   "description": "Google's AI coding assistant",
   "accent": "#4285f4",
   "binary": "gemini",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "skillInstallPath": "~/.gemini/skills/atrium/SKILL.md",
   "skillsDir": "~/.gemini/skills",
   "binaryDiscovery": {
-    "commands": ["gemini"],
+    "commands": [
+      "gemini"
+    ],
     "wellKnownPaths": [
       "/opt/homebrew/bin/gemini",
       "/usr/local/bin/gemini",
@@ -27,11 +29,21 @@
     "notification": "atrium://hooks/gemini/notification"
   },
   "methods": {
-    "build_launch_command": { "script": "build_launch_command.sh" },
-    "build_resume_command": { "script": "build_resume_command.sh" },
-    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
-    "hooks": { "script": "hooks.sh" },
-    "launcher_options": { "static": "launcher_options.json" }
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
   },
   "retention": {
     "fields": [
@@ -59,6 +71,21 @@
   "sessionExtractor": {
     "script": "extract_session.sh",
     "schemaVersion": 1,
-    "supportsDepths": ["quick", "standard", "deep"]
+    "supportsDepths": [
+      "quick",
+      "standard",
+      "deep"
+    ]
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "SessionStart"
+    },
+    "userPromptSubmit": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "BeforeAgent",
+      "includeSystemMessage": true
+    }
   }
 }

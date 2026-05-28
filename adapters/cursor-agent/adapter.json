@@ -5,10 +5,13 @@
   "description": "Cursor's agent CLI",
   "accent": "#6366f1",
   "binary": "cursor-agent",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "skillsDir": "~/.cursor/skills",
   "binaryDiscovery": {
-    "commands": ["cursor-agent", "agent"],
+    "commands": [
+      "cursor-agent",
+      "agent"
+    ],
     "wellKnownPaths": [
       "~/.local/bin/cursor-agent",
       "~/.local/bin/agent",
@@ -27,15 +30,37 @@
     "subagent-stop": "atrium://hooks/cursor-agent/subagent-stop"
   },
   "methods": {
-    "build_launch_command": { "script": "build_launch_command.sh" },
-    "build_resume_command": { "script": "build_resume_command.sh" },
-    "list_recent_sessions": { "script": "list_recent_sessions.sh" },
-    "hooks": { "script": "hooks.sh" },
-    "launcher_options": { "static": "launcher_options.json" }
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
   },
   "sessionExtractor": {
     "script": "extract_session.sh",
     "schemaVersion": 1,
-    "supportsDepths": ["quick", "standard", "deep"]
+    "supportsDepths": [
+      "quick",
+      "standard",
+      "deep"
+    ]
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "flatAdditionalContext"
+    },
+    "userPromptSubmit": {
+      "kind": "none"
+    }
   }
 }
