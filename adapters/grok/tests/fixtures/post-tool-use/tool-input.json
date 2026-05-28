@@ -1,0 +1,15 @@
+{
+  "session_id": "019e6b94-03cc-7512-adec-38b5338c115c",
+  "transcript_path": "/Users/test/.grok/sessions/%2FUsers%2Ftest%2Fdev%2Fmyproject/019e6b94-03cc-7512-adec-38b5338c115c/chat_history.jsonl",
+  "cwd": "/Users/test/dev/myproject",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "search_replace",
+  "tool_input": {
+    "file_path": "/Users/test/dev/myproject/README.md",
+    "old_string": "# Hello",
+    "new_string": "# Hello, world"
+  },
+  "tool_response": {
+    "success": true
+  }
+}

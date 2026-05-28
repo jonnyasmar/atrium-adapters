@@ -1,0 +1,59 @@
+{
+  "sdkVersion": 2,
+  "name": "grok",
+  "displayName": "Grok",
+  "description": "xAI's terminal coding agent",
+  "accent": "#e11d48",
+  "binary": "grok",
+  "version": "0.1.1",
+  "icon": "icon.svg",
+  "skillInstallPath": "~/.grok/skills/atrium/SKILL.md",
+  "skillsDir": "~/.grok/skills",
+  "binaryDiscovery": {
+    "commands": [
+      "grok"
+    ],
+    "wellKnownPaths": [
+      "~/.grok/bin/grok",
+      "/usr/local/bin/grok",
+      "/opt/homebrew/bin/grok",
+      "~/.local/bin/grok"
+    ]
+  },
+  "hooks": {
+    "session-start": "atrium://hooks/grok/session-start",
+    "pre-tool-use": "atrium://hooks/grok/pre-tool-use",
+    "post-tool-use": "atrium://hooks/grok/post-tool-use",
+    "stop": "atrium://hooks/grok/stop",
+    "notification": "atrium://hooks/grok/notification",
+    "user-prompt-submit": "atrium://hooks/grok/user-prompt-submit",
+    "subagent-stop": "atrium://hooks/grok/subagent-stop"
+  },
+  "methods": {
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "identity"
+    },
+    "userPromptSubmit": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "UserPromptSubmit",
+      "includeSystemMessage": true
+    }
+  }
+}

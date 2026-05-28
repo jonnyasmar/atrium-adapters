@@ -1,0 +1,10 @@
+{
+  "session_id": "019e6b94-03cc-7512-adec-38b5338c115c",
+  "tool_name": "search_replace",
+  "_atrium": {
+    "writeKind": "edit",
+    "filePaths": ["/Users/test/dev/myproject/README.md"],
+    "lineStart": null,
+    "lineEnd": null
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "options": [
+    {
+      "key": "alwaysApprove",
+      "label": "👮‍♂️",
+      "description": "--always-approve (auto-approve all tool executions)",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ]
+}

@@ -102,6 +102,21 @@
       "version": "0.3.0",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 800\" fill=\"currentColor\"><title>Pi</title><path fill-rule=\"evenodd\" d=\"M165.29 165.29 H517.36 V400 H400 V517.36 H282.65 V634.72 H165.29 Z M282.65 282.65 V400 H400 V282.65 Z\"/><path d=\"M517.36 400 H634.72 V634.72 H517.36 Z\"/></svg>"
+    },
+    {
+      "name": "grok",
+      "displayName": "Grok",
+      "description": "xAI's terminal coding agent",
+      "accent": "#e11d48",
+      "binary": "grok",
+      "sdkVersion": 2,
+      "platforms": [
+        "macos"
+      ],
+      "official": true,
+      "version": "0.1.1",
+      "minAppVersion": "0.156.0",
+      "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><title>Grok</title><path d=\"M2.30047 8.77631L12.0474 23H16.3799L6.63183 8.77631H2.30047ZM6.6285 16.6762L2.29492 23H6.63072L8.79584 19.8387L6.6285 16.6762ZM17.3709 1L9.88007 11.9308L12.0474 15.0944L21.7067 1H17.3709ZM18.1555 7.76374V23H21.7067V2.5818L18.1555 7.76374Z\"/></svg>"
     }
   ]
 }
