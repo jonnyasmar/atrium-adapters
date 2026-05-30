@@ -65,15 +65,16 @@ UserPromptSubmit hook resolves the agent profile, concatenates the
 agent's prompt with the bodies of every selected skill (skipping
 `disabled` selections), and **injects the combined body directly into
 your this-turn context** as part of the `=== ATRIUM SIGIL CONTEXT ===`
-block. **You should not shell out to `atrium agents load` for sigils
-when the block is already present** — adopt the agent identity from
-the injected body and respond as that agent.
+block. **You should not shell out to `atrium agent definition load`
+(alias `atrium agent def load`) for sigils when the block is already
+present** — adopt the agent identity from the injected body and
+respond as that agent.
 
 If the user typed an agent sigil but you do NOT see a corresponding
 `=== ATRIUM SIGIL CONTEXT ===` block (hook failure / runtime
 unreachable / Cursor adapter — see below), fall back to:
 
-- `++<slug>` → `$ATRIUM_CLI_PATH agents load <slug>`
+- `++<slug>` → `$ATRIUM_CLI_PATH agent definition load <slug>`
 
 The CLI prints the agent's expanded body (the prompt followed by every
 enabled skill body under a `# Skills` header) to stdout. Adopt the
@@ -81,7 +82,7 @@ agent identity and apply the listed skills.
 
 **Cursor Agent CLI:** Cursor's `beforeSubmitPrompt` hook cannot inject
 same-turn context. On Cursor, `++<slug>` ALWAYS requires the
-`atrium agents load <slug>` fallback above.
+`atrium agent definition load <slug>` fallback above.
 
 ## Searching past sessions
 
