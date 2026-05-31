@@ -18,6 +18,8 @@ This skill names the exact flags it depends on, but the CLI is the only source o
 "$ATRIUM_CLI_PATH" context --help
 "$ATRIUM_CLI_PATH" timeline list --help
 "$ATRIUM_CLI_PATH" timeline append --help
+"$ATRIUM_CLI_PATH" note new --help
+"$ATRIUM_CLI_PATH" note write --help
 "$ATRIUM_CLI_PATH" task list --help
 ```
 
@@ -33,7 +35,7 @@ Do not guess flag names — check.
 
 A user may *ask* for the window in relative terms ("the last 7 days", "since last Monday"). **Resolve that to concrete RFC3339 timestamps before reading** — `timeline list --since`/`--until` accept an **RFC3339 / ISO-8601 instant only**, not relative durations like `7d` (that relative syntax belongs to the separate `edits --since` command, not here). When both are absent, recap **the last 7 days**: start = now minus 7 days, end = now. The same resolved start/end feed both the `timeline list` read (step 2) and `RecapMeta.timeRange` (step 4).
 
-## The five-step synthesis flow
+## The six-step synthesis flow
 
 Do these in order.
 
@@ -70,13 +72,53 @@ Then read exactly that window:
 
 Keep the resolved `START` / `END` instants — you write them into `RecapMeta.timeRange` in step 4.
 
-### 3. Synthesize the recap
+### 3. Synthesize the recap — summary, sentinel, then the narrative
+
+**Lead with a scannable summary, then a sentinel, then the detail.** The synthesis text must be structured in exactly this order:
+
+1. A **1–3 sentence, high-signal summary** — the gist of what happened in the window, written so a reader scanning the timeline card sees the highlights without expanding it. This comes **first**.
+2. A line containing **exactly** the sentinel `<!-- more -->` (an HTML comment — invisible in rendered markdown; the timeline card splits on it to show summary vs. detail).
+3. The **full time-bounded narrative** below.
+
+```markdown
+<one-to-three-sentence summary of the window>
+
+<!-- more -->
+
+<full time-bounded narrative>
+```
 
 Write a **time-bounded narrative** of what happened in the window: the work that landed, the threads that moved, decisions made, and what's still open at the end of the window. State the window plainly (e.g. "the last 7 days" or the explicit dates) so the reader knows the scope of the recap.
 
-### 4. Write the entry — a SINGLE `timeline append`
+**This exact `summary → <!-- more --> → detail` shape is the prose you reuse verbatim** for both the backing note body (step 4) and the timeline `--body` (step 5). Write it once, here, in this order.
 
-Persist the recap with exactly this flag contract (the as-built Story 76-4 surface — do **not** invent flags):
+### 4. Create the backing note — holds the full recap prose
+
+The recap prose lives in a real markdown **note** so the user can click the synthesis card open and read it. Create the note FIRST, capture its id, then carry that id into the timeline append in step 5.
+
+`note new` creates a markdown note from `--title` only — for markdown there is **no** `--body` flag (that's canvas/html only), so you write the body in a second call with `note write <id>`. Capture the new note's id from the `--json` output, which is `{"noteId":"<uuid>","meta":{…},"paneId":null}`:
+
+```bash
+NOTE_ID=$("$ATRIUM_CLI_PATH" note new \
+  --title "<one-line recap summary>" \
+  --type markdown \
+  --source agent \
+  --workspace "<workspaceId>" \
+  --json | jq -r '.noteId')
+
+printf '%s' "<the recap narrative>" | "$ATRIUM_CLI_PATH" note write "$NOTE_ID"
+```
+
+Notes:
+
+- The note **title** = the recap's one-line summary (the same string you pass as the timeline `--title`). The note **body** = the full recap narrative markdown (the same prose you pass as the timeline `--body`).
+- `note write` reads the body from `--content`, `--from-file <path>`, or piped stdin. Piping (`printf … | note write "$NOTE_ID"`) avoids shell-quoting a multi-paragraph body; `--from-file` is the alternative if you wrote the prose to a temp file. Do **not** pass `--source` to `note write` — it's rejected ("not yet supported by the storage layer"); the note already carries `source: agent` from `note new`.
+- `--source agent` on `note new` marks the note as agent-authored. `--workspace` is the `workspaceId` from step 1.
+- Confirm the exact flags with `"$ATRIUM_CLI_PATH" note new --help` / `note write --help` if unsure.
+
+### 5. Write the entry — a SINGLE `timeline append`
+
+Persist the recap with exactly this flag contract (the as-built Story 76-4 surface — do **not** invent flags). Include the `noteId` from step 4 in the metadata:
 
 ```bash
 "$ATRIUM_CLI_PATH" timeline append \
@@ -85,7 +127,7 @@ Persist the recap with exactly this flag contract (the as-built Story 76-4 surfa
   --scope "workspace:<workspaceId>" \
   --title "<one-line recap summary>" \
   --body "<the recap narrative>" \
-  --metadata-json '{"timeRange":["<startIso>","<endIso>"],"synthesizedFrom":{"eventIds":["<id1>","<id2>"]},"tags":["topic:weekly"]}' \
+  --metadata-json "{\"timeRange\":[\"<startIso>\",\"<endIso>\"],\"synthesizedFrom\":{\"eventIds\":[\"<id1>\",\"<id2>\"]},\"tags\":[\"topic:weekly\"],\"noteId\":\"$NOTE_ID\"}" \
   --json
 ```
 
@@ -102,15 +144,17 @@ Contract notes:
 {
   "timeRange": ["<startIso>", "<endIso>"],
   "synthesizedFrom": { "eventIds": ["<timeline id>", "..."] },
-  "tags": ["topic:weekly"]
+  "tags": ["topic:weekly"],
+  "noteId": "<note id from step 4>"
 }
 ```
 
 - `timeRange` is **camelCase** and is a **two-element `[start, end]` array of ISO-8601 timestamps** — the concrete window you resolved in step 2. The time range lives here at the top level, **not** inside `synthesizedFrom`.
 - `synthesizedFrom` carries **only** `eventIds` (the timeline `id`s from step 2) and an optional `"label"`. Write **nothing else** inside it — no `timeRange`, no `scope`, no `taskIds`.
 - `tags` — `<namespace>:<value>` strings embedded in the payload so `timeline list --tag` finds the row (e.g. `topic:weekly`). Tag syntax `^[a-z][a-z0-9-]*:[a-zA-Z0-9_-]+$`; an invalid tag rejects the whole append. Omit or `[]` if none.
+- `noteId` — the id of the backing note from step 4. This is what lets the synthesis card open the note. Optional on the wire (omit it if you genuinely created no note), but this skill always creates one, so always set it.
 
-### 5. Report the new entry id
+### 6. Report the new entry id
 
 Read `id` from the `--json` append response and report it to the user — e.g. "Recap of the last 7 days saved as timeline entry `<id>`." The append is synchronous and immediately listable.
 

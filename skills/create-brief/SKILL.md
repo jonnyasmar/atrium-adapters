@@ -18,6 +18,8 @@ This skill names the exact flags it depends on, but the CLI is the only source o
 "$ATRIUM_CLI_PATH" context --help
 "$ATRIUM_CLI_PATH" timeline list --help
 "$ATRIUM_CLI_PATH" timeline append --help
+"$ATRIUM_CLI_PATH" note new --help
+"$ATRIUM_CLI_PATH" note write --help
 "$ATRIUM_CLI_PATH" task list --help
 ```
 
@@ -32,7 +34,7 @@ Do not guess flag names — check.
 
 `--scope` is an override the verb-cluster (and power users) can pass to narrow to a room, pane, or worktree. When it's absent, default to the workspace scope.
 
-## The five-step synthesis flow
+## The six-step synthesis flow
 
 Do these in order.
 
@@ -69,9 +71,23 @@ Each timeline entry in the `--json` array carries an `id`, `kind`, `scope`, `tit
 
 `timeline list --since` takes a **concrete RFC3339 timestamp** (e.g. `2026-05-01T00:00:00Z`), not a relative duration. A brief uses a wide window (default 30 days back) because it's orienting the reader to the whole project, not a slice. Confirm the exact flag shape with `"$ATRIUM_CLI_PATH" timeline list --help` if unsure.
 
-### 3. Synthesize the brief
+### 3. Synthesize the brief — summary, sentinel, then the orientation
 
-Write a **cold-resume orientation narrative** — assume the reader has zero context. Cover:
+**Lead with a scannable summary, then a sentinel, then the detail.** The synthesis text must be structured in exactly this order:
+
+1. A **1–3 sentence, high-signal summary** — the gist of where the project stands and where it left off, written so a returning reader scanning the timeline card sees the orientation without expanding it. This comes **first**.
+2. A line containing **exactly** the sentinel `<!-- more -->` (an HTML comment — invisible in rendered markdown; the timeline card splits on it to show summary vs. detail).
+3. The **full cold-resume orientation narrative** below.
+
+```markdown
+<one-to-three-sentence orientation summary>
+
+<!-- more -->
+
+<full cold-resume orientation narrative>
+```
+
+Write the orientation as if the reader has zero context. Cover:
 
 - **What this workspace is** — the project, its purpose, the stack, what it's for.
 - **Where it left off** — the most recent meaningful activity (last commits, last agent work, last syntheses).
@@ -79,9 +95,35 @@ Write a **cold-resume orientation narrative** — assume the reader has zero con
 
 Keep it tight and skimmable. This is the artifact that lands in the pinned-latest slot of the sidebar, so the title should read as a clear orientation line.
 
-### 4. Write the entry — a SINGLE `timeline append`
+**This exact `summary → <!-- more --> → detail` shape is the prose you reuse verbatim** for both the backing note body (step 4) and the timeline `--body` (step 5). Write it once, here, in this order.
 
-Persist the brief with exactly this flag contract (the as-built Story 76-4 surface — do **not** invent flags):
+### 4. Create the backing note — holds the full brief prose
+
+The brief prose lives in a real markdown **note** so the user can click the synthesis card open and read it. Create the note FIRST, capture its id, then carry that id into the timeline append in step 5.
+
+`note new` creates a markdown note from `--title` only — for markdown there is **no** `--body` flag (that's canvas/html only), so you write the body in a second call with `note write <id>`. Capture the new note's id from the `--json` output, which is `{"noteId":"<uuid>","meta":{…},"paneId":null}`:
+
+```bash
+NOTE_ID=$("$ATRIUM_CLI_PATH" note new \
+  --title "<one-line orientation>" \
+  --type markdown \
+  --source agent \
+  --workspace "<workspaceId>" \
+  --json | jq -r '.noteId')
+
+printf '%s' "<the brief narrative>" | "$ATRIUM_CLI_PATH" note write "$NOTE_ID"
+```
+
+Notes:
+
+- The note **title** = the brief's one-line orientation (the same string you pass as the timeline `--title`). The note **body** = the full brief narrative markdown (the same prose you pass as the timeline `--body`).
+- `note write` reads the body from `--content`, `--from-file <path>`, or piped stdin. Piping (`printf … | note write "$NOTE_ID"`) avoids shell-quoting a multi-paragraph body; `--from-file` is the alternative if you wrote the prose to a temp file. Do **not** pass `--source` to `note write` — it's rejected ("not yet supported by the storage layer"); the note already carries `source: agent` from `note new`.
+- `--source agent` on `note new` marks the note as agent-authored. `--workspace` is the `workspaceId` from step 1.
+- Confirm the exact flags with `"$ATRIUM_CLI_PATH" note new --help` / `note write --help` if unsure.
+
+### 5. Write the entry — a SINGLE `timeline append`
+
+Persist the brief with exactly this flag contract (the as-built Story 76-4 surface — do **not** invent flags). Include the `noteId` from step 4 in the metadata:
 
 ```bash
 "$ATRIUM_CLI_PATH" timeline append \
@@ -90,7 +132,7 @@ Persist the brief with exactly this flag contract (the as-built Story 76-4 surfa
   --scope "workspace:<workspaceId>" \
   --title "<one-line orientation>" \
   --body "<the brief narrative>" \
-  --metadata-json '{"synthesizedFrom":{"eventIds":["<id1>","<id2>"]},"tags":["scope:project"]}' \
+  --metadata-json "{\"synthesizedFrom\":{\"eventIds\":[\"<id1>\",\"<id2>\"]},\"tags\":[\"scope:project\"],\"noteId\":\"$NOTE_ID\"}" \
   --json
 ```
 
@@ -106,15 +148,17 @@ Contract notes:
 ```json
 {
   "synthesizedFrom": { "eventIds": ["<timeline id>", "..."] },
-  "tags": ["scope:project", "topic:onboarding"]
+  "tags": ["scope:project", "topic:onboarding"],
+  "noteId": "<note id from step 4>"
 }
 ```
 
 - `synthesizedFrom` carries **only** `eventIds` (the timeline `id`s from step 2) and an optional `"label": "<string>"`. Write **nothing else** inside it — no `timeRange`, no `scope`, no `taskIds`. Extra keys are dropped on read and are wrong.
 - `tags` is an array of `<namespace>:<value>` strings (e.g. `scope:project`, `topic:onboarding`). Embed tags **inside** the metadata payload — `timeline list --tag <t>` filters on the metadata `tags` field, so a tag only finds the row if it's here. Tag syntax is `^[a-z][a-z0-9-]*:[a-zA-Z0-9_-]+$`; an invalid tag rejects the whole append. Omit `tags` (or use `[]`) if you have none.
+- `noteId` — the id of the backing note from step 4. This is what lets the synthesis card open the note. Optional on the wire (omit it if you genuinely created no note), but this skill always creates one, so always set it.
 - You *may* also pass repeatable `--tag <ns:value>` flags, but the canonical pattern is to embed tags in `--metadata-json` as above.
 
-### 5. Report the new entry id
+### 6. Report the new entry id
 
 The `--json` append echoes the created row, including its assigned `id`. Read `id` from that response and report it to the user — e.g. "Brief saved as timeline entry `<id>`, pinned in your sidebar." The append is synchronous and immediately listable; no polling is needed.
 
