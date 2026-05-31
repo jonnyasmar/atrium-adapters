@@ -1,0 +1,7 @@
+{
+  "session_id": "fixture-cc-stop-001",
+  "transcript_path": "/tmp/atrium-claude-test-transcript.jsonl",
+  "cwd": "/Users/test/dev/myproject",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false
+}

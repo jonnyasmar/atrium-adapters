@@ -1,0 +1,15 @@
+{
+  "session_id": "fixture-cc-001",
+  "transcript_path": "/Users/test/.claude/projects/myproject/fixture-cc-001.jsonl",
+  "cwd": "/Users/test/dev/myproject",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/Users/test/dev/myproject/README.md",
+    "old_string": "# Hello",
+    "new_string": "# Hello, world"
+  },
+  "tool_response": {
+    "success": true
+  }
+}

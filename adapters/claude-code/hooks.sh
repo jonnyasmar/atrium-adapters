@@ -46,18 +46,23 @@ stop-failure\tStopFailure\t.*'
 # against the pane's injected env vars so stable/dev/beta can coexist. Trails
 # with `exit 0` so any CLI failure never breaks the agent session.
 #
-# For `post-tool-use` events, the native payload is piped through
-# `normalize-hook-payload.sh` first so atrium consumes the canonical
-# `_atrium` envelope (see ../../HOOK_ENVELOPE.md). Other events stream
-# straight to `atrium hook emit`.
+# For `post-tool-use` and `stop` events, the native payload is piped
+# through `normalize-hook-payload.sh` first (with the event name as $1)
+# so atrium consumes the canonical envelope: `post-tool-use` gets the
+# `_atrium` write-attribution envelope (see ../../HOOK_ENVELOPE.md);
+# `stop` gets `last_assistant_message` scraped from the transcript so
+# the final reply reaches the activity card and timeline. Other events
+# stream straight to `atrium hook emit`.
 build_hook_command() {
   local event="$1"
   local normalizer=""
-  if [ "$event" = "post-tool-use" ]; then
+  if [ "$event" = "post-tool-use" ] || [ "$event" = "stop" ]; then
     # Use ${ATRIUM_DATA_DIR:-...} so the same hook entry resolves to whichever
     # atrium channel (stable / dev / beta) launched the pane. The PTY layer
     # injects ATRIUM_DATA_DIR at pane spawn (src-tauri/src/pty/manager.rs).
-    normalizer="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/normalize-hook-payload.sh\" | "
+    # Pass the event name as $1 so the normalizer branches per-event
+    # (post-tool-use → _atrium write envelope; stop → last_assistant_message).
+    normalizer="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/normalize-hook-payload.sh\" \"$event\" | "
   fi
   printf '%s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter claude-code --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
     "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$event"
