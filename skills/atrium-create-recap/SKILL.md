@@ -1,10 +1,10 @@
 ---
-name: create-recap
-description: "Synthesize a time-bounded recap of what happened in a workspace over a window (default the last 7 days) from the timeline + open tasks, and persist it as a typed `recap` timeline entry. Use when the user wants a 'what happened this week / since <date>' summary or invokes /create-recap — it reads the timeline for the window and writes one recap narrative tagged with the exact time range it covers."
+name: atrium-create-recap
+description: "Synthesize a time-bounded recap of what happened in a workspace over a window (default the last 7 days) from the timeline + open tasks, and persist it as a typed `recap` timeline entry. Use when the user wants a 'what happened this week / since <date>' summary or invokes /atrium-create-recap — it reads the timeline for the window and writes one recap narrative tagged with the exact time range it covers."
 version: "0.1.0"
 ---
 
-# create-recap — synthesize a time-bounded recap
+# atrium-create-recap — synthesize a time-bounded recap
 
 You are running inside **atrium**. This skill turns the workspace's **timeline** over a specific time window (default: the last 7 days) plus its **open tasks** into a **recap** — a narrative of what happened in that window. The recap is persisted as a typed `recap` entry on the timeline, tagged with the exact range it covers.
 
@@ -68,7 +68,7 @@ Then read exactly that window:
 "$ATRIUM_CLI_PATH" task list --json
 ```
 
-`timeline list --since`/`--until` take **concrete RFC3339 timestamps** (e.g. `2026-05-23T00:00:00Z`), not relative durations; confirm the flag shape with `"$ATRIUM_CLI_PATH" timeline list --help` if unsure. **Collect the `id` of every timeline entry you draw from** — those go into `synthesizedFrom.eventIds`.
+(Recall from Inputs: `--since`/`--until` take concrete RFC3339 instants, not relative durations.) **Collect the `id` of every timeline entry you draw from** — those go into `synthesizedFrom.eventIds`.
 
 Keep the resolved `START` / `END` instants — you write them into `RecapMeta.timeRange` in step 4.
 
@@ -90,7 +90,7 @@ Keep the resolved `START` / `END` instants — you write them into `RecapMeta.ti
 
 Write a **time-bounded narrative** of what happened in the window: the work that landed, the threads that moved, decisions made, and what's still open at the end of the window. State the window plainly (e.g. "the last 7 days" or the explicit dates) so the reader knows the scope of the recap.
 
-**This exact `summary → <!-- more --> → detail` shape is the prose you reuse verbatim** for both the backing note body (step 4) and the timeline `--body` (step 5). Write it once, here, in this order.
+**Write this `summary → <!-- more --> → detail` shape once, here, in this order — but it is consumed in two different cuts.** The backing **note** (step 4) holds the **full** prose (summary + sentinel + detail). The timeline **`--body`** (step 5) carries **only the summary segment** — the text above the `<!-- more -->` sentinel — never the full narrative. They are deliberately **not** identical: the timeline card shows the summary, and clicking it opens the note for the full detail.
 
 ### 4. Create the backing note — holds the full recap prose
 
@@ -111,14 +111,14 @@ printf '%s' "<the recap narrative>" | "$ATRIUM_CLI_PATH" note write "$NOTE_ID"
 
 Notes:
 
-- The note **title** = the recap's one-line summary (the same string you pass as the timeline `--title`). The note **body** = the full recap narrative markdown (the same prose you pass as the timeline `--body`).
+- The note **title** = the recap's one-line summary (the same string you pass as the timeline `--title`). The note **body** = the **full** recap prose markdown (summary + sentinel + detail) — this is the full narrative, **not** the same string as the timeline `--body` (which carries only the summary segment; see step 5).
 - `note write` reads the body from `--content`, `--from-file <path>`, or piped stdin. Piping (`printf … | note write "$NOTE_ID"`) avoids shell-quoting a multi-paragraph body; `--from-file` is the alternative if you wrote the prose to a temp file. Do **not** pass `--source` to `note write` — it's rejected ("not yet supported by the storage layer"); the note already carries `source: agent` from `note new`.
 - `--source agent` on `note new` marks the note as agent-authored. `--workspace` is the `workspaceId` from step 1.
 - Confirm the exact flags with `"$ATRIUM_CLI_PATH" note new --help` / `note write --help` if unsure.
 
 ### 5. Write the entry — a SINGLE `timeline append`
 
-Persist the recap with exactly this flag contract (the as-built Story 76-4 surface — do **not** invent flags). Include the `noteId` from step 4 in the metadata:
+Persist the recap with exactly this flag contract (confirm any flag via `"$ATRIUM_CLI_PATH" timeline append --help` — the golden rule — and do **not** invent flags). Include the `noteId` from step 4 in the metadata:
 
 ```bash
 "$ATRIUM_CLI_PATH" timeline append \
@@ -126,10 +126,12 @@ Persist the recap with exactly this flag contract (the as-built Story 76-4 surfa
   --kind recap \
   --scope "workspace:<workspaceId>" \
   --title "<one-line recap summary>" \
-  --body "<the recap narrative>" \
+  --body "<the SUMMARY only — the text above the <!-- more --> sentinel, NOT the full narrative>" \
   --metadata-json "{\"timeRange\":[\"<startIso>\",\"<endIso>\"],\"synthesizedFrom\":{\"eventIds\":[\"<id1>\",\"<id2>\"]},\"tags\":[\"topic:weekly\"],\"noteId\":\"$NOTE_ID\"}" \
   --json
 ```
+
+The `--body` is the **summary segment only** — the full recap prose lives **only** in the backing note (step 4). Passing the whole narrative here would duplicate storage, let the timeline body go stale against the note if the note is later edited, and double-index the same text in FTS. The summary is what the card shows; the `noteId` is what opens the full detail.
 
 Contract notes:
 

@@ -1,10 +1,10 @@
 ---
-name: create-brief
-description: "Synthesize a project brief from the workspace timeline + open tasks and persist it as a typed `brief` timeline entry, pinned in the sidebar. Use when the user returns to a workspace cold and asks 'what is this / where did I leave off', wants a fresh orientation, or invokes /create-brief — it reads the recent timeline and open work and writes a single cold-resume brief the user can pick back up from."
+name: atrium-create-brief
+description: "Synthesize a project brief from the workspace timeline + open tasks and persist it as a typed `brief` timeline entry, pinned in the sidebar. Use when the user returns to a workspace cold and asks 'what is this / where did I leave off', wants a fresh orientation, or invokes /atrium-create-brief — it reads the recent timeline and open work and writes a single cold-resume brief the user can pick back up from."
 version: "0.1.0"
 ---
 
-# create-brief — synthesize a cold-resume project brief
+# atrium-create-brief — synthesize a cold-resume project brief
 
 You are running inside **atrium**. This skill turns the workspace's recent **timeline** (the activity substrate: prompts, commits, task changes, agent messages, prior syntheses) plus its **open tasks** into a single **project brief** — a cold-resume orientation a returning user (or agent) can pick the project back up from. The brief is persisted as a typed `brief` entry on the timeline and pinned in the sidebar.
 
@@ -53,7 +53,7 @@ This prints the caller's context as JSON: `workspaceId`, `roomId`, `paneId`, `ad
 
 ### 2. Read the source data
 
-First **resolve the read window to a concrete RFC3339 timestamp**. `timeline list --since` accepts an **RFC3339 / ISO-8601 instant only** — it does **not** parse relative durations like `30d` (that relative syntax belongs to the separate `edits --since` command, not here). So compute "now minus 30 days" as a literal RFC3339 timestamp before reading:
+First **resolve the read window to a concrete RFC3339 timestamp** (see Inputs: `--since` takes an RFC3339 instant, not a relative duration). Compute "now minus 30 days" as a literal RFC3339 timestamp before reading:
 
 ```bash
 SINCE=$(date -u -v-30d +%Y-%m-%dT%H:%M:%SZ)   # macOS; a brief takes a wide 30-day view
@@ -69,7 +69,7 @@ Then read the recent timeline at the resolved scope, and the open tasks for cold
 
 Each timeline entry in the `--json` array carries an `id`, `kind`, `scope`, `title`/`body`, `createdAt`, and (where present) a typed `payload`. **Collect the `id` of every entry you actually draw from** — you write those ids into `synthesizedFrom.eventIds` in step 4 (that's the attribution link back to the originals).
 
-`timeline list --since` takes a **concrete RFC3339 timestamp** (e.g. `2026-05-01T00:00:00Z`), not a relative duration. A brief uses a wide window (default 30 days back) because it's orienting the reader to the whole project, not a slice. Confirm the exact flag shape with `"$ATRIUM_CLI_PATH" timeline list --help` if unsure.
+A brief uses a wide window (default 30 days back) because it's orienting the reader to the whole project, not a slice. Confirm the exact flag shape with `"$ATRIUM_CLI_PATH" timeline list --help` if unsure.
 
 ### 3. Synthesize the brief — summary, sentinel, then the orientation
 
@@ -95,7 +95,7 @@ Write the orientation as if the reader has zero context. Cover:
 
 Keep it tight and skimmable. This is the artifact that lands in the pinned-latest slot of the sidebar, so the title should read as a clear orientation line.
 
-**This exact `summary → <!-- more --> → detail` shape is the prose you reuse verbatim** for both the backing note body (step 4) and the timeline `--body` (step 5). Write it once, here, in this order.
+**Write this `summary → <!-- more --> → detail` shape once, here, in this order — but it is consumed in two different cuts.** The backing **note** (step 4) holds the **full** prose (summary + sentinel + detail). The timeline **`--body`** (step 5) carries **only the summary segment** — the text above the `<!-- more -->` sentinel — never the full narrative. They are deliberately **not** identical: the timeline card shows the summary, and clicking it opens the note for the full detail.
 
 ### 4. Create the backing note — holds the full brief prose
 
@@ -116,14 +116,14 @@ printf '%s' "<the brief narrative>" | "$ATRIUM_CLI_PATH" note write "$NOTE_ID"
 
 Notes:
 
-- The note **title** = the brief's one-line orientation (the same string you pass as the timeline `--title`). The note **body** = the full brief narrative markdown (the same prose you pass as the timeline `--body`).
+- The note **title** = the brief's one-line orientation (the same string you pass as the timeline `--title`). The note **body** = the **full** brief prose markdown (summary + sentinel + detail) — this is the full narrative, **not** the same string as the timeline `--body` (which carries only the summary segment; see step 5).
 - `note write` reads the body from `--content`, `--from-file <path>`, or piped stdin. Piping (`printf … | note write "$NOTE_ID"`) avoids shell-quoting a multi-paragraph body; `--from-file` is the alternative if you wrote the prose to a temp file. Do **not** pass `--source` to `note write` — it's rejected ("not yet supported by the storage layer"); the note already carries `source: agent` from `note new`.
 - `--source agent` on `note new` marks the note as agent-authored. `--workspace` is the `workspaceId` from step 1.
 - Confirm the exact flags with `"$ATRIUM_CLI_PATH" note new --help` / `note write --help` if unsure.
 
 ### 5. Write the entry — a SINGLE `timeline append`
 
-Persist the brief with exactly this flag contract (the as-built Story 76-4 surface — do **not** invent flags). Include the `noteId` from step 4 in the metadata:
+Persist the brief with exactly this flag contract (confirm any flag via `"$ATRIUM_CLI_PATH" timeline append --help` — the golden rule — and do **not** invent flags). Include the `noteId` from step 4 in the metadata:
 
 ```bash
 "$ATRIUM_CLI_PATH" timeline append \
@@ -131,10 +131,12 @@ Persist the brief with exactly this flag contract (the as-built Story 76-4 surfa
   --kind brief \
   --scope "workspace:<workspaceId>" \
   --title "<one-line orientation>" \
-  --body "<the brief narrative>" \
+  --body "<the SUMMARY only — the text above the <!-- more --> sentinel, NOT the full narrative>" \
   --metadata-json "{\"synthesizedFrom\":{\"eventIds\":[\"<id1>\",\"<id2>\"]},\"tags\":[\"scope:project\"],\"noteId\":\"$NOTE_ID\"}" \
   --json
 ```
+
+The `--body` is the **summary segment only** — the full brief prose lives **only** in the backing note (step 4). Passing the whole narrative here would duplicate storage, let the timeline body go stale against the note if the note is later edited, and double-index the same text in FTS. The summary is what the card shows; the `noteId` is what opens the full detail.
 
 Contract notes:
 

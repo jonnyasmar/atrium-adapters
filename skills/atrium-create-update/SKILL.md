@@ -1,10 +1,10 @@
 ---
-name: create-update
-description: "Synthesize an audience-shaped status update (Shipped / In Flight / Watching / Next) from the workspace timeline + open tasks and persist it as a typed `update` timeline entry. Use when the user wants a shareable progress update for a specific audience (a client, a teammate, a stakeholder) or invokes /create-update — it reads recent activity and writes one update framed for that audience. Delivery to that audience is a separate step, not part of this skill."
+name: atrium-create-update
+description: "Synthesize an audience-shaped status update (Shipped / In Flight / Watching / Next) from the workspace timeline + open tasks and persist it as a typed `update` timeline entry. Use when the user wants a shareable progress update for a specific audience (a client, a teammate, a stakeholder) or invokes /atrium-create-update — it reads recent activity and writes one update framed for that audience. Delivery to that audience is a separate step, not part of this skill."
 version: "0.1.0"
 ---
 
-# create-update — synthesize an audience-shaped status update
+# atrium-create-update — synthesize an audience-shaped status update
 
 You are running inside **atrium**. This skill turns the workspace's recent **timeline** plus its **open tasks** into a **status update** framed for a named audience (a client, a teammate, a stakeholder). The update is persisted as a typed `update` entry on the timeline.
 
@@ -52,7 +52,7 @@ Read **`workspaceId`** from the JSON — you need it for the `--scope` value and
 
 ### 2. Read the source data
 
-First **resolve the read window to a concrete RFC3339 timestamp**. `timeline list --since` accepts an **RFC3339 / ISO-8601 instant only** — it does **not** parse relative durations like `7d` (that relative syntax belongs to the separate `edits --since` command, not here). So compute "now minus 7 days" as a literal RFC3339 timestamp before reading:
+First **resolve the read window to a concrete RFC3339 timestamp** (see Inputs: `--since` takes an RFC3339 instant, not a relative duration). Compute "now minus 7 days" as a literal RFC3339 timestamp before reading:
 
 ```bash
 SINCE=$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)   # macOS; an update covers the recent reporting window
@@ -66,7 +66,7 @@ Then read:
 "$ATRIUM_CLI_PATH" task list --json
 ```
 
-**Collect the `id` of every timeline entry you draw from** — those go into `synthesizedFrom.eventIds`. `timeline list --since` takes a **concrete RFC3339 timestamp** (e.g. `2026-05-23T00:00:00Z`), not a relative duration; confirm the flag shape with `"$ATRIUM_CLI_PATH" timeline list --help` if unsure.
+**Collect the `id` of every timeline entry you draw from** — those go into `synthesizedFrom.eventIds`. Confirm the flag shape with `"$ATRIUM_CLI_PATH" timeline list --help` if unsure.
 
 ### 3. Synthesize the update — summary, sentinel, then four sections
 
@@ -107,7 +107,7 @@ The four detail sections, in this order:
 
 Frame the tone and detail for the `--audience`: a client update is outcome-focused and light on internals; a teammate update can be more technical. Derive section contents from the timeline (commits, agent work, prior syntheses) and `task list` (open vs. done tasks).
 
-**This exact `summary → <!-- more --> → detail` shape is the prose you reuse verbatim** for both the backing note body (step 4) and the timeline `--body` (step 5). Write it once, here, in this order.
+**Write this `summary → <!-- more --> → detail` shape once, here, in this order — but it is consumed in two different cuts.** The backing **note** (step 4) holds the **full** prose (summary + sentinel + the four sections). The timeline **`--body`** (step 5) carries **only the summary segment** — the text above the `<!-- more -->` sentinel — never the four-section detail. They are deliberately **not** identical: the timeline card shows the summary, and clicking it opens the note for the full detail.
 
 ### 4. Create the backing note — holds the full update prose
 
@@ -128,14 +128,14 @@ printf '%s' "<the four-section update>" | "$ATRIUM_CLI_PATH" note write "$NOTE_I
 
 Notes:
 
-- The note **title** = the update's one-line summary (the same string you pass as the timeline `--title`). The note **body** = the full four-section update markdown (the same prose you pass as the timeline `--body`).
+- The note **title** = the update's one-line summary (the same string you pass as the timeline `--title`). The note **body** = the **full** update prose markdown (summary + sentinel + the four sections) — this is the full narrative, **not** the same string as the timeline `--body` (which carries only the summary segment; see step 5).
 - `note write` reads the body from `--content`, `--from-file <path>`, or piped stdin. Piping (`printf … | note write "$NOTE_ID"`) avoids shell-quoting a multi-paragraph body; `--from-file` is the alternative if you wrote the prose to a temp file. Do **not** pass `--source` to `note write` — it's rejected ("not yet supported by the storage layer"); the note already carries `source: agent` from `note new`.
 - `--source agent` on `note new` marks the note as agent-authored. `--workspace` is the `workspaceId` from step 1.
 - Confirm the exact flags with `"$ATRIUM_CLI_PATH" note new --help` / `note write --help` if unsure.
 
 ### 5. Write the entry — a SINGLE `timeline append`
 
-Persist the update with exactly this flag contract (the as-built Story 76-4 surface — do **not** invent flags). Include the `noteId` from step 4 in the metadata:
+Persist the update with exactly this flag contract (confirm any flag via `"$ATRIUM_CLI_PATH" timeline append --help` — the golden rule — and do **not** invent flags). Include the `noteId` from step 4 in the metadata:
 
 ```bash
 "$ATRIUM_CLI_PATH" timeline append \
@@ -143,10 +143,12 @@ Persist the update with exactly this flag contract (the as-built Story 76-4 surf
   --kind update \
   --scope "workspace:<workspaceId>" \
   --title "<one-line update summary>" \
-  --body "<the four-section update>" \
+  --body "<the SUMMARY only — the text above the <!-- more --> sentinel, NOT the four-section detail>" \
   --metadata-json "{\"audience\":\"<name>\",\"publishedTo\":[],\"synthesizedFrom\":{\"eventIds\":[\"<id1>\",\"<id2>\"]},\"tags\":[\"audience:<name>\"],\"noteId\":\"$NOTE_ID\"}" \
   --json
 ```
+
+The `--body` is the **summary segment only** — the full update prose lives **only** in the backing note (step 4). Passing the whole narrative here would duplicate storage, let the timeline body go stale against the note if the note is later edited, and double-index the same text in FTS. The summary is what the card shows; the `noteId` is what opens the full detail.
 
 Contract notes:
 
