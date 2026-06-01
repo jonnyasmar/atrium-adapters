@@ -12,7 +12,7 @@
         "macos"
       ],
       "official": true,
-      "version": "1.15.0",
+      "version": "1.16.1",
       "minAppVersion": "0.156.0"
     },
     {
@@ -70,7 +70,7 @@
         "macos"
       ],
       "official": true,
-      "version": "0.4.0",
+      "version": "0.4.2",
       "minAppVersion": "0.156.0"
     },
     {
