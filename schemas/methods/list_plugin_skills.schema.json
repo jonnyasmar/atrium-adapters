@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "list_plugin_skills output",
+  "description": "Output schema for the list_plugin_skills method — plugin skill roots to index plus config-file paths to watch for plugin install/remove/enable/disable.",
+  "type": "object",
+  "required": ["scopes", "watch"],
+  "properties": {
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["dir", "namespace"],
+        "properties": {
+          "dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Absolute path to a directory that may contain SKILL.md bundles. Need not exist — atrium skips missing scopes."
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Prefix applied to each discovered skill name (<namespace>:<skill>); typically the plugin id."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Enabled plugins' skill roots, namespaced by plugin id."
+    },
+    "watch": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Absolute config-file paths whose mutation should trigger a re-scan (e.g. the installed-plugins registry and the enable/disable settings file)."
+    }
+  },
+  "additionalProperties": false
+}
