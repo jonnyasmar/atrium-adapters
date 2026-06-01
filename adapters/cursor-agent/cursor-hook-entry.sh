@@ -38,34 +38,51 @@ ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
 # way. Convention preserved so the filter reads the same everywhere.
 BASE_FILTER='if type=="object" then . + (if .session_id then {} else {session_id: .conversation_id} end) else . end'
 
+# Capture stdin once: the stop case reads the payload (cwd) before the
+# dispatch jq below would otherwise consume it.
+input="$(cat)"
+
 # Per-event field normalization — translate Cursor-shaped payloads into
 # the field names atrium's `parseActivityEvent` reads.
+# Resolve the adapter dir up-front: the stop case reaches the
+# last-assistant-message helper, the dispatch reaches the normalizer.
+# Same `BASH_SOURCE` pattern hooks.sh uses for `pane-name-check.sh`.
+ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NORMALIZER="${ADAPTER_DIR}/normalize-hook-payload.sh"
+
+LAST_MSG=""
 case "$EVENT" in
   stop)
-    # We route Cursor's `afterAgentResponse` to atrium's `stop` (see the
-    # EVENTS table in hooks.sh for why). Cursor puts the assistant text
-    # in `text`; atrium's reducer reads `last_assistant_message`.
-    EVENT_FILTER='if type=="object" and has("text") then . + {last_assistant_message: .text} else . end'
+    # Cursor's `cursor-agent` CLI fires no hook event carrying the assistant
+    # response text (`afterAgentResponse` is IDE-only — see hooks.sh). Pull the
+    # last assistant message out-of-band from the chat sqlite; best-effort, so
+    # absence just leaves lastAssistantMessage null (backfill recovers it later).
+    cwd="$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null || true)"
+    [ -n "$cwd" ] || cwd="$PWD"
+    LAST_MSG="$(python3 "$ADAPTER_DIR/last-assistant-message.py" --cwd "$cwd" 2>/dev/null || true)"
+    if [ -n "$LAST_MSG" ]; then
+      EVENT_FILTER='. + {last_assistant_message: $lastmsg}'
+    else
+      # Legacy path: should a future Cursor `stop` ever carry inline `text`.
+      EVENT_FILTER='if type=="object" and has("text") then . + {last_assistant_message: .text} else . end'
+    fi
     ;;
   *)
     EVENT_FILTER='.'
     ;;
 esac
 
-# Resolve the adapter dir so we can locate `normalize-hook-payload.sh`.
-# Same `BASH_SOURCE` pattern hooks.sh uses for `pane-name-check.sh`.
-ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NORMALIZER="${ADAPTER_DIR}/normalize-hook-payload.sh"
-
 # For post-tool-use, route through the normalizer so atrium sees the
 # canonical `_atrium.filePaths` envelope (see ../../HOOK_ENVELOPE.md).
-# Other events skip it — they don't carry write information.
+# Other events skip it — they don't carry write information. `--arg lastmsg`
+# is always defined (empty for non-stop) so the stop filter can reference it
+# safely; jq ignores it otherwise.
 if [ "$EVENT" = "post-tool-use" ] && [ -x "$NORMALIZER" ]; then
-  jq -c "$BASE_FILTER | $EVENT_FILTER" 2>/dev/null \
+  printf '%s' "$input" | jq -c --arg lastmsg "$LAST_MSG" "$BASE_FILTER | $EVENT_FILTER" 2>/dev/null \
     | "$NORMALIZER" 2>/dev/null \
     | "$ATRIUM_CLI" hook emit "$EVENT" --adapter cursor-agent --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null
 else
-  jq -c "$BASE_FILTER | $EVENT_FILTER" 2>/dev/null \
+  printf '%s' "$input" | jq -c --arg lastmsg "$LAST_MSG" "$BASE_FILTER | $EVENT_FILTER" 2>/dev/null \
     | "$ATRIUM_CLI" hook emit "$EVENT" --adapter cursor-agent --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null
 fi
 

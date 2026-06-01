@@ -109,4 +109,14 @@ run_depth quick 2
 run_depth standard 4
 run_depth deep 5
 
+# last-assistant-message.py: the out-of-band source for Cursor's stop hook
+# (the `cursor-agent` CLI carries no assistant text in `stop`). Must extract
+# the FINAL assistant turn from store.db.
+LAST_MSG_OUT="$(python3 "$ADAPTER_DIR/last-assistant-message.py" --db "$FIXTURE_DIR/fixture-session.db")"
+if [[ "$LAST_MSG_OUT" != "There are 2 files in /tmp" ]]; then
+  echo "[FAIL] last-assistant-message.py returned '$LAST_MSG_OUT', expected 'There are 2 files in /tmp'" >&2
+  exit 1
+fi
+echo "[PASS] last-assistant-message.py extracts the final assistant turn"
+
 echo "[PASS] cursor-agent extractor fixture test complete"
