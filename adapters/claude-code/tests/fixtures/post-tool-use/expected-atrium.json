@@ -1,0 +1,10 @@
+{
+  "session_id": "fixture-cc-001",
+  "tool_name": "Edit",
+  "_atrium": {
+    "writeKind": "edit",
+    "filePaths": ["/Users/test/dev/myproject/README.md"],
+    "lineStart": null,
+    "lineEnd": null
+  }
+}
