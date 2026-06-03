@@ -130,6 +130,45 @@ The recipient sees exactly that block — they know who sent it and how to reply
 "$ATRIUM_CLI_PATH" agent message <agent-id-prefix> "I'm picking up ATR-12, taking the frontend half."
 ```
 
+## Inspecting a QA Capture bundle (CAP-#)
+
+When the user references a CAP-# — assigns you a capture task, drops `CAP-381` in a message, or asks you to "look at this recording" — drive the inspection through `atrium capture`. **Don't shell out to ffmpeg** to crop, slice, or extract frames; atrium ships native equivalents that are faster and work without any third-party binary.
+
+The recipe agents should run, in order:
+
+```bash
+# 1. Get the bundle's file paths + counts + status.
+"$ATRIUM_CLI_PATH" capture show CAP-381 --json
+```
+
+This returns absolute paths to `video.mov` / `transcript.jsonl` / `events.jsonl` / `chapters.json` / `annotations.json`, plus line / chapter / annotation counts. Read the JSONL/JSON files directly via `Read` — they're small, well-structured, and the highest-bandwidth signal in the bundle. The transcript is what the user narrated; events show input; chapters flag the moments the user explicitly marked.
+
+```bash
+# 2. Pull a still frame at a specific timestamp (the LLM-friendly path).
+"$ATRIUM_CLI_PATH" capture screenshot CAP-381 --at 16 --out /tmp/cap381_at16.png
+```
+
+This is the **primary** way to "look at" a video moment as an agent. AVFoundation gives you a full-resolution PNG at the requested timestamp — no ffmpeg dependency, no re-encode. Correlate `--at` values with timestamps from the transcript, events, chapters, or annotations to grab "what was on screen when X happened." The output path can be anywhere you can write — `/tmp/`, the bundle dir, a worktree-local scratch dir.
+
+```bash
+# 3. Slice a time-range chunk when you actually need motion.
+"$ATRIUM_CLI_PATH" capture chunk CAP-381 --start 9 --end 17 --out /tmp/cap381_9-17.mov
+```
+
+Passthrough — codec-preserving, near-instant. Use this for handing the user a focused excerpt to share, not for agent inspection (still frames carry more signal per token than video).
+
+```bash
+# 4. Enumerate / delete.
+"$ATRIUM_CLI_PATH" capture list --json     # all bundles, most-recent first
+"$ATRIUM_CLI_PATH" capture delete CAP-381 --yes
+```
+
+### What NOT to do
+
+- **Don't** run `ffmpeg -ss ... -i video.mov -frames:v 1 frame.png` — `capture screenshot` does this without the dependency, and the agent shouldn't assume ffmpeg is on PATH.
+- **Don't** run `ffprobe` to read duration / dimensions — `capture show --json` gives you durationMs + the file paths; you can read the file metadata if you really need width/height, but the transcript + events tell you more about content than dimensions ever will.
+- **Don't** decode the video yourself. If you need to "see" something at second N, screenshot at N + crop/zoom around the annotation coords from `annotations.json`.
+
 ## Task workflow
 
 When atrium launches you against a task, it sets two env vars in your shell so you don't have to pass ids around:
