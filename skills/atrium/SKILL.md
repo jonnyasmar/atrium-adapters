@@ -132,7 +132,9 @@ The recipient sees exactly that block — they know who sent it and how to reply
 
 ## Inspecting a QA Capture bundle (CAP-#)
 
-When the user references a CAP-# — assigns you a capture task, drops `CAP-381` in a message, or asks you to "look at this recording" — drive the inspection through `atrium capture`. **Don't shell out to ffmpeg** to crop, slice, or extract frames; atrium ships native equivalents that are faster and work without any third-party binary.
+When the user references a CAP-# — assigns you a capture task, drops `CAP-381` in a message, or asks you to "look at this recording" — drive the inspection through `atrium capture`. **Don't shell out to ffmpeg / sips / magick** to crop, slice, extract frames, or resize; atrium ships native equivalents that are faster and work without any third-party binary.
+
+**Run `--help` first whenever you're not sure of the exact flags.** The verbs and flags below evolve faster than this skill — `"$ATRIUM_CLI_PATH" capture --help` lists the current verbs, `"$ATRIUM_CLI_PATH" capture screenshot --help` lists every flag of that verb. The CLI is the source of truth; trust it over this document when they disagree.
 
 The recipe agents should run, in order:
 
@@ -146,9 +148,23 @@ This returns absolute paths to `video.mov` / `transcript.jsonl` / `events.jsonl`
 ```bash
 # 2. Pull a still frame at a specific timestamp (the LLM-friendly path).
 "$ATRIUM_CLI_PATH" capture screenshot CAP-381 --at 16 --out /tmp/cap381_at16.png
+
+# Crop to a region (pixel-space, top-left origin) — same shape as sips/ffmpeg.
+"$ATRIUM_CLI_PATH" capture screenshot CAP-381 --at 16 \
+    --crop 1380,920,1150,900 --out /tmp/cap381_sidebar.png
+
+# Downsample so the longest edge is at most N pixels (preserves aspect).
+"$ATRIUM_CLI_PATH" capture screenshot CAP-381 --at 16 \
+    --max-edge 1280 --out /tmp/cap381_small.png
+
+# Combine — crop a region, then shrink the crop to fit your context budget.
+"$ATRIUM_CLI_PATH" capture screenshot CAP-381 --at 16 \
+    --crop 1380,920,1150,900 --max-edge 800 --out /tmp/cap381_focused.png
 ```
 
 This is the **primary** way to "look at" a video moment as an agent. AVFoundation gives you a full-resolution PNG at the requested timestamp — no ffmpeg dependency, no re-encode. Correlate `--at` values with timestamps from the transcript, events, chapters, or annotations to grab "what was on screen when X happened." The output path can be anywhere you can write — `/tmp/`, the bundle dir, a worktree-local scratch dir.
+
+**`--crop` and `--max-edge` mean you almost never need to chain `sips` / `ffmpeg` / `magick` afterwards.** Annotations.json carries pixel-space rects of what the user drew on; combine those coordinates with `--crop` to extract exactly the region the user flagged. Use `--max-edge` to keep the resulting PNG inside your context budget (a 3600×2338 retina frame is ~3 MB; the same frame at `--max-edge 1280` is ~300 KB).
 
 ```bash
 # 3. Slice a time-range chunk when you actually need motion.
