@@ -38,6 +38,7 @@ Each bucket below maps to one top-level verb of the CLI. Run `<verb> --help` to 
 - **`hook`** — Emit adapter lifecycle events (session-start, session-stop, etc.) manually. Niche; usually you don't need this.
 - **`context`** — Print the caller's context: workspace, room, adapter, working directory. Cheap way to orient yourself in a pane.
 - **`commands`** — Enumerate dynamic commands contributed by installed extensions.
+- **`capture`** — QA Capture bundles. `show CAP-N` returns absolute paths to `video.mov` / `transcript.jsonl` / `events.jsonl` / `chapters.json` / `annotations.json` so you can read them directly. `list` enumerates captures. `delete CAP-N` removes one. `start` / `stop` / `flag` drive the live recorder when atrium is running. For inspecting moments inside a recording: `screenshot CAP-N --at <sec> [--out <path>]` writes a single full-resolution PNG frame at the timestamp (highest-signal for LLM agents — correlate with transcript/event/chapter timestamps to see what was on screen at that moment), and `chunk CAP-N --start <sec> --end <sec> [--out <path>]` slices a time range out of `video.mov` as a new `.mov` (passthrough — no re-encode). Both are native AVFoundation — no ffmpeg required.
 - **`version`** — Show atrium version.
 
 If you need a capability that isn't in that list, it probably lives inside one of these verbs — check `--help`.
