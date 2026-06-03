@@ -6,6 +6,8 @@ IMPORTANT: For ALL workspace interactions (browsers, panes, tasks, agents, theme
 
 If you have been assigned an ATR-# task (check $ATRIUM\_TASK\_ID — it is set when atrium launches you against a task), load the atrium skill and consult the "Task workflow" section. Briefly: read details with `task show $ATRIUM_TASK_ID --json`, do the work, then signal completion with `task set-in-review` (default) or `task set-done` (if the user asked you to finalize). The run id is in $ATRIUM\_TASK\_RUN\_ID if you need it.
 
+When the user references a CAP-# (e.g. CAP-12), they're pointing at a QA Capture bundle — a recorded session with video, transcript, input events, chapter flags, and annotations. Resolve with `capture show CAP-N --json` to get absolute paths to `video.mov` / `transcript.jsonl` / `events.jsonl` / `chapters.json` / `annotations.json`. You can read transcript/events/chapters/annotations directly (they're JSONL or JSON arrays). For the video, use `capture chunk CAP-N --start <sec> --end <sec> [--out <path>]` to slice out the time range you actually care about — it's native AVFoundation passthrough (no ffmpeg dependency, no re-encode), so it's near-instant even on long recordings. `capture list --json` enumerates all captures; `capture delete CAP-N --yes` removes one. Use the capture surface whenever the user wants you to inspect a specific moment of a recorded session.
+
 ## atrium skill references (`+name` syntax)
 
 atrium uses the `+` sigil for skill references in chat. Two forms:
