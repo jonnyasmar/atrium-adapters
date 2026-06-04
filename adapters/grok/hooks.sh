@@ -94,34 +94,18 @@ build_hooks_json() {
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
 
-  # Pane-name nudge on UserPromptSubmit so the agent gets a per-prompt
-  # reminder until the pane is renamed off its default launcher name.
-  local rename_cmd rename_entry
-  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh grok"
-  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
-    '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
-  hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
-
-  # `+name@scope` sigil auto-resolve: appended to UserPromptSubmit so
-  # the CLI scans the prompt for sigils, resolves bodies via the
-  # registry, and emits `{"hookSpecificOutput": {"additionalContext":
-  # …}}` for grok to inject as this-turn context.
-  local sigil_cmd sigil_entry
-  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-%s}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok 2>/dev/null || true' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$ATRIUM_CLI_FALLBACK")"
-  sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
-    '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
-  hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
-
-  # Skills resolve-manifest on SessionStart so the pane-specific v1
-  # manifest gets injected as session context.
-  local ctx_cmd ctx_entry
-  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-%s}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok 2>/dev/null || true' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$ATRIUM_CLI_FALLBACK")"
-  ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
-    '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
-  hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
-
+  # NO context-injection wiring (pane-rename nudge / sigils / manifest).
+  # Grok only consumes stdout from BLOCKING hooks (PreToolUse, for the
+  # allow/deny decision); ALL other hooks are "passive" and their stdout is
+  # ignored (per ~/.grok/docs/user-guide/10-hooks.md "Passive Hooks" + a
+  # live `grok -p` probe where an injected UserPromptSubmit additionalContext
+  # directive was NOT obeyed, 2026-06-04). So `pane-name-check.sh`,
+  # `skills resolve-prompt-sigils`, and `skills resolve-manifest` would all
+  # produce output grok throws away — wiring them just burns a CLI call per
+  # prompt. Grok therefore can't self-rename or receive the atrium context
+  # (capability ceiling, like cursor-agent's per-prompt path). If a future
+  # grok adds additionalContext support for UserPromptSubmit/SessionStart,
+  # re-add the wiring + flip hookEnvelopes back to hookSpecificOutput/identity.
   jq -n --argjson hooks "$hooks" \
     '{description: "atrium-grok hook bridge", hooks: $hooks}'
 }

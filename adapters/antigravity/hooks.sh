@@ -77,7 +77,12 @@ build_post_tool_use_command() {
 # so the "first-invocation-only" gate never triggered. Atrium handles
 # duplicate session-starts idempotently (claude-code's hooks also fire
 # session-start on every "startup|resume" SessionStart event, so this is
-# the established pattern). Output `{}` (no injectSteps).
+# the established pattern).
+#
+# Stdout: piped to inject-context.sh, which (on invocationNum==0) emits an
+# agy `injectSteps` envelope carrying the atrium SessionStart manifest +
+# resolved sigils + the pane-rename nudge — agy's confirmed same-turn
+# context-injection primitive. Continuations / any failure emit `{}`.
 build_pre_invocation_command() {
   # PreInvocation fires for EVERY model call. In an agentic tool loop a
   # single user turn produces multiple PreInvocations: invocationNum=0
@@ -88,8 +93,8 @@ build_pre_invocation_command() {
   # Gate user-prompt-submit on invocationNum=0; always emit session-start
   # (atrium handles duplicates idempotently — matches claude-code's
   # startup|resume SessionStart pattern).
-  printf '%s; %s; payload=$(cat); inv=$(printf "%%s" "$payload" | jq -r ".invocationNum // 0" 2>/dev/null || echo 0); log "PreInvocation inv=$inv stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" session-start | "${ATRIUM_CLI_PATH:-%s}" hook emit session-start --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "session-start emit rc=$?"; if [ "$inv" = "0" ]; then printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" user-prompt-submit | "${ATRIUM_CLI_PATH:-%s}" hook emit user-prompt-submit --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "user-prompt-submit emit rc=$?"; else log "user-prompt-submit suppressed (continuation invocation)"; fi; printf "{}\\n"; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK"
+  printf '%s; %s; payload=$(cat); inv=$(printf "%%s" "$payload" | jq -r ".invocationNum // 0" 2>/dev/null || echo 0); log "PreInvocation inv=$inv stdin=$(printf %%s \"$payload\" | head -c 400)"; printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" session-start | "${ATRIUM_CLI_PATH:-%s}" hook emit session-start --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "session-start emit rc=$?"; if [ "$inv" = "0" ]; then printf "%%s" "$payload" | "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/normalize-hook-payload.sh" user-prompt-submit | "${ATRIUM_CLI_PATH:-%s}" hook emit user-prompt-submit --adapter antigravity --pane-id "${ATRIUM_PANE_ID:-}" --json >/dev/null 2>>/tmp/atrium-agy-hooks.log; log "user-prompt-submit emit rc=$?"; else log "user-prompt-submit suppressed (continuation invocation)"; fi; printf "%%s" "$payload" | ATRIUM_CLI_PATH="${ATRIUM_CLI_PATH:-%s}" ATRIUM_DATA_DIR="${ATRIUM_DATA_DIR:-%s}" "${ATRIUM_DATA_DIR:-%s}/adapters/antigravity/inject-context.sh" 2>>/tmp/atrium-agy-hooks.log; log "inject rc=$?"; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$LOG" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_CLI_FALLBACK" "$ATRIUM_CLI_FALLBACK" "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_DATA_DIR_FALLBACK"
 }
 
 # PostInvocation fires per model-invocation, not per-turn. With agentic

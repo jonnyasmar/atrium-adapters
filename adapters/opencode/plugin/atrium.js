@@ -77,6 +77,112 @@ function emit(event, payload) {
   }
 }
 
+// Run an atrium CLI command and capture its stdout (vs. emit()'s fire-
+// and-forget). Used by the system-prompt transform to fetch context to
+// inject. Fail-open: any error / timeout resolves to "" so a slow or
+// unreachable CLI never blocks opencode's request.
+function runAtriumCapture(args, stdin, timeoutMs = 2500) {
+  if (!ATRIUM_ACTIVE) return Promise.resolve("");
+  return new Promise((resolve) => {
+    let out = "";
+    let settled = false;
+    const finish = (v) => {
+      if (!settled) {
+        settled = true;
+        resolve(v);
+      }
+    };
+    try {
+      const child = spawn(ATRIUM_CLI, args, { stdio: ["pipe", "pipe", "ignore"] });
+      const timer = setTimeout(() => {
+        try {
+          child.kill();
+        } catch {
+          /* already gone */
+        }
+        finish("");
+      }, timeoutMs);
+      child.stdout.on("data", (d) => {
+        out += d.toString();
+      });
+      child.on("close", () => {
+        clearTimeout(timer);
+        finish(out);
+      });
+      child.on("error", () => {
+        clearTimeout(timer);
+        finish("");
+      });
+      if (stdin != null) child.stdin.write(stdin);
+      child.stdin.end();
+    } catch {
+      finish("");
+    }
+  });
+}
+
+// Generic launcher names atrium nudges the agent to rename away from.
+// Mirrors adapters/shared/pane-name-check.sh — opencode can't use that
+// shell script (it shapes a hook-stdout envelope), so the same check lives
+// here and the nudge is pushed onto the system prompt.
+const GENERIC_PANE_NAMES = new Set([
+  "OpenCode",
+  "Claude Code",
+  "Codex",
+  "Codex CLI",
+  "Gemini",
+  "Gemini CLI",
+  "Grok",
+  "Antigravity",
+  "Pi",
+  "Cursor",
+  "Cursor Agent",
+  "Terminal",
+  "",
+]);
+
+const RENAME_NUDGE = `[atrium] This pane is still using its default launcher name. Before responding, rename it to a 10–20 char description of the work:
+
+  $ATRIUM_CLI_PATH pane rename "$ATRIUM_PANE_ID" --name "<new name>"
+
+Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"), describe the work not your role, no status/timestamp/adapter name. If the user has already chosen a name, leave it alone.`;
+
+// Extract the injected context string from a resolve-prompt-sigils response
+// (claude-shaped hookSpecificOutput envelope); "" for the no-op `{}` envelope.
+function parseAdditionalContext(raw) {
+  if (!raw.trim()) return "";
+  try {
+    const j = JSON.parse(raw);
+    const ctx = j?.hookSpecificOutput?.additionalContext;
+    return typeof ctx === "string" ? ctx : "";
+  } catch {
+    return "";
+  }
+}
+
+// The SessionStart manifest (atrium-context.md + skills) is session-stable,
+// so fetch it once and reuse across requests rather than re-shelling out
+// on every system-prompt build.
+let manifestCache = null;
+// Latest user prompt awaiting `+name` sigil resolution. Captured in
+// chat.message (which carries the prompt text) and consumed by the next
+// system.transform (which has no prompt of its own), then cleared so
+// tool-loop continuation requests don't re-resolve a stale prompt.
+let pendingSigilPrompt = null;
+
+async function renameNudgeIfGeneric() {
+  const out = await runAtriumCapture(["pane", "list", "--filter", `id=${ATRIUM_PANE_ID}`, "--json"]);
+  if (!out.trim()) return "";
+  try {
+    const arr = JSON.parse(out);
+    const name = Array.isArray(arr) ? arr[0]?.name : undefined;
+    if (typeof name === "string" && GENERIC_PANE_NAMES.has(name)) return RENAME_NUDGE;
+  } catch {
+    /* tolerate */
+  }
+  return "";
+}
+
 // Module-level state: remember the most recent assistant message text so
 // we can attach it to the `stop` event. opencode doesn't deliver it in
 // any hook input — it streams through the catch-all `event` bus across
@@ -182,6 +288,8 @@ export const AtriumPlugin = async (_input, _options) => {
         session_id: input?.sessionID,
         user_prompt: userText || null,
       });
+      // Hand the prompt to the next system.transform for sigil resolution.
+      if (userText) pendingSigilPrompt = userText;
     },
 
     // ── Tool lifecycle. opencode's hook signature is (input, output)
@@ -209,6 +317,54 @@ export const AtriumPlugin = async (_input, _options) => {
     // ── Permission flow.
     "permission.ask": async (input, _output) => {
       emit("permission-request", { session_id: lastSessionId, permission: input });
+    },
+
+    // ── Context injection. opencode has no return-based prompt hook, but
+    // the system prompt is assembled through this transform: pushing onto
+    // output.system adds system-prompt segments for the request. This is
+    // opencode's same-turn injection primitive — the equivalent of Claude's
+    // UserPromptSubmit additionalContext / pi's before_agent_start. We use
+    // it to deliver the atrium SessionStart manifest (atrium-context.md +
+    // skills, telling the agent it runs inside atrium and how to drive it)
+    // and the pane-rename nudge while the pane name is still generic. Both
+    // fetches are fail-open. (Per-prompt `+name` sigil expansion isn't wired
+    // here yet — system.transform has no prompt text; that needs
+    // messages.transform and is a follow-up.)
+    "experimental.chat.system.transform": async (_input, output) => {
+      if (!ATRIUM_ACTIVE || !output || !Array.isArray(output.system)) return;
+      if (manifestCache == null) {
+        const m = await runAtriumCapture([
+          "skills",
+          "resolve-manifest",
+          "--pane-id",
+          ATRIUM_PANE_ID,
+          "--adapter",
+          "opencode",
+        ]);
+        if (m.trim()) manifestCache = m;
+      }
+      if (manifestCache) output.system.push(manifestCache);
+      const nudge = await renameNudgeIfGeneric();
+      if (nudge) output.system.push(nudge);
+      // Per-prompt `+name` sigil bodies — resolve once per user message
+      // (the prompt was captured in chat.message), then clear so tool-loop
+      // continuation requests don't re-inject a stale prompt's sigils.
+      let sigilCtx = "";
+      if (pendingSigilPrompt != null) {
+        const p = pendingSigilPrompt;
+        pendingSigilPrompt = null;
+        const sigilOut = await runAtriumCapture(
+          ["skills", "resolve-prompt-sigils", "--pane-id", ATRIUM_PANE_ID, "--adapter", "opencode"],
+          JSON.stringify({ prompt: p }),
+        );
+        sigilCtx = parseAdditionalContext(sigilOut);
+        if (sigilCtx) output.system.push(sigilCtx);
+      }
+      debug("system.transform inject", {
+        manifest: Boolean(manifestCache),
+        nudge: nudge.length > 0,
+        sigils: sigilCtx.length > 0,
+      });
     },
   };
 };

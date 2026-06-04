@@ -3,9 +3,17 @@
 # rename its pane while it still carries a generic launcher name.
 #
 # Args:
-#   $1  shape — one of: claude | codex | gemini | cursor (controls stdout
-#       envelope shape; mirrors the SessionStart context-inject envelope
-#       which now lives in SkillsHandler::manifest() per NFR18)
+#   $1  shape — one of: claude | codex | gemini | grok | cursor | raw
+#       (controls stdout envelope shape; `raw` emits the bare nudge text for
+#       plugin/extension adapters that wrap it themselves. Mirrors the
+#       per-adapter `hookEnvelopes`
+#       declaration in adapter.json that SkillsHandler uses for sigil
+#       resolution per NFR18). Only wire this for adapters whose
+#       hookEnvelopes.userPromptSubmit kind is NOT "none" — adapters that
+#       can't inject same-turn context (antigravity, opencode, pi) get no
+#       per-prompt nudge. cursor-agent is also "none" today (its
+#       beforeSubmitPrompt stdout isn't consumed); the cursor shape below
+#       is retained only so the no-op stays JSON-valid if re-wired.
 #
 # Behavior:
 #   - Always emits valid JSON to stdout. Codex strictly parses every
@@ -31,11 +39,20 @@
 
 set -u
 
-SHAPE="${1:?shape arg required (claude|codex|gemini|cursor)}"
+SHAPE="${1:?shape arg required (claude|codex|gemini|grok|cursor|raw)}"
 
-# Always emits valid JSON. The body decides what to put inside; this trap
-# guarantees the closing emit and exit so every code path stays JSON-safe.
-EMIT='{}'
+# Default no-op output. Shell-hook shapes need valid JSON (`{}`); the `raw`
+# shape (consumed by plugin/extension adapters + antigravity's injectSteps
+# builder, which wrap the text themselves) wants an empty string so the
+# caller can detect "no nudge" by emptiness.
+if [ "$SHAPE" = "raw" ]; then
+  EMIT=""
+else
+  EMIT='{}'
+fi
+
+# The trap guarantees the closing emit + exit so every code path stays
+# output-safe (valid JSON for hook shapes, empty/text for raw).
 finish() {
   printf '%s\n' "$EMIT"
   exit 0
@@ -68,6 +85,16 @@ build_envelope() {
         '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}' \
         2>/dev/null || printf '%s' '{}')"
       ;;
+    grok)
+      # Grok is Claude-settings-compatible: its UserPromptSubmit hook
+      # consumes hookSpecificOutput.additionalContext identically to Claude
+      # (adapter.json declares hookEnvelopes.userPromptSubmit kind
+      # "hookSpecificOutput", hookEventName "UserPromptSubmit"). Same
+      # envelope as the claude/codex arm.
+      EMIT="$(jq -n --arg c "$context" \
+        '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}' \
+        2>/dev/null || printf '%s' '{}')"
+      ;;
     gemini)
       # Gemini BeforeAgent: hookSpecificOutput.additionalContext, with
       # hookEventName mirroring the firing event (same envelope shape as
@@ -83,6 +110,15 @@ build_envelope() {
       EMIT="$(jq -n --arg c "$context" \
         '{additional_context: $c}' \
         2>/dev/null || printf '%s' '{}')"
+      ;;
+    raw)
+      # Bare reminder text, no JSON envelope. Plugin/extension adapters
+      # (pi, opencode) and antigravity's injectSteps builder call this to
+      # get the canonical nudge text + generic-name check from one place,
+      # then wrap it in their own injection mechanism. Non-generic panes
+      # never reach build_envelope, so the EXIT default ("") signals "no
+      # nudge".
+      EMIT="$context"
       ;;
     *)
       echo "pane-name-check.sh: unknown shape '$SHAPE'" >&2
@@ -112,7 +148,7 @@ PANE_NAME="$("$ATRIUM_CLI" pane list --filter "id=$ATRIUM_PANE_ID" --json 2>/dev
 # fields in adapters/*/adapter.json. Empty string covers the case where
 # a pane has no name at all.
 case "$PANE_NAME" in
-  "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Cursor"|"Cursor Agent"|"Terminal"|"")
+  "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Grok"|"Antigravity"|"OpenCode"|"Pi"|"Cursor"|"Cursor Agent"|"Terminal"|"")
     : # generic — fall through
     ;;
   *)

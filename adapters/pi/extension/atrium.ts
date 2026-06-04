@@ -82,6 +82,121 @@ function emit(event: string, payload?: Record<string, unknown>) {
   }
 }
 
+// Run an atrium CLI command and capture its stdout. Unlike emit() (fire-
+// and-forget), this awaits the result so a hook can inject the returned
+// context into the turn. Fail-open: any error / timeout resolves to ""
+// so a slow or unreachable CLI never blocks pi's agent loop.
+function runAtriumCapture(
+  args: string[],
+  stdin?: string,
+  timeoutMs = 2500,
+): Promise<string> {
+  if (!ATRIUM_ACTIVE) return Promise.resolve("");
+  return new Promise((resolve) => {
+    let out = "";
+    let settled = false;
+    const finish = (v: string) => {
+      if (!settled) {
+        settled = true;
+        resolve(v);
+      }
+    };
+    try {
+      const child = spawn(ATRIUM_CLI, args, {
+        stdio: ["pipe", "pipe", "ignore"],
+      });
+      const timer = setTimeout(() => {
+        try {
+          child.kill();
+        } catch {
+          /* already gone */
+        }
+        finish("");
+      }, timeoutMs);
+      child.stdout.on("data", (d: Buffer) => {
+        out += d.toString();
+      });
+      child.on("close", () => {
+        clearTimeout(timer);
+        finish(out);
+      });
+      child.on("error", () => {
+        clearTimeout(timer);
+        finish("");
+      });
+      if (stdin != null) child.stdin.write(stdin);
+      child.stdin.end();
+    } catch {
+      finish("");
+    }
+  });
+}
+
+// Extract the injected context string from a resolve-prompt-sigils
+// response (claude-shaped hookSpecificOutput envelope). Returns "" for the
+// no-op `{}` envelope or any parse failure.
+function parseAdditionalContext(raw: string): string {
+  if (!raw.trim()) return "";
+  try {
+    const j = JSON.parse(raw) as {
+      hookSpecificOutput?: { additionalContext?: unknown };
+    };
+    const ctx = j?.hookSpecificOutput?.additionalContext;
+    return typeof ctx === "string" ? ctx : "";
+  } catch {
+    return "";
+  }
+}
+
+// Generic launcher names atrium nudges the agent to rename away from.
+// Mirrors adapters/shared/pane-name-check.sh — pi can't use that shell
+// script (it shapes a hook-stdout envelope), so the same check lives here
+// and the nudge is injected via before_agent_start.systemPrompt.
+const GENERIC_PANE_NAMES = new Set([
+  "Pi",
+  "Claude Code",
+  "Codex",
+  "Codex CLI",
+  "Gemini",
+  "Gemini CLI",
+  "Grok",
+  "Antigravity",
+  "OpenCode",
+  "Cursor",
+  "Cursor Agent",
+  "Terminal",
+  "",
+]);
+
+const RENAME_NUDGE = `[atrium] This pane is still using its default launcher name. Before responding, rename it to a 10–20 char description of the work:
+
+  $ATRIUM_CLI_PATH pane rename "$ATRIUM_PANE_ID" --name "<new name>"
+
+Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"), describe the work not your role, no status/timestamp/adapter name. If the user has already chosen a name, leave it alone.`;
+
+// Returns the rename nudge when the pane still carries a generic launcher
+// name, else "". Silent on any CLI failure.
+async function renameNudgeIfGeneric(): Promise<string> {
+  const out = await runAtriumCapture([
+    "pane",
+    "list",
+    "--filter",
+    `id=${ATRIUM_PANE_ID}`,
+    "--json",
+  ]);
+  if (!out.trim()) return "";
+  try {
+    const arr = JSON.parse(out) as Array<{ name?: unknown }>;
+    const name = Array.isArray(arr) ? arr[0]?.name : undefined;
+    if (typeof name === "string" && GENERIC_PANE_NAMES.has(name)) {
+      return RENAME_NUDGE;
+    }
+  } catch {
+    /* tolerate */
+  }
+  return "";
+}
+
 // ── Module-level state ──────────────────────────────────────────────
 // pi extension modules are loaded once per session and stay alive, so
 // we use module-level state for:
@@ -92,6 +207,9 @@ function emit(event: string, payload?: Record<string, unknown>) {
 //   message_end events where role === "assistant".
 let sessionId: string | null = null;
 let lastAssistantMessage: string | null = null;
+// The atrium SessionStart manifest (atrium-context.md + skills) is injected
+// once per session as a persistent hidden message; this gates that.
+let manifestInjected = false;
 
 // Derive a stable session id from the pi session file path. pi stores
 // sessions as `~/.pi/agent/sessions/<cwd-encoded>/<uuid>.jsonl`; the
@@ -129,6 +247,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (event, ctx) => {
     sessionId = resolveSessionId(ctx as { sessionManager?: { getSessionFile?: () => string | null } });
     lastAssistantMessage = null;
+    manifestInjected = false;
     emit("session-start", {
       session_id: sessionId,
       reason: (event as { reason?: string })?.reason,
@@ -195,6 +314,78 @@ export default function (pi: ExtensionAPI) {
       user_prompt: e.text ?? "",
       source: e.source,
     });
+  });
+
+  // ── Context injection ────────────────────────────────────────────
+  // before_agent_start fires after the user submits a prompt, before the
+  // agent loop, and (unlike pi.on emit handlers) its return value is
+  // consumed: `message` injects a persistent message, `systemPrompt`
+  // replaces the turn's system prompt (chained across extensions). This
+  // is pi's same-turn context-injection primitive — the equivalent of
+  // Claude's UserPromptSubmit additionalContext. We use it to deliver the
+  // three things atrium injects for first-class adapters:
+  //   1. the SessionStart manifest (atrium-context.md + skills) — once,
+  //      as a persistent hidden message,
+  //   2. resolved `+name` sigil bodies for this prompt,
+  //   3. the pane-rename nudge while the pane name is still generic.
+  // All fetches are fail-open (empty string on any error) so a slow or
+  // unreachable atrium CLI never blocks pi's turn.
+  pi.on("before_agent_start", async (event) => {
+    if (!ATRIUM_ACTIVE) return undefined;
+    const e = event as { prompt?: string; systemPrompt?: string };
+    const result: {
+      message?: { customType: string; content: string; display: boolean };
+      systemPrompt?: string;
+    } = {};
+
+    if (!manifestInjected) {
+      manifestInjected = true;
+      const manifest = await runAtriumCapture([
+        "skills",
+        "resolve-manifest",
+        "--pane-id",
+        ATRIUM_PANE_ID,
+        "--adapter",
+        "pi",
+      ]);
+      if (manifest.trim()) {
+        result.message = {
+          customType: "atrium-context",
+          content: manifest,
+          display: false,
+        };
+      }
+    }
+
+    const additions: string[] = [];
+
+    const sigilOut = await runAtriumCapture(
+      [
+        "skills",
+        "resolve-prompt-sigils",
+        "--pane-id",
+        ATRIUM_PANE_ID,
+        "--adapter",
+        "pi",
+      ],
+      JSON.stringify({ prompt: e.prompt ?? "" }),
+    );
+    const sigilCtx = parseAdditionalContext(sigilOut);
+    if (sigilCtx) additions.push(sigilCtx);
+
+    const nudge = await renameNudgeIfGeneric();
+    if (nudge) additions.push(nudge);
+
+    if (additions.length > 0) {
+      result.systemPrompt = `${e.systemPrompt ?? ""}\n\n${additions.join("\n\n")}`;
+    }
+
+    debug("before_agent_start inject", {
+      manifest: result.message != null,
+      sigils: sigilCtx.length > 0,
+      nudge: nudge.length > 0,
+    });
+    return Object.keys(result).length > 0 ? result : undefined;
   });
 
   // ── Assistant message capture ────────────────────────────────────
