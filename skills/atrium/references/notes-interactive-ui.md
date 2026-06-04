@@ -1,6 +1,38 @@
-# Notes — canvas & html interactive UIs
+# Notes — advanced operations
 
-This reference is the deep-dive companion to the `## Notes` section of the parent `SKILL.md`. Read it when you're actually authoring a canvas or HTML note — for everyday CLI work it isn't needed.
+Deep-dive companion to the `## Notes` section of the parent `SKILL.md`. Read it when editing a note body file directly, or authoring a canvas / HTML note — for everyday `note new` / `read` / `write` / `search` work it isn't needed.
+
+## Editing note body files directly
+
+Every note is file-backed under `$ATRIUM_DATA_DIR/notes/$ATRIUM_WORKSPACE_ID/[<folder>...]/<noteId>/`. Each note directory contains:
+
+- `meta.json` — title, type, tags, folder, timestamps, source.
+- one body file per type — `note.md` (markdown), `note.excalidraw` (sketch), `note.canvas.json` (canvas), `note.html` (html).
+- `state.json` — canvas form-state (atrium-managed; **do not hand-edit**).
+- `viewport.json` — pane-local scroll/cursor (atrium-managed; **do not hand-edit**).
+
+This gives you **two ways to mutate a note** — pick by what you're doing:
+
+| Operation | Use |
+|---|---|
+| Create / delete / list / full-text search | `atrium note new` / `delete` / `list` / `search` |
+| Read a body (with filters, render-via-app, sketch SVG/PNG export) | `atrium note read` |
+| Bulk-replace a body in one shot | `atrium note write` (`--content` / `--from-file` / piped stdin) |
+| **Incremental body edits** — append a section, fix a typo, refactor a heading | **`Edit` / `Write` directly on the body file** |
+| **Stream a canvas spec into existence** live | `atrium note canvas-patch <id>` — see **Streaming a canvas spec** below |
+
+atrium watches the notes tree and reconciles automatically: write the body file directly and the FTS index updates and any open notepad pane refetches in real-time. **Direct file edits are a first-class workflow, not a backdoor** — for incremental changes, `Edit` is much cheaper than `read` → mutate → `write` round-trips.
+
+Rules:
+
+- **Always use env vars for the path.** `$ATRIUM_DATA_DIR` for the install root (varies by channel: `~/.atrium`, `~/.atrium-dev`, `~/.atrium-beta`) and `$ATRIUM_WORKSPACE_ID` for the workspace. **Never hardcode `~/.atrium/`** — dev/beta channels won't see the write. If `$ATRIUM_DATA_DIR` is unset (rare), derive it: `dirname $(dirname "$ATRIUM_CLI_PATH")`.
+- **`workspaceId` ≠ `sessionId` ≠ `paneId`.** All three are UUIDs that appear near notes. The path segment after `/notes/` is `workspaceId` (= `$ATRIUM_WORKSPACE_ID`), **never** the `originSessionId` / `originAgentPaneId` from `meta.json`. Mixing them up writes a 0-byte phantom no app reads.
+- **Find a note's directory** via `atrium note list --json` (returns `id`, `folder`, `type`). Compose `$ATRIUM_DATA_DIR/notes/$ATRIUM_WORKSPACE_ID/<folder>/<noteId>/<body-filename>` (omit `<folder>/` when empty).
+- **When in doubt, use `atrium note write`** — it resolves root + workspace from the CLI binary path, so it can't be misrouted.
+- **Never touch `state.json` or `viewport.json`** — they back atrium UI contracts.
+- **Don't change `id`, `folder`, or `createdAt` in `meta.json`** — the directory layout is the truth for `folder` (a rename is a directory move). Editing `title`, `tags`, or `source` is fine; the watcher picks it up.
+
+## Canvas & html interactive UIs
 
 atrium notes have four modes. Two (markdown, sketch) are agent-readable content. Two (**canvas**, **html**) are **interactive UIs the user fills in and sends back to you**. Use canvas/html when you need the user to:
 

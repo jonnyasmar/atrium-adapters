@@ -1,6 +1,9 @@
 {
   "version": 1,
   "references": [
-    "notes-interactive-ui.md"
+    "notes-interactive-ui.md",
+    "capture.md",
+    "teaching-mode.md",
+    "authoring-skills.md"
   ]
 }
