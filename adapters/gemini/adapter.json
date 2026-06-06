@@ -86,6 +86,9 @@
       "kind": "hookSpecificOutput",
       "hookEventName": "BeforeAgent",
       "includeSystemMessage": true
+    },
+    "preToolUse": {
+      "kind": "none"
     }
   }
 }

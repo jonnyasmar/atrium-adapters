@@ -29,6 +29,7 @@ Each bucket is one top-level verb. Run `<verb> --help` for its full surface.
 - **`note`** — Workspace-scoped notes in four modes (markdown, sketch, canvas, html): new / list / read / write / search / open / delete / `canvas-patch` / history. Markdown supports mermaid via fenced code blocks. See **Notes** below.
 - **`room`** — List, switch, close rooms.
 - **`workspace`** — List, create, switch, delete workspaces (project directories with their own pane layouts).
+- **`workspace-command`** — The workspace's named background commands (dev server, watcher, etc.): list / status / start / stop / restart / logs / clear / create / edit / delete. **Check before you launch** — see **Workspace commands** below.
 - **`browser`** — Drive browser panes: navigate, click, fill, type, press, select, scroll, eval JS, screenshot, snapshot, wait, read attributes. Always prefer this over Playwright or any browser MCP.
 - **`agent`** — List active agent panes and send framed messages between them. See **Agent-to-agent messaging** below.
 - **`theme`** — List and switch themes.
@@ -111,6 +112,30 @@ When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUI
 Both `set-in-review` and `set-done` read `$ATRIUM_TASK_RUN_ID` by default (override with `--run-id`). `set-in-review` moves the card to the configured review status so the user can approve your changes; `set-done` moves it to completion AND marks the run complete.
 
 **Manual lifecycle** (rarely needed — atrium launches you): `task launch ATR-12 --pane-id "$ATRIUM_PANE_ID" --adapter <name>` (self-launch; `--adapter` required in piped/`--json` mode); `run show <id> --json`; `run complete <id>`; `run resume <id> --pane-id "$ATRIUM_PANE_ID"` (headless pickup of an interrupted run). Discover runs via `run list --task ATR-N` or `--workspace <id>`, with `--state interrupted`.
+
+## Workspace commands
+
+A workspace defines **named background commands** — its dev server, test watcher, build, etc. — that run in long-lived background terminals. They're the workspace's "Run" surface; you drive them with `workspace-command`, scoped to your workspace (no id needed — it resolves from your pane). A worktree inherits its parent's commands (own definitions win on a name clash).
+
+**Anti-footgun — commands may already be running. Check before you launch.** Don't blindly start a dev server; it may already be up (a stray second one wastes a port and confuses everyone). The flow:
+
+```bash
+"$ATRIUM_CLI_PATH" workspace-command list --json              # what's defined + each one's state
+"$ATRIUM_CLI_PATH" workspace-command status "Dev Server"      # one command: running / stopped / not-launched
+"$ATRIUM_CLI_PATH" workspace-command logs "Dev Server"        # recent scrollback (ring buffer, --tail N)
+```
+
+`start` is **idempotent** — if the command is already running it does NOT launch a second instance; it reports the existing one and points you at `logs`. So even if you forget to check, `start` won't double-launch — but reading `logs`/`status` first tells you *why* something's already up.
+
+```bash
+"$ATRIUM_CLI_PATH" workspace-command start "Dev Server"       # launch (or no-op if already running)
+"$ATRIUM_CLI_PATH" workspace-command restart "Dev Server"     # re-run the line in the same shell
+"$ATRIUM_CLI_PATH" workspace-command stop "Dev Server"        # SIGTERM, keep the shell + scrollback
+```
+
+Commands resolve by **label or id** (id wins). Full verb surface — `create` / `edit` / `delete` manage the definitions themselves — via `workspace-command --help` and `workspace-command <verb> --help`.
+
+atrium also injects the live defined-and-running list into your session automatically (at session start, and a terse "already running" nudge before a shell command), so you often already know — but `list`/`status` is the authoritative check.
 
 ## Notes
 

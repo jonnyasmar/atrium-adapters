@@ -63,6 +63,9 @@
       "kind": "hookSpecificOutput",
       "hookEventName": "UserPromptSubmit",
       "includeSystemMessage": false
+    },
+    "preToolUse": {
+      "kind": "none"
     }
   }
 }

@@ -95,7 +95,7 @@
     },
     "hookEnvelopes": {
       "type": "object",
-      "description": "SDK v2. Optional. Declares the per-event response envelope shape atrium core should emit when the underlying tool fires SessionStart and UserPromptSubmit hooks. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit — the Claude-Code-compatible defaults).",
+      "description": "SDK v2. Optional. Declares the per-event response-envelope shape atrium core emits when the underlying tool fires SessionStart, UserPromptSubmit, and PreToolUse hooks. This is ALSO the per-event injection-capability matrix (Epic 77): for each event, 'kind: none' (or an omitted field) means the adapter CANNOT have context injected back into that event ('cannot inject unless verified' — the conservative default); any non-none 'kind' means the adapter IS injection-capable for that event and atrium renders the assembled context in that envelope shape. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their capability + envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit, and PreToolUse incapable — the Claude-Code-compatible defaults).",
       "properties": {
         "sessionStartManifest": {
           "description": "Envelope wrapping the SessionStart manifest stdout. 'identity' = raw text/plain (Claude Code, Codex, Grok); 'hookSpecificOutput' = JSON {hookSpecificOutput: {hookEventName, additionalContext}} (Gemini); 'flatAdditionalContext' = JSON {additional_context} (Cursor); 'none' = empty body (skip injection).",
@@ -125,6 +125,22 @@
                 "kind": { "const": "hookSpecificOutput" },
                 "hookEventName": { "type": "string", "minLength": 1, "description": "Value placed in hookSpecificOutput.hookEventName (e.g. 'UserPromptSubmit', 'BeforeAgent')." },
                 "includeSystemMessage": { "type": "boolean", "description": "When true, the envelope also includes a top-level 'systemMessage' field with the resolution status line. Defaults to false. Set true for claude-code/gemini/grok; false for codex." }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "preToolUse": {
+          "description": "Epic 77 Story 77.5. Envelope + injection-capability for the PreToolUse hook (atrium's RunCommandStatusProvider injects a terse 'these run-commands are already running' nudge here, before a shell-class tool call). 'hookSpecificOutput' is the Claude-Code-shaped envelope (capable: atrium renders the assembled nudge in it). 'none' (or an omitted preToolUse field) means the adapter CANNOT inject at PreToolUse — the conservative default. Only set a non-none kind for an adapter VERIFIED to consume injected PreToolUse context.",
+          "oneOf": [
+            { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "none" } }, "additionalProperties": false },
+            {
+              "type": "object",
+              "required": ["kind", "hookEventName"],
+              "properties": {
+                "kind": { "const": "hookSpecificOutput" },
+                "hookEventName": { "type": "string", "minLength": 1, "description": "Value placed in hookSpecificOutput.hookEventName (e.g. 'PreToolUse')." },
+                "includeSystemMessage": { "type": "boolean", "description": "When true, the envelope also includes a top-level 'systemMessage' field. Defaults to false." }
               },
               "additionalProperties": false
             }

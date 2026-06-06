@@ -52,6 +52,9 @@
     },
     "userPromptSubmit": {
       "kind": "none"
+    },
+    "preToolUse": {
+      "kind": "none"
     }
   }
 }
