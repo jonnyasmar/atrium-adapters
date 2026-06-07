@@ -1,6 +1,6 @@
-# Atrium Adapter SDK
+# atrium Adapter SDK
 
-This is the adapter registry and SDK for [Atrium](https://github.com/jonnyasmar/atrium). Adapters are shell-script plugins that teach Atrium how to detect, launch, resume, and manage AI coding tools. Each adapter is a self-contained directory: one JSON manifest and up to nine bash scripts. No compiled code, no runtime dependencies beyond `jq` and standard POSIX utilities.
+This is the adapter registry and SDK for [atrium](https://getatrium.dev). Adapters are shell-script plugins that teach atrium how to detect, launch, resume, and manage AI coding tools. Each adapter is a self-contained directory: one JSON manifest and a small set of bash scripts. No compiled code, no runtime dependencies beyond `jq` and standard POSIX utilities.
 
 ---
 
@@ -62,7 +62,7 @@ chmod +x *.sh
 ./validate-adapter.sh ~/.atrium/adapters/mytool/
 ```
 
-Restart Atrium. Your adapter appears in the launcher if the binary is found.
+Restart atrium. Your adapter appears in the launcher if the binary is found.
 
 ---
 
@@ -111,6 +111,9 @@ SDK v1 shipped additional scripts (`detect_binary.sh`, `detect_running.sh`, `ext
 | `hooks` | object | No (v2) | Map of kebab-case event name → stable `atrium://` URI (e.g. `"session-start": "atrium://hooks/mytool/session-start"`). atrium exposes resolved URIs to `hooks.sh install` via `ATRIUM_HOOK_URI_*` env vars. |
 | `skillInstallPath` | string | No (v2) | Absolute or `~`-prefixed path where atrium installs the adapter's `SKILL.md` (e.g. `~/.claude/skills/atrium/skill.md`). |
 | `skillsDir` | string | No (v2) | Absolute or `~`-prefixed path that atrium **scans** for harness-installed skills (one `SKILL.md` per immediate subdirectory). See "skillsDir" section below. |
+| `icon` | string | No (v2) | Filename of an SVG icon in the adapter directory (e.g. `icon.svg`), used for the launcher tile. |
+| `sessionExtractor` | object | No (v2) | `{script, schemaVersion, supportsDepths}` — declares a script that extracts structured session summaries at `quick` / `standard` / `deep` depth. See `schemas/methods/`. |
+| `hookEnvelopes` | object | No (v2) | Per-event payload-envelope dispatch (`sessionStartManifest`, `userPromptSubmit`, `preToolUse`, `postToolUse`) so atrium can deliver injected context in the tool's native hook-output shape. See [HOOK_ENVELOPE.md](HOOK_ENVELOPE.md). |
 
 ---
 
@@ -165,7 +168,7 @@ Set before every script execution:
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `ATRIUM_ADAPTER_DIR` | Absolute path to this adapter's directory | `~/.atrium/adapters/mytool` |
-| `ATRIUM_DATA_DIR` | Absolute path to Atrium's data directory | `~/.atrium` |
+| `ATRIUM_DATA_DIR` | Absolute path to atrium's data directory | `~/.atrium` |
 | `ATRIUM_HOOK_PORT` | Port of the local hook HTTP server | `17322` |
 | `ATRIUM_SDK_VERSION` | SDK version the host app supports | `2` |
 
@@ -291,13 +294,13 @@ Option `key` values map directly to the flags JSON passed to `build_launch_comma
 
 ## Hook Integration
 
-Hooks let Atrium track session starts and ends inside an AI tool, powering pane header status and session tracking.
+Hooks let atrium track session starts and ends inside an AI tool, powering pane header status and session tracking.
 
 ### How It Works
 
-1. Atrium runs a local HTTP server; port is written to `~/.atrium/hook-port`
+1. atrium runs a local HTTP server; port is written to `~/.atrium/hook-port`
 2. `hooks.sh install` writes tool-specific config that POSTs to this server
-3. When sessions start/end, the tool fires requests to Atrium
+3. When sessions start/end, the tool fires requests to atrium
 
 ### Endpoints
 
@@ -310,7 +313,7 @@ Content-Type: `application/json`. Payload is whatever the tool passes via stdin.
 
 ### Hook Command Template
 
-Reads the port at execution time (survives Atrium restarts):
+Reads the port at execution time (survives atrium restarts):
 
 ```bash
 PORT=$(cat ~/.atrium/hook-port 2>/dev/null) && [ -n "$PORT" ] && \
@@ -320,7 +323,7 @@ PORT=$(cat ~/.atrium/hook-port 2>/dev/null) && [ -n "$PORT" ] && \
 
 ### Per-Tool Examples
 
-**Claude Code** -- `hooks.sh` deep-merges entries into `~/.claude/settings.json` under `hooks.SessionStart` and `hooks.SessionEnd`, preserving non-Atrium hooks. Uninstall removes only Atrium entries. Atomic writes via temp file + `mv`.
+**Claude Code** -- `hooks.sh` deep-merges entries into `~/.claude/settings.json` under `hooks.SessionStart` and `hooks.SessionEnd`, preserving non-atrium hooks. Uninstall removes only atrium entries. Atomic writes via temp file + `mv`.
 
 **Codex** -- requires `codex_hooks = true` in `~/.codex/config.toml` plus hook definitions in `~/.codex/hooks.json` following the same `SessionStart`/`SessionEnd` structure.
 
@@ -329,7 +332,7 @@ PORT=$(cat ~/.atrium/hook-port 2>/dev/null) && [ -n "$PORT" ] && \
 1. Identify how your tool supports hooks (config file, env var, plugin API)
 2. Build a hook command that reads `~/.atrium/hook-port` and POSTs to the endpoint
 3. `hooks.sh install` -- write hook config into tool's configuration
-4. `hooks.sh uninstall` -- remove only Atrium's hooks
+4. `hooks.sh uninstall` -- remove only atrium's hooks
 5. `hooks.sh status` -- report whether hooks are installed
 6. Use atomic writes to avoid corrupting config files
 
@@ -376,6 +379,8 @@ Clone this repo and run `./validate-adapter.sh adapters/claude-code/` for a refe
 
 5. Open a pull request -- CI validates automatically
 
+> **Keep versions in sync.** The `version` in `registry.json` must match `adapters/<name>/adapter.json`. atrium's update notice compares a user's installed `adapter.json` version against the `registry.json` version, and the bundled auto-update only re-copies an adapter when its version increases. Any change to an adapter's scripts or manifest must bump **both** files, or the change won't reach users.
+
 **Guidelines:** Self-contained, no deps beyond `jq` + POSIX. Bash, tested on macOS and Ubuntu. 3s timeout (50ms for `list_recent_sessions`). Atomic writes for config files. Never store credentials.
 
 ---
@@ -387,7 +392,11 @@ Clone this repo and run `./validate-adapter.sh adapters/claude-code/` for a refe
 | [claude-code](adapters/claude-code/) | Anthropic's AI coding assistant | `claude` | Official |
 | [codex](adapters/codex/) | OpenAI's AI coding assistant | `codex` | Official |
 | [gemini](adapters/gemini/) | Google's AI coding assistant | `gemini` | Official |
-| [cursor-agent](adapters/cursor-agent/) | Cursor's agent CLI | `cursor-agent` | Community |
+| [antigravity](adapters/antigravity/) | Google's agent-first terminal CLI (successor to Gemini CLI) | `agy` | Official |
+| [grok](adapters/grok/) | xAI's terminal coding agent | `grok` | Official |
+| [opencode](adapters/opencode/) | Open-source AI coding agent built for the terminal | `opencode` | Official |
+| [pi](adapters/pi/) | Minimal terminal coding agent by Mario Zechner | `pi` | Official |
+| [cursor-agent](adapters/cursor-agent/) | Cursor's agent CLI | `cursor-agent` | Official |
 
 ---
 
