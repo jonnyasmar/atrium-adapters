@@ -5,8 +5,15 @@
 # envelope to stdout carrying atrium's session context for this turn:
 #   1. the SessionStart manifest (atrium-context.md + skills — tells the
 #      agent it's running inside atrium and how to drive the CLI),
-#   2. resolved `+name` sigil bodies for this turn's prompt,
-#   3. the pane-rename nudge while the pane name is still generic.
+#   2. the run-command pipeline `atriumContext` from the hook server's
+#      context_injection pipeline (Epic 77 — RunCommandStatusProvider et al.),
+#   3. resolved `+name` sigil bodies for this turn's prompt,
+#   4. the pane-rename nudge while the pane name is still generic.
+#
+# agy is injection-CAPABLE at SessionStart ONLY: it has no native SessionStart,
+# so atrium maps SessionStart→PreInvocation gated on invocationNum==0. agy's
+# PreToolUse (PreToolHookResult) has no inject_steps field, so PreToolUse is
+# NOT an injection point — the run-command context rides SessionStart here.
 #
 # Confirmed agy envelope (verified 2026-06-04 via an isolated `agy --print`
 # probe — the agent obeyed an injected directive):
@@ -55,11 +62,41 @@ add_step() {
     '$arr + [{systemMessage: {systemMessage: $t}}]' 2>/dev/null || printf '%s' "$steps_json")"
 }
 
+# Run-command pipeline context (Epic 77): POST the native PreInvocation payload
+# to the hook server's session-start route and read `.atriumContext`. The
+# context_injection pipeline (RunCommandStatusProvider et al.) runs server-side;
+# its assembled envelope rides the `atriumContext` field. Fail-open: any
+# missing dep / port / failure / empty body returns "" and the caller skips it.
+fetch_pipeline_context() {
+  command -v curl >/dev/null 2>&1 || return 0
+  local port_file="${DATA}/hook-port"
+  [ -f "$port_file" ] || return 0
+  local port
+  port="$(cat "$port_file" 2>/dev/null || true)"
+  [ -n "$port" ] || return 0
+  local response
+  response="$(curl -fsS \
+    --max-time 2 \
+    --connect-timeout 1 \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -H "X-Atrium-Pane-Id: ${ATRIUM_PANE_ID}" \
+    --data-binary "$payload" \
+    "http://127.0.0.1:${port}/api/adapter/antigravity/session-start" 2>/dev/null || true)"
+  [ -n "$response" ] || return 0
+  printf '%s' "$response" | jq -r '.atriumContext // empty' 2>/dev/null || true
+}
+
 # 1. Manifest (atrium-context.md + skills) — identity envelope → raw text.
 manifest="$("$CLI" skills resolve-manifest --pane-id "$ATRIUM_PANE_ID" --adapter antigravity 2>/dev/null || true)"
 add_step "$manifest"
 
-# 2. Sigils — resolve `+name` bodies for this turn's prompt. agy's
+# 2. Run-command pipeline context — assembled by the hook server's
+#    context_injection pipeline, delivered as its own injectSteps systemMessage.
+pipeline_ctx="$(fetch_pipeline_context)"
+add_step "$pipeline_ctx"
+
+# 3. Sigils — resolve `+name` bodies for this turn's prompt. agy's
 #    PreInvocation payload doesn't carry the prompt text, so read the latest
 #    history.jsonl entry (same source normalize-hook-payload.sh uses).
 HISTORY="${HOME}/.gemini/antigravity-cli/history.jsonl"
@@ -72,7 +109,7 @@ sigils="$(jq -cn --arg p "$prompt" '{prompt: $p}' 2>/dev/null \
   | jq -r '.hookSpecificOutput.additionalContext // empty' 2>/dev/null || true)"
 add_step "$sigils"
 
-# 3. Rename nudge — canonical text + generic-name check live in
+# 4. Rename nudge — canonical text + generic-name check live in
 #    pane-name-check.sh's `raw` shape (single source); empty when the pane
 #    has already been renamed.
 nudge="$("$DATA/adapters/shared/pane-name-check.sh" raw 2>/dev/null || true)"

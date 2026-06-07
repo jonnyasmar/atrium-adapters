@@ -23,7 +23,7 @@ fi
 # new hook command matches it. Remove in a future cleanup release once
 # pre-59.7 installs have aged out.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|context-entry\.sh|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|context-entry\.sh|pane-name-check\.sh|inject-context\.sh'
 
 # Gemini sanitizes hook environments, stripping some ATRIUM_* vars at hook
 # fire time. We probe the filesystem at install time to bake the active
@@ -124,6 +124,30 @@ build_all_hooks() {
   sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
     '[{matcher: "*", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.BeforeAgent += $s' <<< "$hooks")"
+
+  # Epic 77 Story 77.5 — context-injection pipeline delivery: atrium's
+  # RunCommandStatusProvider runs in the hook server's context_injection
+  # pipeline and the assembled envelope rides the `atriumContext` field on the
+  # /api/adapter/gemini/* HTTP response. `inject-context.sh session-start`
+  # POSTs the native hook payload to that route, reads `atriumContext`, and
+  # renders gemini's native SessionStart envelope (hookSpecificOutput
+  # .additionalContext, matching hookEnvelopes.sessionStartManifest) as a
+  # SECOND SessionStart context source alongside resolve-manifest.
+  #
+  # SessionStart ONLY: gemini exposes no additionalContext channel at
+  # BeforeTool, so adapter.json declares preToolUse "none" and no PreToolUse
+  # injection is wired (the grok-revert lesson: no dead wiring).
+  #
+  # The data-dir is baked twice: once via ${ATRIUM_DATA_DIR:-<fallback>} to
+  # resolve the script path, and again as the script's $2 arg so the script's
+  # hook-port lookup survives gemini stripping ATRIUM_DATA_DIR at hook-fire
+  # time (runtime env still wins inside the script).
+  local inject_cmd inject_entry
+  inject_cmd="$(printf '${ATRIUM_DATA_DIR:-%s}/adapters/gemini/inject-context.sh session-start %s' \
+    "$ATRIUM_DATA_DIR_FALLBACK" "$ATRIUM_DATA_DIR_FALLBACK")"
+  inject_entry="$(jq -n --arg cmd "$inject_cmd" \
+    '[{matcher: "startup", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
+  hooks="$(jq --argjson e "$inject_entry" '.SessionStart += $e' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

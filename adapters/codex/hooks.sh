@@ -23,7 +23,7 @@ fi
 # The regex matches both current and legacy command shapes so install and
 # uninstall can still clean up entries written by prior releases.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh'
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh|inject-context\.sh'
 
 # Event table: kebab-case event name, Codex settings key, matcher.
 EVENTS=$'session-start\tSessionStart\tstartup|resume
@@ -115,6 +115,28 @@ build_all_hooks() {
   sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
+
+  # Epic 77 Story 77.5 — context-injection pipeline delivery: atrium's
+  # RunCommandStatusProvider runs in the hook server's context_injection
+  # pipeline and the assembled envelope rides the `atriumContext` field on the
+  # /api/adapter/* HTTP response. `inject-context.sh <event>` POSTs the native
+  # hook payload to that route, reads `atriumContext`, and renders codex's
+  # native hookSpecificOutput envelope per event:
+  #   - SessionStart → run-command defined+running list (a SECOND SessionStart
+  #     context source alongside resolve-manifest).
+  #   - PreToolUse   → terse "already running" nudge before a shell-class tool
+  #     call (`{}` no-op otherwise).
+  # codex is injection-CAPABLE at BOTH events via the hookSpecificOutput
+  # envelope on the hook's stdout (live-probed). Resolved via
+  # ${ATRIUM_DATA_DIR:-...} so stable / dev / beta installs coexist.
+  local inject_base inject_ss inject_pt
+  inject_base="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/codex/inject-context.sh"
+  inject_ss="$(jq -n --arg cmd "$inject_base session-start" \
+    '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
+  inject_pt="$(jq -n --arg cmd "$inject_base pre-tool-use" \
+    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson e "$inject_pt" '.PreToolUse += $e' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

@@ -35,7 +35,7 @@ ENTRY_SCRIPT="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/cursor-agent/cursor-h
 # Current installs never emit that path; the token is harmless because no
 # new hook command matches it. Remove in a future cleanup release once
 # pre-59.7 installs have aged out.
-ATRIUM_HOOK_MARKER_RE='cursor-hook-entry\.sh|context-entry\.sh|pane-name-check\.sh|atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve'
+ATRIUM_HOOK_MARKER_RE='cursor-hook-entry\.sh|context-entry\.sh|inject-context\.sh|pane-name-check\.sh|atrium-runtime-hook|atrium hook emit|skills resolve-manifest|atrium/hook-port|/resolve'
 
 # Event table: the atrium kebab-case event name we emit (passed to the
 # entry script as argv[1]), the Cursor camelCase event name we register
@@ -110,6 +110,25 @@ build_all_hooks() {
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
   hooks="$(jq --argjson r "$rename_entry" '.beforeSubmitPrompt += $r' <<< "$hooks")"
+
+  # Epic 77 Story 77.5 — context-injection pipeline delivery: atrium's
+  # RunCommandStatusProvider runs in the hook server's context_injection
+  # pipeline and the assembled envelope rides the `atriumContext` field on the
+  # /api/adapter/cursor-agent/session-start HTTP response. `inject-context.sh
+  # session-start` POSTs the native hook payload to that route, reads
+  # `atriumContext`, and renders Cursor's native sessionStart envelope
+  # `{"additional_context": <ctx>}` (a SECOND sessionStart context source
+  # alongside resolve-manifest). cursor-agent is injection-capable at
+  # sessionStart ONLY — PreToolUse is incapable (adapter.json keeps
+  # preToolUse: none; no dead wiring, per the grok-revert lesson). Single
+  # binary-shaped invocation so Cursor's shellExecutor runs it cleanly;
+  # ${ATRIUM_DATA_DIR:-...} expands at hook-fire time so stable / dev / beta
+  # installs coexist.
+  local inject_cmd inject_entry
+  inject_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/cursor-agent/inject-context.sh session-start"
+  inject_entry="$(jq -n --arg cmd "$inject_cmd" \
+    '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
+  hooks="$(jq --argjson e "$inject_entry" '.sessionStart += $e' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

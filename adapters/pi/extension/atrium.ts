@@ -18,8 +18,9 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { spawn } from "node:child_process";
-import { appendFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { appendFileSync, readFileSync } from "node:fs";
+import { request } from "node:http";
+import { homedir, tmpdir } from "node:os";
 import { basename, join } from "node:path";
 
 const ATRIUM_CLI = process.env.ATRIUM_CLI_PATH || "atrium";
@@ -148,6 +149,83 @@ function parseAdditionalContext(raw: string): string {
   }
 }
 
+// Fetch the run-command pipeline context (Epic 77) from the hook server's
+// HTTP route. atrium's context providers (RunCommandStatusProvider, …) run in
+// the hook server's context_injection pipeline and the assembled envelope rides
+// the `atriumContext` field on POST /api/adapter/pi/session-start. pi has no
+// shell hook, so this is pi's delivery: read the hook-port (written per data-dir
+// by the running app), POST the pane id on the X-Atrium-Pane-Id header, and read
+// `.atriumContext`. SessionStart-equivalent only — pi's tool_call hook can't
+// inject, so there's no PreToolUse delivery. Fail-open: any error / timeout / no
+// port resolves to "" so a slow or unreachable hook server never blocks the turn.
+function fetchPipelineContext(timeoutMs = 2000): Promise<string> {
+  if (!ATRIUM_ACTIVE) return Promise.resolve("");
+
+  const dataDir = process.env.ATRIUM_DATA_DIR || join(homedir(), ".atrium");
+  let port = "";
+  try {
+    port = readFileSync(join(dataDir, "hook-port"), "utf8").trim();
+  } catch {
+    return Promise.resolve("");
+  }
+  if (!port) return Promise.resolve("");
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (v: string) => {
+      if (!settled) {
+        settled = true;
+        resolve(v);
+      }
+    };
+    try {
+      const req = request(
+        {
+          host: "127.0.0.1",
+          port: Number(port),
+          path: "/api/adapter/pi/session-start",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Atrium-Pane-Id": ATRIUM_PANE_ID,
+          },
+          timeout: timeoutMs,
+        },
+        (res) => {
+          if (res.statusCode == null || res.statusCode >= 400) {
+            res.resume();
+            finish("");
+            return;
+          }
+          let body = "";
+          res.setEncoding("utf8");
+          res.on("data", (chunk: string) => {
+            body += chunk;
+          });
+          res.on("end", () => {
+            try {
+              const j = JSON.parse(body) as { atriumContext?: unknown };
+              finish(typeof j.atriumContext === "string" ? j.atriumContext : "");
+            } catch {
+              finish("");
+            }
+          });
+        },
+      );
+      req.on("timeout", () => {
+        req.destroy();
+        finish("");
+      });
+      req.on("error", () => finish(""));
+      // SessionStart hooks carry no native body; an empty JSON object keeps the
+      // route's payload parse happy.
+      req.end("{}");
+    } catch {
+      finish("");
+    }
+  });
+}
+
 // Generic launcher names atrium nudges the agent to rename away from.
 // Mirrors adapters/shared/pane-name-check.sh — pi can't use that shell
 // script (it shapes a hook-stdout envelope), so the same check lives here
@@ -207,8 +285,8 @@ async function renameNudgeIfGeneric(): Promise<string> {
 //   message_end events where role === "assistant".
 let sessionId: string | null = null;
 let lastAssistantMessage: string | null = null;
-// The atrium SessionStart manifest (atrium-context.md + skills) is injected
-// once per session as a persistent hidden message; this gates that.
+// The atrium SessionStart context (manifest + run-command pipeline context) is
+// injected once per session as a persistent hidden message; this gates that.
 let manifestInjected = false;
 
 // Derive a stable session id from the pi session file path. pi stores
@@ -323,9 +401,11 @@ export default function (pi: ExtensionAPI) {
   // replaces the turn's system prompt (chained across extensions). This
   // is pi's same-turn context-injection primitive — the equivalent of
   // Claude's UserPromptSubmit additionalContext. We use it to deliver the
-  // three things atrium injects for first-class adapters:
-  //   1. the SessionStart manifest (atrium-context.md + skills) — once,
-  //      as a persistent hidden message,
+  // things atrium injects for first-class adapters:
+  //   1. the SessionStart manifest (atrium-context.md + skills) plus the
+  //      run-command pipeline context (Epic 77) — once, combined into one
+  //      persistent hidden message (both are SessionStart-equivalent; pi can't
+  //      inject at PreToolUse, so SessionStart is the only delivery point),
   //   2. resolved `+name` sigil bodies for this prompt,
   //   3. the pane-rename nudge while the pane name is still generic.
   // All fetches are fail-open (empty string on any error) so a slow or
@@ -340,18 +420,28 @@ export default function (pi: ExtensionAPI) {
 
     if (!manifestInjected) {
       manifestInjected = true;
-      const manifest = await runAtriumCapture([
-        "skills",
-        "resolve-manifest",
-        "--pane-id",
-        ATRIUM_PANE_ID,
-        "--adapter",
-        "pi",
+      // Both the SessionStart manifest and the run-command pipeline context
+      // (Epic 77) are SessionStart-equivalent, so fetch them together and
+      // deliver them through the one persistent hidden message. Concurrent —
+      // independent fail-open fetches.
+      const [manifest, pipelineContext] = await Promise.all([
+        runAtriumCapture([
+          "skills",
+          "resolve-manifest",
+          "--pane-id",
+          ATRIUM_PANE_ID,
+          "--adapter",
+          "pi",
+        ]),
+        fetchPipelineContext(),
       ]);
-      if (manifest.trim()) {
+      const sessionStartParts = [manifest, pipelineContext]
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (sessionStartParts.length > 0) {
         result.message = {
           customType: "atrium-context",
-          content: manifest,
+          content: sessionStartParts.join("\n\n"),
           display: false,
         };
       }

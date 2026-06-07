@@ -65,7 +65,9 @@
       "includeSystemMessage": false
     },
     "preToolUse": {
-      "kind": "none"
+      "kind": "hookSpecificOutput",
+      "hookEventName": "PreToolUse",
+      "includeSystemMessage": false
     }
   }
 }

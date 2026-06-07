@@ -14,13 +14,14 @@
 // ATRIUM_HOOK_MARKER=atrium-runtime-hook
 
 import { spawn } from "node:child_process";
-import { appendFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { appendFileSync, readFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 const ATRIUM_CLI = process.env.ATRIUM_CLI_PATH || "atrium";
 const ATRIUM_PANE_ID = process.env.ATRIUM_PANE_ID || "";
 const ATRIUM_ACTIVE = Boolean(process.env.ATRIUM) && Boolean(ATRIUM_PANE_ID);
+const ATRIUM_DATA_DIR = process.env.ATRIUM_DATA_DIR || join(homedir(), ".atrium");
 
 const DEBUG_LOG = process.env.ATRIUM_PLUGIN_LOG || join(tmpdir(), "atrium-opencode-plugin.log");
 const DEBUG = process.env.ATRIUM_PLUGIN_DEBUG !== "0";
@@ -119,6 +120,57 @@ function runAtriumCapture(args, stdin, timeoutMs = 2500) {
       finish("");
     }
   });
+}
+
+// Fetch the run-command pipeline context (Epic 77) from the hook server's
+// context_injection route. atrium's context providers assemble an envelope
+// that rides the `atriumContext` field of the
+// /api/adapter/opencode/session-start JSON response (the same contract
+// claude-code uses via inject-context.sh). opencode delivers it by pushing
+// the string onto the system prompt in chat.system.transform. Fail-open:
+// any error / timeout / missing port resolves to "" so a slow or unreachable
+// hook server never blocks opencode's request.
+async function fetchRunCommandContext(sessionID, model, timeoutMs = 2000) {
+  if (!ATRIUM_ACTIVE) return "";
+  try {
+    // Hook server port is written by the running app, per data dir.
+    let port = "";
+    try {
+      port = readFileSync(join(ATRIUM_DATA_DIR, "hook-port"), "utf8").trim();
+    } catch {
+      return ""; // no port file ⇒ no running server ⇒ nothing to inject
+    }
+    if (!port) return "";
+
+    // Native-ish payload mirroring what a SessionStart hook would carry.
+    const payload = JSON.stringify({
+      session_id: sessionID ?? null,
+      model: model ?? null,
+    });
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res;
+    try {
+      res = await fetch(`http://127.0.0.1:${port}/api/adapter/opencode/session-start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Atrium-Pane-Id": ATRIUM_PANE_ID,
+        },
+        body: payload,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res || !res.ok) return "";
+    const data = await res.json();
+    const ctx = data?.atriumContext;
+    return typeof ctx === "string" ? ctx : "";
+  } catch {
+    return "";
+  }
 }
 
 // Generic launcher names atrium nudges the agent to rename away from.
@@ -325,12 +377,14 @@ export const AtriumPlugin = async (_input, _options) => {
     // opencode's same-turn injection primitive — the equivalent of Claude's
     // UserPromptSubmit additionalContext / pi's before_agent_start. We use
     // it to deliver the atrium SessionStart manifest (atrium-context.md +
-    // skills, telling the agent it runs inside atrium and how to drive it)
-    // and the pane-rename nudge while the pane name is still generic. Both
-    // fetches are fail-open. (Per-prompt `+name` sigil expansion isn't wired
-    // here yet — system.transform has no prompt text; that needs
-    // messages.transform and is a follow-up.)
-    "experimental.chat.system.transform": async (_input, output) => {
+    // skills, telling the agent it runs inside atrium and how to drive it),
+    // the Epic 77 run-command pipeline context (atriumContext from the hook
+    // server, this adapter's SessionStart-equivalent delivery), and the
+    // pane-rename nudge while the pane name is still generic. Every fetch is
+    // fail-open. (Per-prompt `+name` sigil expansion isn't wired here yet —
+    // system.transform has no prompt text; that needs messages.transform and
+    // is a follow-up.)
+    "experimental.chat.system.transform": async (input, output) => {
       if (!ATRIUM_ACTIVE || !output || !Array.isArray(output.system)) return;
       if (manifestCache == null) {
         const m = await runAtriumCapture([
@@ -344,6 +398,11 @@ export const AtriumPlugin = async (_input, _options) => {
         if (m.trim()) manifestCache = m;
       }
       if (manifestCache) output.system.push(manifestCache);
+      // Run-command pipeline context (atriumContext) from the hook server.
+      // Re-fetched per request (it's session/run-state dependent, unlike the
+      // session-stable manifest); fail-open skips the push on any error.
+      const runCtx = await fetchRunCommandContext(input?.sessionID, input?.model);
+      if (runCtx) output.system.push(runCtx);
       const nudge = await renameNudgeIfGeneric();
       if (nudge) output.system.push(nudge);
       // Per-prompt `+name` sigil bodies — resolve once per user message
@@ -362,6 +421,7 @@ export const AtriumPlugin = async (_input, _options) => {
       }
       debug("system.transform inject", {
         manifest: Boolean(manifestCache),
+        runCommand: runCtx.length > 0,
         nudge: nudge.length > 0,
         sigils: sigilCtx.length > 0,
       });
