@@ -294,6 +294,39 @@ validate_session_extractor() {
   fi
 }
 
+# ── Phase 2c: Registry version parity ─────────────────────────────────────────
+
+# When an adapter ships in the repo registry, its adapter.json version MUST
+# match registry.json. atrium's update notice compares a user's installed
+# adapter.json version against the registry version, and the bundled
+# auto-update only re-copies when the version changes, so any drift between the
+# two silently breaks both. Skipped when no registry.json sits beside the
+# validator (standalone / community-adapter run).
+validate_registry_parity() {
+  local registry
+  registry="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/registry.json"
+  if [[ ! -f "$registry" ]]; then
+    printf '  %s\n' "[SKIP] no registry.json beside validator; parity check not applicable"
+    return 0
+  fi
+
+  local name manifest_version registry_version
+  name="$(jq -r '.name' "$MANIFEST")"
+  manifest_version="$(jq -r '.version' "$MANIFEST")"
+  registry_version="$(jq -r --arg n "$name" '.adapters[] | select(.name == $n) | .version' "$registry")"
+
+  if [[ -z "$registry_version" ]]; then
+    printf '  %s\n' "[SKIP] '$name' not in registry.json; parity check not applicable"
+    return 0
+  fi
+
+  if [[ "$manifest_version" == "$registry_version" ]]; then
+    pass "registry.json version matches adapter.json ($manifest_version)"
+  else
+    fail "registry.json out of sync with adapter.json for '$name'" "$manifest_version (adapter.json)" "$registry_version (registry.json)"
+  fi
+}
+
 # ── Phase 3: Schema validation helpers ────────────────────────────────────────
 
 # Get the JSON type of a value (string, number, boolean, null, array, object)
@@ -608,6 +641,10 @@ if [[ -f "$MANIFEST" ]] && jq empty "$MANIFEST" 2>/dev/null; then
 
   echo "${BOLD:-}Phase 2b: Session extractor (Epic 66)${RESET:-}"
   validate_session_extractor
+  echo ""
+
+  echo "${BOLD:-}Phase 2c: Registry version parity${RESET:-}"
+  validate_registry_parity
   echo ""
 
   echo "${BOLD:-}Phase 3: Output validation${RESET:-}"

@@ -1,6 +1,8 @@
 name: Validate Adapters
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -21,6 +23,8 @@ jobs:
         run: |
           failed=0
           for dir in adapters/*/; do
+            # Skip shared asset dirs (e.g. shared/) — no adapter.json, not adapters.
+            [ -f "${dir}adapter.json" ] || { echo "=== Skipping ${dir} (no adapter.json) ==="; continue; }
             echo "=== Validating ${dir} ==="
             if ! ./validate-adapter.sh "$dir"; then
               echo "FAILED: ${dir}"
