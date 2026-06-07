@@ -95,7 +95,7 @@
     },
     "hookEnvelopes": {
       "type": "object",
-      "description": "SDK v2. Optional. Declares the per-event response-envelope shape atrium core emits when the underlying tool fires SessionStart, UserPromptSubmit, and PreToolUse hooks. This is ALSO the per-event injection-capability matrix (Epic 77): for each event, 'kind: none' (or an omitted field) means the adapter CANNOT have context injected back into that event ('cannot inject unless verified' — the conservative default); any non-none 'kind' means the adapter IS injection-capable for that event and atrium renders the assembled context in that envelope shape. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their capability + envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit, and PreToolUse incapable — the Claude-Code-compatible defaults).",
+      "description": "SDK v2. Optional. Declares the per-event response-envelope shape atrium core emits when the underlying tool fires SessionStart, UserPromptSubmit, PreToolUse, and PostToolUse hooks. This is ALSO the per-event injection-capability matrix (Epic 77): for each event, 'kind: none' (or an omitted field) means the adapter CANNOT have context injected back into that event ('cannot inject unless verified' — the conservative default); any non-none 'kind' means the adapter IS injection-capable for that event and atrium renders the assembled context in that envelope shape. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their capability + envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit, and PreToolUse/PostToolUse incapable — the Claude-Code-compatible defaults).",
       "properties": {
         "sessionStartManifest": {
           "description": "Envelope wrapping the SessionStart manifest stdout. 'identity' = raw text/plain (Claude Code, Codex, Grok); 'hookSpecificOutput' = JSON {hookSpecificOutput: {hookEventName, additionalContext}} (Gemini); 'flatAdditionalContext' = JSON {additional_context} (Cursor); 'none' = empty body (skip injection).",
@@ -140,6 +140,22 @@
               "properties": {
                 "kind": { "const": "hookSpecificOutput" },
                 "hookEventName": { "type": "string", "minLength": 1, "description": "Value placed in hookSpecificOutput.hookEventName (e.g. 'PreToolUse')." },
+                "includeSystemMessage": { "type": "boolean", "description": "When true, the envelope also includes a top-level 'systemMessage' field. Defaults to false." }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "postToolUse": {
+          "description": "Epic 78 Story 78.1/78.3. Envelope + injection-capability for the PostToolUse hook (the carried hook payload is the tool RESULT rather than the tool input). 'hookSpecificOutput' is the Claude-Code-shaped envelope (capable: atrium renders the assembled injection in it). 'none' (or an omitted postToolUse field) means the adapter CANNOT inject at PostToolUse — the conservative default. Only set a non-none kind for an adapter VERIFIED to consume injected PostToolUse context. Per-adapter capability is declared in Story 78.3.",
+          "oneOf": [
+            { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "none" } }, "additionalProperties": false },
+            {
+              "type": "object",
+              "required": ["kind", "hookEventName"],
+              "properties": {
+                "kind": { "const": "hookSpecificOutput" },
+                "hookEventName": { "type": "string", "minLength": 1, "description": "Value placed in hookSpecificOutput.hookEventName (e.g. 'PostToolUse')." },
                 "includeSystemMessage": { "type": "boolean", "description": "When true, the envelope also includes a top-level 'systemMessage' field. Defaults to false." }
               },
               "additionalProperties": false

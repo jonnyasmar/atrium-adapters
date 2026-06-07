@@ -65,6 +65,9 @@
     },
     "preToolUse": {
       "kind": "none"
+    },
+    "postToolUse": {
+      "kind": "none"
     }
   }
 }

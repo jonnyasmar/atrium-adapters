@@ -89,6 +89,11 @@
       "kind": "hookSpecificOutput",
       "hookEventName": "PreToolUse",
       "includeSystemMessage": false
+    },
+    "postToolUse": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "PostToolUse",
+      "includeSystemMessage": false
     }
   }
 }

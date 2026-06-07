@@ -3,7 +3,7 @@
 # context_injection pipeline (Epic 77).
 #
 # Usage: inject-context.sh <event>
-#   event = session-start | pre-tool-use
+#   event = session-start | user-prompt-submit | pre-tool-use | post-tool-use
 #
 # Atrium's context providers (Story 77.5: RunCommandStatusProvider) run in the
 # hook server's context_injection pipeline (Story 77.4) and the assembled
@@ -12,31 +12,38 @@
 # claude-code delivery: it POSTs the native hook payload to the hook server's
 # HTTP route, reads `atriumContext`, and re-emits it in Claude Code's native
 # envelope for that event:
-#   - session-start → raw text on stdout (identity envelope: Claude treats
+#   - session-start    → raw text on stdout (identity envelope: Claude treats
 #     SessionStart hook stdout as additionalContext directly).
-#   - pre-tool-use  → {"hookSpecificOutput": {"hookEventName": "PreToolUse",
+#   - user-prompt-submit → {"hookSpecificOutput": {"hookEventName":
+#     "UserPromptSubmit", "additionalContext": <envelope>}} (Epic 78 Story 78.3:
+#     the context-injection pipeline atriumContext, additive to the existing
+#     sigil/nudge UserPromptSubmit entries).
+#   - pre-tool-use     → {"hookSpecificOutput": {"hookEventName": "PreToolUse",
 #     "additionalContext": <envelope>}}.
+#   - post-tool-use    → {"hookSpecificOutput": {"hookEventName": "PostToolUse",
+#     "additionalContext": <envelope>}} (Epic 78 Story 78.3: the PostToolUse
+#     payload carries the tool RESULT, so a post-action provider can read it).
 #
 # When there's nothing to inject (or anything fails) it emits the per-event
-# no-op (empty body for session-start, `{}` for pre-tool-use) and exits 0 — the
-# hook NEVER blocks the session or the tool call (fail-open, NFR5 / Rule 7).
-# Budget: ONE HTTP round-trip to localhost.
+# no-op (empty body for session-start, `{}` for the JSON-envelope events) and
+# exits 0 — the hook NEVER blocks the session or the tool call (fail-open,
+# NFR5 / Rule 7). Budget: ONE HTTP round-trip to localhost.
 set -uo pipefail
 
 EVENT="${1:-}"
 
 # Per-event no-op: SessionStart consumes raw stdout, so its no-op is an EMPTY
-# body; PreToolUse expects a JSON envelope, so its no-op is `{}`.
+# body; the JSON-envelope events expect a JSON envelope, so their no-op is `{}`.
 noop() {
   case "$EVENT" in
-    pre-tool-use) printf '%s\n' '{}' ;;
+    user-prompt-submit | pre-tool-use | post-tool-use) printf '%s\n' '{}' ;;
     *) : ;; # session-start (and anything else): empty body
   esac
   exit 0
 }
 
 case "$EVENT" in
-  session-start | pre-tool-use) ;;
+  session-start | user-prompt-submit | pre-tool-use | post-tool-use) ;;
   *) noop ;;
 esac
 
@@ -77,15 +84,22 @@ response="$(curl -fsS \
 context="$(printf '%s' "$response" | jq -r '.atriumContext // empty' 2>/dev/null || true)"
 [ -n "$context" ] || noop
 
-# Render the per-event native envelope. `jq -n` because stdin is drained.
+# Render the per-event native envelope. `jq -n` because stdin is drained. The
+# JSON-envelope events share the hookSpecificOutput shape, differing only in
+# hookEventName; SessionStart is the identity (raw-text) exception.
 case "$EVENT" in
-  pre-tool-use)
-    jq -n --arg ctx "$context" \
-      '{hookSpecificOutput: {hookEventName: "PreToolUse", additionalContext: $ctx}}'
-    ;;
   session-start)
     # Identity envelope: Claude treats SessionStart hook stdout as context.
     printf '%s\n' "$context"
+    ;;
+  user-prompt-submit) hook_event_name="UserPromptSubmit" ;;
+  pre-tool-use) hook_event_name="PreToolUse" ;;
+  post-tool-use) hook_event_name="PostToolUse" ;;
+esac
+case "$EVENT" in
+  user-prompt-submit | pre-tool-use | post-tool-use)
+    jq -n --arg name "$hook_event_name" --arg ctx "$context" \
+      '{hookSpecificOutput: {hookEventName: $name, additionalContext: $ctx}}'
     ;;
 esac
 exit 0

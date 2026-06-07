@@ -149,16 +149,16 @@ function parseAdditionalContext(raw: string): string {
   }
 }
 
-// Fetch the run-command pipeline context (Epic 77) from the hook server's
-// HTTP route. atrium's context providers (RunCommandStatusProvider, …) run in
-// the hook server's context_injection pipeline and the assembled envelope rides
-// the `atriumContext` field on POST /api/adapter/pi/session-start. pi has no
-// shell hook, so this is pi's delivery: read the hook-port (written per data-dir
-// by the running app), POST the pane id on the X-Atrium-Pane-Id header, and read
-// `.atriumContext`. SessionStart-equivalent only — pi's tool_call hook can't
-// inject, so there's no PreToolUse delivery. Fail-open: any error / timeout / no
+// Fetch the pipeline context (Epic 77/78) from the hook server's HTTP route for
+// a given injectable event. atrium's context providers (RunCommandStatusProvider,
+// …) run in the hook server's context_injection pipeline and the assembled
+// envelope rides the `atriumContext` field on POST /api/adapter/pi/<event>. pi
+// has no shell hook, so this is pi's delivery: read the hook-port (written per
+// data-dir by the running app), POST the pane id on the X-Atrium-Pane-Id header,
+// and read `.atriumContext`. `event` is the kebab-case event path (session-start
+// | user-prompt-submit | post-tool-use). Fail-open: any error / timeout / no
 // port resolves to "" so a slow or unreachable hook server never blocks the turn.
-function fetchPipelineContext(timeoutMs = 2000): Promise<string> {
+function fetchPipelineContext(event: string, timeoutMs = 2000): Promise<string> {
   if (!ATRIUM_ACTIVE) return Promise.resolve("");
 
   const dataDir = process.env.ATRIUM_DATA_DIR || join(homedir(), ".atrium");
@@ -183,7 +183,7 @@ function fetchPipelineContext(timeoutMs = 2000): Promise<string> {
         {
           host: "127.0.0.1",
           port: Number(port),
-          path: "/api/adapter/pi/session-start",
+          path: `/api/adapter/pi/${event}`,
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -361,6 +361,14 @@ export default function (pi: ExtensionAPI) {
     });
   });
 
+  // tool_result fires after a tool executes, before the LLM receives the
+  // result, and (unlike emit-only handlers) its return value CAN modify the
+  // result: returning `{ content }` extends the content blocks the model sees
+  // (handlers chain like middleware). This is pi's PostToolUse injection point
+  // (Epic 78 Story 78.3) — the matrix's named capable event, carrying the tool
+  // RESULT. We fetch the pipeline atriumContext for post-tool-use and append it
+  // as a trailing text block so a post-action provider's context reaches the
+  // model right after the tool output. Fail-open: skip the append on any error.
   pi.on("tool_result", async (event) => {
     const e = event as {
       toolName?: string;
@@ -377,6 +385,14 @@ export default function (pi: ExtensionAPI) {
       tool_call_id: e.toolCallId,
       error: e.isError ? stringify(e.content) : "",
     });
+    if (!ATRIUM_ACTIVE) return undefined;
+    const postCtx = await fetchPipelineContext("post-tool-use");
+    if (!postCtx.trim()) return undefined;
+    // Append-only: preserve the existing content blocks, add atrium's context
+    // as a trailing text block. `content` is the chained result so far.
+    const existing = Array.isArray(e.content) ? e.content : [];
+    debug("tool_result inject", { postToolUse: true });
+    return { content: [...existing, { type: "text", text: postCtx }] };
   });
 
   // ── User prompt ───────────────────────────────────────────────────
@@ -403,12 +419,14 @@ export default function (pi: ExtensionAPI) {
   // Claude's UserPromptSubmit additionalContext. We use it to deliver the
   // things atrium injects for first-class adapters:
   //   1. the SessionStart manifest (atrium-context.md + skills) plus the
-  //      run-command pipeline context (Epic 77) — once, combined into one
-  //      persistent hidden message (both are SessionStart-equivalent; pi can't
-  //      inject at PreToolUse, so SessionStart is the only delivery point),
-  //   2. resolved `+name` sigil bodies for this prompt,
-  //   3. the pane-rename nudge while the pane name is still generic.
-  // All fetches are fail-open (empty string on any error) so a slow or
+  //      SessionStart run-command pipeline context (Epic 77) — once, combined
+  //      into one persistent hidden message,
+  //   2. the UserPromptSubmit pipeline atriumContext (Epic 78 Story 78.3) —
+  //      fetched per turn (this hook IS pi's UserPromptSubmit-equivalent),
+  //   3. resolved `+name` sigil bodies for this prompt,
+  //   4. the pane-rename nudge while the pane name is still generic.
+  // (PostToolUse pipeline context is delivered separately, on the tool_result
+  // hook.) All fetches are fail-open (empty string on any error) so a slow or
   // unreachable atrium CLI never blocks pi's turn.
   pi.on("before_agent_start", async (event) => {
     if (!ATRIUM_ACTIVE) return undefined;
@@ -420,8 +438,8 @@ export default function (pi: ExtensionAPI) {
 
     if (!manifestInjected) {
       manifestInjected = true;
-      // Both the SessionStart manifest and the run-command pipeline context
-      // (Epic 77) are SessionStart-equivalent, so fetch them together and
+      // Both the SessionStart manifest and the SessionStart run-command pipeline
+      // context (Epic 77) are SessionStart-equivalent, so fetch them together and
       // deliver them through the one persistent hidden message. Concurrent —
       // independent fail-open fetches.
       const [manifest, pipelineContext] = await Promise.all([
@@ -433,7 +451,7 @@ export default function (pi: ExtensionAPI) {
           "--adapter",
           "pi",
         ]),
-        fetchPipelineContext(),
+        fetchPipelineContext("session-start"),
       ]);
       const sessionStartParts = [manifest, pipelineContext]
         .map((p) => p.trim())
@@ -448,6 +466,11 @@ export default function (pi: ExtensionAPI) {
     }
 
     const additions: string[] = [];
+
+    // UserPromptSubmit pipeline atriumContext — fetched every turn (this hook is
+    // pi's UserPromptSubmit-equivalent). Fail-open skips it on any error.
+    const upsCtx = await fetchPipelineContext("user-prompt-submit");
+    if (upsCtx.trim()) additions.push(upsCtx);
 
     const sigilOut = await runAtriumCapture(
       [
@@ -472,6 +495,7 @@ export default function (pi: ExtensionAPI) {
 
     debug("before_agent_start inject", {
       manifest: result.message != null,
+      userPromptSubmit: upsCtx.trim().length > 0,
       sigils: sigilCtx.length > 0,
       nudge: nudge.length > 0,
     });

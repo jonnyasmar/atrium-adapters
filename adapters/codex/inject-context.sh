@@ -3,7 +3,7 @@
 # context_injection pipeline (Epic 77).
 #
 # Usage: inject-context.sh <event>
-#   event = session-start | pre-tool-use
+#   event = session-start | user-prompt-submit | pre-tool-use | post-tool-use
 #
 # Atrium's context providers (Story 77.5: RunCommandStatusProvider) run in the
 # hook server's context_injection pipeline (Story 77.4) and the assembled
@@ -12,10 +12,15 @@
 # codex delivery: it POSTs the native hook payload to the hook server's HTTP
 # route, reads `atriumContext`, and re-emits it in codex's native envelope for
 # that event. codex (unlike claude-code, whose SessionStart consumes raw
-# stdout) consumes the hookSpecificOutput envelope at BOTH SessionStart and
-# PreToolUse (live-probed):
-#   {"hookSpecificOutput": {"hookEventName": "SessionStart"|"PreToolUse",
+# stdout) consumes the hookSpecificOutput envelope at every injectable event
+# (live-probed):
+#   {"hookSpecificOutput": {"hookEventName": "SessionStart"|"UserPromptSubmit"
+#                           |"PreToolUse"|"PostToolUse",
 #                           "additionalContext": <envelope>}}
+# Epic 78 Story 78.3 adds user-prompt-submit (the context-injection pipeline
+# atriumContext, additive to the existing sigil/nudge UserPromptSubmit entries)
+# and post-tool-use (whose payload carries the tool RESULT for post-action
+# providers).
 #
 # When there's nothing to inject (or anything fails) it emits the `{}` no-op and
 # exits 0 — the hook NEVER blocks the session or the tool call (fail-open, NFR5
@@ -33,7 +38,7 @@ noop() {
 }
 
 case "$EVENT" in
-  session-start | pre-tool-use) ;;
+  session-start | user-prompt-submit | pre-tool-use | post-tool-use) ;;
   *) noop ;;
 esac
 
@@ -75,10 +80,12 @@ context="$(printf '%s' "$response" | jq -r '.atriumContext // empty' 2>/dev/null
 [ -n "$context" ] || noop
 
 # Render codex's native hookSpecificOutput envelope. `jq -n` because stdin is
-# drained. codex consumes this shape at both SessionStart and PreToolUse.
+# drained. codex consumes this shape at every injectable event.
 case "$EVENT" in
-  pre-tool-use) hook_event_name="PreToolUse" ;;
   session-start) hook_event_name="SessionStart" ;;
+  user-prompt-submit) hook_event_name="UserPromptSubmit" ;;
+  pre-tool-use) hook_event_name="PreToolUse" ;;
+  post-tool-use) hook_event_name="PostToolUse" ;;
 esac
 jq -n --arg name "$hook_event_name" --arg ctx "$context" \
   '{hookSpecificOutput: {hookEventName: $name, additionalContext: $ctx}}'

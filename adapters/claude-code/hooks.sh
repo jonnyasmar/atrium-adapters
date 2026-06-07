@@ -121,28 +121,39 @@ build_all_hooks() {
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
 
-  # Epic 77 Story 77.5 — context-injection pipeline delivery: atrium's
-  # RunCommandStatusProvider runs in the hook server's context_injection
-  # pipeline and the assembled envelope rides the `atriumContext` field on the
+  # Epic 77 Story 77.5 / Epic 78 Story 78.3 — context-injection pipeline
+  # delivery: atrium's RunCommandStatusProvider (and future post-action /
+  # prompt-aware providers) run in the hook server's context_injection pipeline
+  # and the assembled envelope rides the `atriumContext` field on the
   # /api/adapter/* HTTP response. `inject-context.sh <event>` POSTs the native
   # hook payload to that route, reads `atriumContext`, and renders Claude's
   # native envelope per event:
-  #   - SessionStart → run-command defined+running list (raw-text/identity, a
-  #     SECOND SessionStart context source alongside resolve-manifest).
-  #   - PreToolUse   → terse "already running" nudge before a shell-class tool
-  #     call (hookSpecificOutput.additionalContext; `{}` no-op otherwise).
-  # claude-code is the VERIFIED injection baseline (`hookEnvelopes.preToolUse =
-  # hookSpecificOutput`); other adapters declare `preToolUse: none` and wire no
-  # PreToolUse injection (the grok-revert lesson: no dead wiring). Resolved via
-  # ${ATRIUM_DATA_DIR:-...} so stable / dev / beta installs coexist.
-  local inject_base inject_ss inject_pt
+  #   - SessionStart      → run-command defined+running list (raw-text/identity,
+  #     a SECOND SessionStart context source alongside resolve-manifest).
+  #   - UserPromptSubmit  → the pipeline atriumContext, additive to the existing
+  #     sigil/nudge UserPromptSubmit entries (hookSpecificOutput; `{}` no-op).
+  #   - PreToolUse        → terse "already running" nudge before a shell-class
+  #     tool call (hookSpecificOutput.additionalContext; `{}` no-op otherwise).
+  #   - PostToolUse       → post-action context (the PostToolUse payload carries
+  #     the tool RESULT; hookSpecificOutput; `{}` no-op otherwise).
+  # claude-code is the VERIFIED injection baseline (every hookEnvelopes kind is
+  # hookSpecificOutput); other adapters declare the events they can't consume as
+  # `none` and wire no injection there (the grok-revert lesson: no dead wiring).
+  # Resolved via ${ATRIUM_DATA_DIR:-...} so stable / dev / beta installs coexist.
+  local inject_base inject_ss inject_ups inject_pt inject_post
   inject_base="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
   inject_ss="$(jq -n --arg cmd "$inject_base session-start" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
+  inject_ups="$(jq -n --arg cmd "$inject_base user-prompt-submit" \
+    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson e "$inject_ups" '.UserPromptSubmit += $e' <<< "$hooks")"
   inject_pt="$(jq -n --arg cmd "$inject_base pre-tool-use" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_pt" '.PreToolUse += $e' <<< "$hooks")"
+  inject_post="$(jq -n --arg cmd "$inject_base post-tool-use" \
+    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson e "$inject_post" '.PostToolUse += $e' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

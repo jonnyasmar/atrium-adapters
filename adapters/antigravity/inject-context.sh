@@ -5,15 +5,19 @@
 # envelope to stdout carrying atrium's session context for this turn:
 #   1. the SessionStart manifest (atrium-context.md + skills — tells the
 #      agent it's running inside atrium and how to drive the CLI),
-#   2. the run-command pipeline `atriumContext` from the hook server's
-#      context_injection pipeline (Epic 77 — RunCommandStatusProvider et al.),
+#   2. the SessionStart run-command pipeline `atriumContext` from the hook
+#      server's context_injection pipeline (Epic 77 — RunCommandStatusProvider),
+#   2b. the UserPromptSubmit pipeline `atriumContext` (Epic 78 Story 78.3 —
+#      agy's PreInvocation hook IS its UserPromptSubmit-equivalent),
 #   3. resolved `+name` sigil bodies for this turn's prompt,
 #   4. the pane-rename nudge while the pane name is still generic.
 #
-# agy is injection-CAPABLE at SessionStart ONLY: it has no native SessionStart,
-# so atrium maps SessionStart→PreInvocation gated on invocationNum==0. agy's
-# PreToolUse (PreToolHookResult) has no inject_steps field, so PreToolUse is
-# NOT an injection point — the run-command context rides SessionStart here.
+# agy is injection-CAPABLE at SessionStart + UserPromptSubmit (both via this one
+# PreInvocation hook, fired per user turn): it has no native SessionStart, so
+# atrium maps SessionStart→PreInvocation gated on invocationNum==0. agy's
+# PreToolUse (PreToolHookResult) and its post-tool path have no inject_steps
+# field, so PreToolUse and PostToolUse are NOT injection points (postToolUse:
+# none) — the run-command + prompt context ride this PreInvocation step.
 #
 # Confirmed agy envelope (verified 2026-06-04 via an isolated `agy --print`
 # probe — the agent obeyed an injected directive):
@@ -62,12 +66,15 @@ add_step() {
     '$arr + [{systemMessage: {systemMessage: $t}}]' 2>/dev/null || printf '%s' "$steps_json")"
 }
 
-# Run-command pipeline context (Epic 77): POST the native PreInvocation payload
-# to the hook server's session-start route and read `.atriumContext`. The
-# context_injection pipeline (RunCommandStatusProvider et al.) runs server-side;
-# its assembled envelope rides the `atriumContext` field. Fail-open: any
-# missing dep / port / failure / empty body returns "" and the caller skips it.
+# Pipeline context (Epic 77/78): POST the native PreInvocation payload to the
+# hook server's route for the given event and read `.atriumContext`. The
+# context_injection pipeline (RunCommandStatusProvider et al.) runs server-side
+# and its provider output is event-specific; its assembled envelope rides the
+# `atriumContext` field. $1 is the kebab-case event (session-start |
+# user-prompt-submit). Fail-open: any missing dep / port / failure / empty body
+# returns "" and the caller skips it.
 fetch_pipeline_context() {
+  local event="$1"
   command -v curl >/dev/null 2>&1 || return 0
   local port_file="${DATA}/hook-port"
   [ -f "$port_file" ] || return 0
@@ -82,7 +89,7 @@ fetch_pipeline_context() {
     -H "Content-Type: application/json" \
     -H "X-Atrium-Pane-Id: ${ATRIUM_PANE_ID}" \
     --data-binary "$payload" \
-    "http://127.0.0.1:${port}/api/adapter/antigravity/session-start" 2>/dev/null || true)"
+    "http://127.0.0.1:${port}/api/adapter/antigravity/${event}" 2>/dev/null || true)"
   [ -n "$response" ] || return 0
   printf '%s' "$response" | jq -r '.atriumContext // empty' 2>/dev/null || true
 }
@@ -91,10 +98,19 @@ fetch_pipeline_context() {
 manifest="$("$CLI" skills resolve-manifest --pane-id "$ATRIUM_PANE_ID" --adapter antigravity 2>/dev/null || true)"
 add_step "$manifest"
 
-# 2. Run-command pipeline context — assembled by the hook server's
+# 2. SessionStart run-command pipeline context — assembled by the hook server's
 #    context_injection pipeline, delivered as its own injectSteps systemMessage.
-pipeline_ctx="$(fetch_pipeline_context)"
+pipeline_ctx="$(fetch_pipeline_context session-start)"
 add_step "$pipeline_ctx"
+
+# 2b. UserPromptSubmit pipeline context (Epic 78 Story 78.3). antigravity is
+#     injection-capable at UserPromptSubmit via this same PreInvocation hook
+#     (it has no PostToolUse inject point). inv==0 fires on each new user turn,
+#     so the UserPromptSubmit pipeline channel rides here as a distinct step —
+#     78.4's prompt-aware provider serves different content at user-prompt-submit
+#     than at session-start.
+ups_ctx="$(fetch_pipeline_context user-prompt-submit)"
+add_step "$ups_ctx"
 
 # 3. Sigils — resolve `+name` bodies for this turn's prompt. agy's
 #    PreInvocation payload doesn't carry the prompt text, so read the latest

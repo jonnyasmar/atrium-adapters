@@ -122,15 +122,19 @@ function runAtriumCapture(args, stdin, timeoutMs = 2500) {
   });
 }
 
-// Fetch the run-command pipeline context (Epic 77) from the hook server's
-// context_injection route. atrium's context providers assemble an envelope
-// that rides the `atriumContext` field of the
-// /api/adapter/opencode/session-start JSON response (the same contract
-// claude-code uses via inject-context.sh). opencode delivers it by pushing
-// the string onto the system prompt in chat.system.transform. Fail-open:
-// any error / timeout / missing port resolves to "" so a slow or unreachable
-// hook server never blocks opencode's request.
-async function fetchRunCommandContext(sessionID, model, timeoutMs = 2000) {
+// Fetch the pipeline context (Epic 77/78) from the hook server's
+// context_injection route for a given injectable event. atrium's context
+// providers assemble an envelope that rides the `atriumContext` field of the
+// /api/adapter/opencode/<event> JSON response (the same contract claude-code
+// uses via inject-context.sh). opencode delivers it by pushing the string onto
+// the system prompt in chat.system.transform (its only same-turn injection
+// primitive — it runs on every provider request, including the tool-loop
+// continuation after a tool runs, so PostToolUse context rides the next
+// transform). `event` is the kebab-case event path (session-start |
+// user-prompt-submit | post-tool-use). Fail-open: any error / timeout /
+// missing port resolves to "" so a slow or unreachable hook server never blocks
+// opencode's request.
+async function fetchPipelineContext(event, sessionID, model, timeoutMs = 2000) {
   if (!ATRIUM_ACTIVE) return "";
   try {
     // Hook server port is written by the running app, per data dir.
@@ -142,7 +146,7 @@ async function fetchRunCommandContext(sessionID, model, timeoutMs = 2000) {
     }
     if (!port) return "";
 
-    // Native-ish payload mirroring what a SessionStart hook would carry.
+    // Native-ish payload mirroring what the corresponding hook would carry.
     const payload = JSON.stringify({
       session_id: sessionID ?? null,
       model: model ?? null,
@@ -152,7 +156,7 @@ async function fetchRunCommandContext(sessionID, model, timeoutMs = 2000) {
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     let res;
     try {
-      res = await fetch(`http://127.0.0.1:${port}/api/adapter/opencode/session-start`, {
+      res = await fetch(`http://127.0.0.1:${port}/api/adapter/opencode/${event}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -221,6 +225,15 @@ let manifestCache = null;
 // system.transform (which has no prompt of its own), then cleared so
 // tool-loop continuation requests don't re-resolve a stale prompt.
 let pendingSigilPrompt = null;
+// Epic 78 Story 78.3 — pipeline atriumContext delivery for the new injectable
+// events. opencode's only same-turn injection primitive is system.transform,
+// which runs on every provider request; we gate the per-event pipeline fetch on
+// a flag set by the lifecycle handler that fired, then clear it so a tool-loop
+// continuation doesn't re-inject. UserPromptSubmit ⇐ chat.message;
+// PostToolUse ⇐ tool.execute.after (its context rides the NEXT transform, the
+// continuation request after the tool runs).
+let pendingUserPromptInject = false;
+let pendingPostToolInject = false;
 
 async function renameNudgeIfGeneric() {
   const out = await runAtriumCapture(["pane", "list", "--filter", `id=${ATRIUM_PANE_ID}`, "--json"]);
@@ -342,6 +355,8 @@ export const AtriumPlugin = async (_input, _options) => {
       });
       // Hand the prompt to the next system.transform for sigil resolution.
       if (userText) pendingSigilPrompt = userText;
+      // Mark the UserPromptSubmit pipeline atriumContext for the next transform.
+      pendingUserPromptInject = true;
     },
 
     // ── Tool lifecycle. opencode's hook signature is (input, output)
@@ -364,6 +379,10 @@ export const AtriumPlugin = async (_input, _options) => {
         tool_input: stringify(input?.args),
         tool_response: stringify(output?.output),
       });
+      // Mark the PostToolUse pipeline atriumContext for the NEXT transform —
+      // the tool-loop continuation request after this tool runs (system.transform
+      // is opencode's only inject point; there's no return-based after-tool hook).
+      pendingPostToolInject = true;
     },
 
     // ── Permission flow.
@@ -375,11 +394,14 @@ export const AtriumPlugin = async (_input, _options) => {
     // the system prompt is assembled through this transform: pushing onto
     // output.system adds system-prompt segments for the request. This is
     // opencode's same-turn injection primitive — the equivalent of Claude's
-    // UserPromptSubmit additionalContext / pi's before_agent_start. We use
-    // it to deliver the atrium SessionStart manifest (atrium-context.md +
+    // UserPromptSubmit additionalContext / pi's before_agent_start, and it
+    // runs on every provider request (including tool-loop continuations). We
+    // use it to deliver the atrium SessionStart manifest (atrium-context.md +
     // skills, telling the agent it runs inside atrium and how to drive it),
     // the Epic 77 run-command pipeline context (atriumContext from the hook
-    // server, this adapter's SessionStart-equivalent delivery), and the
+    // server, this adapter's SessionStart-equivalent delivery), the Epic 78
+    // Story 78.3 pipeline atriumContext for UserPromptSubmit (after a user
+    // message) and PostToolUse (on the continuation after a tool runs), and the
     // pane-rename nudge while the pane name is still generic. Every fetch is
     // fail-open. (Per-prompt `+name` sigil expansion isn't wired here yet —
     // system.transform has no prompt text; that needs messages.transform and
@@ -398,11 +420,29 @@ export const AtriumPlugin = async (_input, _options) => {
         if (m.trim()) manifestCache = m;
       }
       if (manifestCache) output.system.push(manifestCache);
-      // Run-command pipeline context (atriumContext) from the hook server.
-      // Re-fetched per request (it's session/run-state dependent, unlike the
-      // session-stable manifest); fail-open skips the push on any error.
-      const runCtx = await fetchRunCommandContext(input?.sessionID, input?.model);
+      // SessionStart run-command pipeline context (atriumContext) from the hook
+      // server. Re-fetched per request (it's session/run-state dependent, unlike
+      // the session-stable manifest); fail-open skips the push on any error.
+      const runCtx = await fetchPipelineContext("session-start", input?.sessionID, input?.model);
       if (runCtx) output.system.push(runCtx);
+      // UserPromptSubmit pipeline atriumContext — fetched once per user message
+      // (flag set in chat.message), then cleared so tool-loop continuations
+      // don't re-inject. Fail-open.
+      let upsCtx = "";
+      if (pendingUserPromptInject) {
+        pendingUserPromptInject = false;
+        upsCtx = await fetchPipelineContext("user-prompt-submit", input?.sessionID, input?.model);
+        if (upsCtx) output.system.push(upsCtx);
+      }
+      // PostToolUse pipeline atriumContext — fetched on the continuation request
+      // after a tool runs (flag set in tool.execute.after), then cleared.
+      // Fail-open.
+      let postCtx = "";
+      if (pendingPostToolInject) {
+        pendingPostToolInject = false;
+        postCtx = await fetchPipelineContext("post-tool-use", input?.sessionID, input?.model);
+        if (postCtx) output.system.push(postCtx);
+      }
       const nudge = await renameNudgeIfGeneric();
       if (nudge) output.system.push(nudge);
       // Per-prompt `+name` sigil bodies — resolve once per user message
@@ -422,6 +462,8 @@ export const AtriumPlugin = async (_input, _options) => {
       debug("system.transform inject", {
         manifest: Boolean(manifestCache),
         runCommand: runCtx.length > 0,
+        userPromptSubmit: upsCtx.length > 0,
+        postToolUse: postCtx.length > 0,
         nudge: nudge.length > 0,
         sigils: sigilCtx.length > 0,
       });
