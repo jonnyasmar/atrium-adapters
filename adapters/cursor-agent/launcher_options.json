@@ -18,8 +18,9 @@
       "key": "model",
       "label": "model",
       "description": "Model id",
-      "type": "text",
-      "default": ""
+      "type": "select",
+      "default": "",
+      "choices": ["auto", "composer-2.5", "composer-2.5-fast", "gpt-5.3-codex", "gpt-5.3-codex-high", "gpt-5.2", "gpt-5.5-high", "claude-opus-4-8-thinking-high", "claude-opus-4-8-low"]
     },
     {
       "key": "extraArgs",

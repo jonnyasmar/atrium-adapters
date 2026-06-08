@@ -11,8 +11,9 @@
       "key": "model",
       "label": "model",
       "description": "Model id",
-      "type": "text",
-      "default": ""
+      "type": "select",
+      "default": "",
+      "choices": ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini"]
     },
     {
       "key": "effort",

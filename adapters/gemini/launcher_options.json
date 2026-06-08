@@ -11,8 +11,9 @@
       "key": "model",
       "label": "model",
       "description": "Model id",
-      "type": "text",
-      "default": ""
+      "type": "select",
+      "default": "",
+      "choices": ["gemini-3-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro", "gemini-2.5-flash"]
     },
     {
       "key": "extraArgs",

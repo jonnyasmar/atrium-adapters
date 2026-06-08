@@ -11,8 +11,9 @@
       "key": "model",
       "label": "model",
       "description": "Model (alias opus/sonnet/haiku or full id)",
-      "type": "text",
-      "default": ""
+      "type": "select",
+      "default": "",
+      "choices": ["opus", "sonnet", "haiku"]
     },
     {
       "key": "effort",
@@ -20,7 +21,7 @@
       "description": "Reasoning effort",
       "type": "select",
       "default": "high",
-      "choices": ["low", "medium", "high", "xhigh", "max"]
+      "choices": ["low", "medium", "high", "xhigh", "max", "ultracode"]
     },
     {
       "key": "extraArgs",

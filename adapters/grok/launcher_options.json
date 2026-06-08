@@ -11,8 +11,9 @@
       "key": "model",
       "label": "model",
       "description": "Model id",
-      "type": "text",
-      "default": ""
+      "type": "select",
+      "default": "",
+      "choices": ["grok-build", "grok-composer-2.5-fast"]
     },
     {
       "key": "effort",
