@@ -15,6 +15,13 @@
       "default": false
     },
     {
+      "key": "model",
+      "label": "model",
+      "description": "Model id (effort folds into model name)",
+      "type": "text",
+      "default": ""
+    },
+    {
       "key": "extraArgs",
       "label": "args",
       "description": "Additional CLI arguments",

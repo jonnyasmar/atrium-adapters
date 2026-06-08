@@ -8,6 +8,21 @@
       "default": false
     },
     {
+      "key": "model",
+      "label": "model",
+      "description": "Model id",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "effort",
+      "label": "effort",
+      "description": "Reasoning effort",
+      "type": "select",
+      "default": "medium",
+      "choices": ["minimal", "low", "medium", "high"]
+    },
+    {
       "key": "extraArgs",
       "label": "args",
       "description": "Additional CLI arguments",

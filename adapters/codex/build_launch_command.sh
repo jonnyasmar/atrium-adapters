@@ -14,6 +14,19 @@ if command -v jq &>/dev/null; then
     CMD="${CMD}, \"--dangerously-bypass-approvals-and-sandbox\""
   fi
 
+  MODEL="$(echo "$FLAGS" | jq -r '.model // ""' 2>/dev/null)" || MODEL=""
+  if [ -n "$MODEL" ]; then
+    CMD="${CMD}, \"-m\", \"${MODEL}\""
+  fi
+
+  # Codex has no native --effort flag; reasoning effort is a config override.
+  # The argv element must be model_reasoning_effort="<v>" (inner quotes are
+  # part of the TOML value codex's -c/--config parser expects, e.g. -c model="o3").
+  EFFORT="$(echo "$FLAGS" | jq -r '.effort // ""' 2>/dev/null)" || EFFORT=""
+  if [ -n "$EFFORT" ]; then
+    CMD="${CMD}, \"-c\", \"model_reasoning_effort=\\\"${EFFORT}\\\"\""
+  fi
+
   EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
   if [ -n "$EXTRA" ]; then
     for arg in $EXTRA; do
