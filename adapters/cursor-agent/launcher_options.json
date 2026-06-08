@@ -3,14 +3,14 @@
     {
       "key": "yolo",
       "label": "👮‍♂️",
-      "description": "--force (run everything without approval)",
+      "description": "--force",
       "type": "toggle",
       "default": false
     },
     {
       "key": "plan",
       "label": "plan",
-      "description": "--plan (read-only planning mode)",
+      "description": "--plan",
       "type": "toggle",
       "default": false
     },

@@ -3,7 +3,7 @@
     {
       "key": "alwaysApprove",
       "label": "👮‍♂️",
-      "description": "--always-approve (auto-approve all tool executions)",
+      "description": "--always-approve",
       "type": "toggle",
       "default": false
     },

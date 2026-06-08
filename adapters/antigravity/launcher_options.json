@@ -10,7 +10,7 @@
     {
       "key": "sandbox",
       "label": "sandbox",
-      "description": "--sandbox (terminal restrictions)",
+      "description": "--sandbox",
       "type": "toggle",
       "default": false
     },

@@ -71,7 +71,7 @@
         "macos"
       ],
       "official": true,
-      "version": "0.5.2",
+      "version": "0.5.3",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" fill-rule=\"evenodd\"><title>Antigravity</title><path d=\"M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z\"/></svg>"
     },
@@ -86,7 +86,7 @@
         "macos"
       ],
       "official": true,
-      "version": "0.4.5",
+      "version": "0.4.6",
       "minAppVersion": "0.156.0"
     },
     {
@@ -130,7 +130,7 @@
         "macos"
       ],
       "official": true,
-      "version": "0.1.5",
+      "version": "0.1.6",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><title>Grok</title><path d=\"M2.30047 8.77631L12.0474 23H16.3799L6.63183 8.77631H2.30047ZM6.6285 16.6762L2.29492 23H6.63072L8.79584 19.8387L6.6285 16.6762ZM17.3709 1L9.88007 11.9308L12.0474 15.0944L21.7067 1H17.3709ZM18.1555 7.76374V23H21.7067V2.5818L18.1555 7.76374Z\"/></svg>"
     }
