@@ -93,12 +93,18 @@ build_all_hooks() {
   # guard: gemini's SessionStart only fires inside an atrium-managed pane,
   # and the CLI's NFR8 fast-path (Story 59.6 AC5) writes an exit-0 warning
   # when the runtime is unreachable — never blocks session start.
-  local ctx_cmd ctx_entry
-  ctx_cmd="$(printf '"${ATRIUM_CLI_PATH:-%s}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter gemini 2>/dev/null || true' \
-    "$ATRIUM_CLI_FALLBACK")"
-  ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
-    '[{matcher: "startup", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
-  hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+  #
+  # Split into THREE dedicated SessionStart entries (--section context|agent|
+  # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
+  # hook per section gives each section its own 10K budget (max headroom).
+  local ctx_section ctx_cmd ctx_entry
+  for ctx_section in context agent skills; do
+    ctx_cmd="$(printf '"${ATRIUM_CLI_PATH:-%s}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter gemini --section %s 2>/dev/null || true' \
+      "$ATRIUM_CLI_FALLBACK" "$ctx_section")"
+    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
+      '[{matcher: "startup", hooks: [{type: "command", command: $cmd, timeout: 5000}]}]')"
+    hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+  done
 
   # Pane-name nudge: appended to BeforeAgent (gemini's user-prompt-submit
   # equivalent) so the agent gets a per-prompt reminder until the pane is

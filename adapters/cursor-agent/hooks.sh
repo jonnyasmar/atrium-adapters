@@ -95,11 +95,19 @@ build_all_hooks() {
   # || true` suffix: the CLI itself returns exit 0 on the NFR8 fast-path
   # (Story 59.6 AC5), and Cursor's hook output parsing tolerates exit-0
   # + non-empty stdout cleanly.
-  local ctx_cmd ctx_entry
-  ctx_cmd="\${ATRIUM_CLI_PATH:-\$HOME/.atrium/bin/atrium} skills resolve-manifest --pane-id \"\${ATRIUM_PANE_ID:-}\" --adapter cursor-agent"
-  ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
-    '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
-  hooks="$(jq --argjson ctx "$ctx_entry" '.sessionStart += $ctx' <<< "$hooks")"
+  #
+  # Split into THREE dedicated sessionStart entries (--section context|agent|
+  # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
+  # hook per section gives each section its own 10K budget (max headroom).
+  # `--section %s` keeps the required single `<binary> <args...>` shape — no
+  # inline pipeline, so Cursor's shellExecutor doesn't drop it.
+  local ctx_section ctx_cmd ctx_entry
+  for ctx_section in context agent skills; do
+    ctx_cmd="\${ATRIUM_CLI_PATH:-\$HOME/.atrium/bin/atrium} skills resolve-manifest --pane-id \"\${ATRIUM_PANE_ID:-}\" --adapter cursor-agent --section $ctx_section"
+    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
+      '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
+    hooks="$(jq --argjson ctx "$ctx_entry" '.sessionStart += $ctx' <<< "$hooks")"
+  done
 
   # Pane-name nudge: appended to beforeSubmitPrompt (Cursor's user-prompt
   # equivalent) so the agent gets a per-prompt reminder until the pane is

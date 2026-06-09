@@ -83,18 +83,24 @@ build_all_hooks() {
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
 
-  # Claude-specific: a second SessionStart matcher whose stdout becomes
-  # session context. Calls `atrium skills resolve-manifest` at hook-fire
-  # time so the injected context is the pane-specific v1 manifest emitted
-  # by SkillsHandler::manifest() (per-adapter envelope normalization lives
-  # there per NFR18). The CLI writes raw bytes shaped for the target
-  # harness directly to stdout — no jq, no per-harness wrap here.
-  local ctx_cmd ctx_entry
-  ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
-    "$ATRIUM_HOOK_MARKER_PREFIX")"
-  ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
-    '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
-  hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+  # Claude-specific: SessionStart context whose stdout becomes session
+  # context. Calls `atrium skills resolve-manifest` at hook-fire time so the
+  # injected context is the pane-specific v1 manifest emitted by
+  # SkillsHandler::manifest() (per-adapter envelope normalization lives there
+  # per NFR18). The CLI writes raw bytes shaped for the target harness
+  # directly to stdout — no jq, no per-harness wrap here.
+  #
+  # Split into THREE dedicated SessionStart entries (--section context|agent|
+  # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
+  # hook per section gives each section its own 10K budget (max headroom).
+  local ctx_section ctx_cmd ctx_entry
+  for ctx_section in context agent skills; do
+    ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$ctx_section")"
+    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
+      '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+    hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+  done
 
   # Pane-name nudge: appended to UserPromptSubmit so the agent gets a
   # per-prompt reminder until the pane is renamed off its default
