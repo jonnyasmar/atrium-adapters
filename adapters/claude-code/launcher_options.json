@@ -2,7 +2,7 @@
   "options": [
     {
       "key": "dangerouslySkipPermissions",
-      "label": "\ud83d\udc6e\u200d\u2642\ufe0f",
+      "label": "👮‍♂️",
       "description": "--dangerously-skip-permissions",
       "type": "toggle",
       "default": false
@@ -13,7 +13,12 @@
       "description": "Model (alias fable/opus/sonnet/haiku or full id)",
       "type": "select",
       "default": "",
-      "choices": ["fable", "opus", "sonnet", "haiku"]
+      "choices": [
+        { "value": "fable", "label": "Claude Fable 5" },
+        { "value": "opus", "label": "Claude Opus 4.8" },
+        { "value": "sonnet", "label": "Claude Sonnet 4.6" },
+        { "value": "haiku", "label": "Claude Haiku 4.5" }
+      ]
     },
     {
       "key": "effort",
@@ -30,5 +35,37 @@
       "type": "text",
       "default": ""
     }
+  ],
+  "suggestedFlags": [
+    { "flag": "--add-dir", "description": "Additional directories to allow tool access" },
+    { "flag": "--agent", "description": "Agent for the current session" },
+    { "flag": "--agents", "description": "JSON object defining custom agents" },
+    { "flag": "--allowed-tools", "description": "Tools allowed without confirmation" },
+    { "flag": "--disallowed-tools", "description": "Tools to disallow" },
+    { "flag": "--append-system-prompt", "description": "Append to the system prompt" },
+    { "flag": "--fallback-model", "description": "Fallback model on overload" },
+    { "flag": "--fork-session", "description": "On resume, create a new session id" },
+    { "flag": "--continue", "description": "Continue the most recent conversation" },
+    { "flag": "--mcp-config", "description": "Load MCP servers from JSON files" },
+    { "flag": "--ide", "description": "Auto-connect to an IDE on startup" },
+    { "flag": "--debug", "description": "Enable debug mode (optional filter)" },
+    { "flag": "--debug-file", "description": "Write debug logs to a file" },
+    {
+      "flag": "--output-format",
+      "description": "Output format",
+      "values": ["text", "json", "stream-json"]
+    },
+    {
+      "flag": "--input-format",
+      "description": "Input format",
+      "values": ["text", "stream-json"]
+    },
+    { "flag": "--settings", "description": "Load settings from a JSON file" },
+    { "flag": "--plugin-dir", "description": "Load a plugin from a directory" },
+    { "flag": "--max-budget-usd", "description": "Max dollars to spend on the API" },
+    { "flag": "--include-partial-messages", "description": "Include partial chunks" },
+    { "flag": "--from-pr", "description": "Resume a session linked to a PR" },
+    { "flag": "--disable-slash-commands", "description": "Disable all skills" },
+    { "flag": "--no-session-persistence", "description": "Don't persist the session" }
   ]
 }

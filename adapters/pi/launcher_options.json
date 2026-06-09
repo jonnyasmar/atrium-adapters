@@ -5,7 +5,15 @@
       "label": "model",
       "description": "Override the default model (e.g. claude-sonnet-4)",
       "type": "text",
-      "default": ""
+      "default": "",
+      "choices": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "gpt-5.5",
+        "gemini-3-pro",
+        "grok-build"
+      ]
     },
     {
       "key": "provider",
@@ -21,5 +29,9 @@
       "type": "text",
       "default": ""
     }
+  ],
+  "suggestedFlags": [
+    { "flag": "--provider", "description": "Model provider" },
+    { "flag": "--cwd", "description": "Working directory" }
   ]
 }

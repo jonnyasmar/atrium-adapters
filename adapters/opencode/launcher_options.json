@@ -5,7 +5,20 @@
       "label": "model",
       "description": "Override the default model (e.g. anthropic/claude-sonnet-4)",
       "type": "text",
-      "default": ""
+      "default": "",
+      "choices": [
+        "anthropic/claude-opus-4-8",
+        "anthropic/claude-sonnet-4-6",
+        "anthropic/claude-haiku-4-5",
+        "openai/gpt-5.5",
+        "openai/gpt-5.4",
+        "google/gemini-3-pro",
+        "google/gemini-3.5-flash",
+        "opencode/big-pickle",
+        "opencode/deepseek-v4-flash-free",
+        "opencode/mimo-v2.5-free",
+        "opencode/nemotron-3-ultra-free"
+      ]
     },
     {
       "key": "agent",
@@ -21,5 +34,18 @@
       "type": "text",
       "default": ""
     }
+  ],
+  "suggestedFlags": [
+    { "flag": "--agent", "description": "Agent" },
+    { "flag": "--continue", "description": "Continue the last session" },
+    { "flag": "--session", "description": "Session id" },
+    { "flag": "--prompt", "description": "Prompt" },
+    { "flag": "--fork", "description": "Fork the session" },
+    { "flag": "--log-level", "description": "Log level" },
+    { "flag": "--port", "description": "Server port" },
+    { "flag": "--hostname", "description": "Server hostname" },
+    { "flag": "--cors", "description": "Allowed CORS origins" },
+    { "flag": "--print-logs", "description": "Print logs to stderr" },
+    { "flag": "--pure", "description": "Pure mode (no config)" }
   ]
 }

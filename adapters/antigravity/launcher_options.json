@@ -19,7 +19,18 @@
       "label": "model",
       "description": "Model id (effort folds into model name)",
       "type": "text",
-      "default": ""
+      "default": "",
+      "choices": [
+        "gemini-3.5-flash",
+        "gemini-3.1-pro",
+        "gemini-3-pro",
+        "gemini-3-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "claude-sonnet-4-6",
+        "claude-opus-4-6",
+        "gpt-oss-120b"
+      ]
     },
     {
       "key": "extraArgs",
@@ -28,5 +39,11 @@
       "type": "text",
       "default": ""
     }
+  ],
+  "suggestedFlags": [
+    { "flag": "--sandbox", "description": "Terminal/sandbox restrictions" },
+    { "flag": "--include-directories", "description": "Additional workspace directories" },
+    { "flag": "--output-format", "description": "CLI output format" },
+    { "flag": "--debug", "description": "Debug mode" }
   ]
 }

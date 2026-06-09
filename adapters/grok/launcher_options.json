@@ -13,7 +13,10 @@
       "description": "Model id",
       "type": "select",
       "default": "",
-      "choices": ["grok-build", "grok-composer-2.5-fast"]
+      "choices": [
+        { "value": "grok-build", "label": "Grok Build" },
+        { "value": "grok-composer-2.5-fast", "label": "Composer 2.5 Fast" }
+      ]
     },
     {
       "key": "effort",
@@ -30,5 +33,31 @@
       "type": "text",
       "default": ""
     }
+  ],
+  "suggestedFlags": [
+    { "flag": "--agent", "description": "Agent name" },
+    { "flag": "--agents", "description": "Custom agents JSON" },
+    { "flag": "--allow", "description": "Permission allow rule" },
+    { "flag": "--deny", "description": "Permission deny rule" },
+    { "flag": "--disallowed-tools", "description": "Tools to disallow" },
+    { "flag": "--continue", "description": "Continue the most recent conversation" },
+    { "flag": "--resume", "description": "Resume a session" },
+    { "flag": "--cwd", "description": "Working directory" },
+    { "flag": "--sandbox", "description": "Sandbox profile" },
+    { "flag": "--max-turns", "description": "Max agent turns" },
+    { "flag": "--system-prompt-override", "description": "Override the system prompt" },
+    { "flag": "--tools", "description": "Tools to enable" },
+    { "flag": "--no-subagents", "description": "Disable subagents" },
+    { "flag": "--no-plan", "description": "Disable planning" },
+    { "flag": "--no-memory", "description": "Disable memory" },
+    { "flag": "--disable-web-search", "description": "Disable web search" },
+    {
+      "flag": "--output-format",
+      "description": "Output format",
+      "values": ["plain", "json", "streaming-json"]
+    },
+    { "flag": "--prompt-file", "description": "Read the prompt from a file" },
+    { "flag": "--rules", "description": "Rules" },
+    { "flag": "--best-of-n", "description": "Sample N responses" }
   ]
 }

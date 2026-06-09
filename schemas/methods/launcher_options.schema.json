@@ -35,13 +35,51 @@
           },
           "choices": {
             "type": "array",
-            "items": { "type": "string" },
-            "description": "Available choices (required when type is 'select')."
+            "items": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "required": ["value"],
+                  "properties": {
+                    "value": { "type": "string", "minLength": 1 },
+                    "label": { "type": "string", "minLength": 1 }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "description": "Canonical set for 'select'; non-exhaustive suggestion hints for 'text'. A choice is a bare string or a {value,label} object (adapter-owned display label)."
           }
         },
         "additionalProperties": false
       },
       "description": "List of configurable launcher options."
+    },
+    "suggestedFlags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["flag"],
+        "properties": {
+          "flag": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The CLI flag, e.g. '--add-dir'."
+          },
+          "description": {
+            "type": "string",
+            "description": "The flag's --help description, shown in the picker."
+          },
+          "values": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Closed set of allowed values when the CLI advertises one."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Suggested CLI flags for the launch-profile '+ Add flag' picker."
     }
   },
   "additionalProperties": false
