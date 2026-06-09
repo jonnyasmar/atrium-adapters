@@ -10,10 +10,10 @@
     {
       "key": "model",
       "label": "model",
-      "description": "Model (alias opus/sonnet/haiku or full id)",
+      "description": "Model (alias fable/opus/sonnet/haiku or full id)",
       "type": "select",
       "default": "",
-      "choices": ["opus", "sonnet", "haiku"]
+      "choices": ["fable", "opus", "sonnet", "haiku"]
     },
     {
       "key": "effort",

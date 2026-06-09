@@ -12,9 +12,10 @@
         "macos"
       ],
       "official": true,
-      "version": "1.16.5",
+      "version": "1.16.6",
       "minAppVersion": "0.156.0",
       "models": [
+        "fable",
         "opus",
         "sonnet",
         "haiku"
