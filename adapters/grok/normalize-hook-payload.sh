@@ -125,6 +125,11 @@ case "$EVENT" in
 
     last_msg=""
     if [ -n "$chat_path" ] && [ -f "$chat_path" ]; then
+      # Wait for this turn's reply to be flushed before scraping — same
+      # "stop fires before the final message lands" race fixed for claude-code
+      # (the hook can otherwise read the previous turn's reply, "one behind").
+      settle="$(dirname "$0")/../shared/await-transcript-settle.sh"
+      [ -x "$settle" ] && "$settle" grok "$chat_path"
       last_msg="$(tail -r "$chat_path" 2>/dev/null | jq -rR --slurp '
         split("\n")
         | map(select(. != "") | fromjson?)

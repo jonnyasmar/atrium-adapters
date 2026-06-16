@@ -24,7 +24,10 @@
 #   We surface the LAST assistant message with non-empty text content as
 #   `last_assistant_message` so the agent's final reply reaches both the
 #   activity card and the timeline. The scan is bounded to the file tail
-#   so a long transcript never threatens the 5s hook timeout.
+#   so a long transcript never threatens the 5s hook timeout. Before scraping
+#   we wait (../shared/await-transcript-settle.sh) for the reply to be flushed
+#   — Claude fires Stop before the final message lands, which otherwise yields
+#   the previous turn's reply ("one behind").
 #
 # Any other event passes through verbatim — atrium only reads the
 # normalized fields on the events above.
@@ -91,6 +94,13 @@ case "$EVENT" in
     transcript_path="$(printf '%s' "$input" | jq -r '.transcript_path // empty' 2>/dev/null || true)"
     last_msg=""
     if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+      # Claude fires this Stop hook a few hundred ms BEFORE the turn's final
+      # assistant message is flushed to the transcript (verified: at fire-time
+      # only the user prompt is on disk), so scraping immediately yields the
+      # PREVIOUS turn's reply — "one behind". Wait for the reply to land first.
+      settle="$(dirname "$0")/../shared/await-transcript-settle.sh"
+      [ -x "$settle" ] && "$settle" claude "$transcript_path"
+
       # Read only the last ~800 lines, then reverse so the first
       # text-bearing assistant turn we hit is the most recent one.
       # tail -r is reverse on BSD/macOS; fall back to an awk reverse

@@ -68,4 +68,50 @@ diff_out="$(jq -n --argjson exp "$(cat "$exp_file")" --argjson act "$act" '
 [ "$diff_out" = "[]" ] || fail "static stop fixture diverges from expected-atrium.json" "$diff_out"
 echo "[PASS] stop: static fixture pair (expected ⊂ actual)"
 
+# 5. Settle predicate (await-transcript-settle.sh --check claude). Guards the
+#    "last assistant message is one turn behind" fix: the predicate must report
+#    settled ONLY once the turn's final reply is the last conversation line, and
+#    unsettled while the reply still lags (last line is the prompt or a tool
+#    result, as it is at the moment Claude actually fires the Stop hook).
+SETTLE="$ADAPTER_DIR/../shared/await-transcript-settle.sh"
+[ -x "$SETTLE" ] || fail "settle helper missing/non-executable: $SETTLE"
+
+# 5a. The realistic transcript ends with the final reply → settled.
+got_settled="$("$SETTLE" --check claude "$TRANSCRIPT")"
+[ "$got_settled" = "true" ] \
+  || fail "settle predicate should be true once the reply has landed" "got: $got_settled"
+echo "[PASS] settle: reply present → true"
+
+# 5b. Reply still lagging — transcript ends with a tool_result (the exact
+#     on-disk state when Stop fires mid-flush) → not settled.
+racing="$(mktemp)"
+turn1="$(mktemp)"
+trap 'rm -f "$racing" "$turn1"' EXIT
+{
+  printf '%s\n' '{"type":"user","message":{"role":"user","content":[{"type":"text","text":"do it"}]}}'
+  printf '%s\n' '{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"working"},{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls"}}]}}'
+  printf '%s\n' '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"ok"}]}}'
+} > "$racing"
+got_racing="$("$SETTLE" --check claude "$racing")"
+[ "$got_racing" != "true" ] \
+  || fail "settle predicate must be false while the reply lags (last line is a tool_result)" "got: $got_racing"
+echo "[PASS] settle: reply lagging (trailing tool_result) → not true"
+
+# 5c. Turn one — only the user prompt on disk (what we actually observed at
+#     fire-time) → not settled.
+printf '%s\n' '{"type":"user","message":{"role":"user","content":[{"type":"text","text":"hi"}]}}' > "$turn1"
+got_turn1="$("$SETTLE" --check claude "$turn1")"
+[ "$got_turn1" != "true" ] \
+  || fail "settle predicate must be false when only the prompt is on disk" "got: $got_turn1"
+echo "[PASS] settle: only prompt on disk → not true"
+
+# 5d. Poll mode returns promptly on an already-settled transcript (no race →
+#     no added latency). Generous slack for slow CI.
+t_start=$(date +%s)
+"$SETTLE" claude "$TRANSCRIPT" 2000 120
+t_end=$(date +%s)
+[ "$(( t_end - t_start ))" -le 1 ] \
+  || fail "settle should return immediately when the reply is already present"
+echo "[PASS] settle: already-settled transcript → returns immediately"
+
 echo "[PASS] claude-code stop normalization fixture test complete"

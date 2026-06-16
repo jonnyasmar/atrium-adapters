@@ -17,6 +17,7 @@ import argparse
 import hashlib
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from extract_session import (  # noqa: E402  (path is set above)
@@ -51,29 +52,54 @@ def _newest_store_db(cwd: str):
     return newest
 
 
+def _scan(conn):
+    """Return (last_assistant_text, last_message_role) from the chat store in
+    iteration (chronological) order — so the caller can tell whether the most
+    recent message is the assistant's reply or still the user's prompt."""
+    last_text = ""
+    last_role = None
+    for _key, value in _try_read_messages(conn):
+        msg = _decode_message(value)
+        if not isinstance(msg, dict):
+            continue
+        role = msg.get("role") or msg.get("type")
+        if role:
+            last_role = role
+        if role == "assistant":
+            text = _flatten_content(msg.get("content") or msg.get("text"))
+            if text and text.strip():
+                last_text = text.strip()
+    return last_text, last_role
+
+
 def last_assistant_message(db_path: str) -> str:
-    try:
-        conn = _open_ro(db_path)
-    except Exception:
-        return ""
-    try:
-        last = ""
-        for _key, value in _try_read_messages(conn):
-            msg = _decode_message(value)
-            if not isinstance(msg, dict):
-                continue
-            if (msg.get("role") or msg.get("type")) == "assistant":
-                text = _flatten_content(msg.get("content") or msg.get("text"))
-                if text and text.strip():
-                    last = text.strip()
-        return last
-    except Exception:
-        return ""
-    finally:
+    # Cursor fires its stop hook around the moment the reply is written to the
+    # chat store; if the write lags the hook, the newest row is still the user
+    # prompt and we'd return the PREVIOUS turn's reply ("one behind" — the same
+    # race fixed for the file-scraping adapters). Poll (bounded, well under the
+    # hook timeout) until the newest message is the assistant reply, then return
+    # it. When the reply is already present this returns on the first read.
+    budget_s = 1.6
+    interval_s = 0.12
+    deadline = time.monotonic() + budget_s
+    last = ""
+    while True:
         try:
-            conn.close()
+            conn = _open_ro(db_path)
         except Exception:
-            pass
+            return last
+        try:
+            last, last_role = _scan(conn)
+        except Exception:
+            last_role = None
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        if last_role == "assistant" or time.monotonic() >= deadline:
+            return last
+        time.sleep(interval_s)
 
 
 def main():
