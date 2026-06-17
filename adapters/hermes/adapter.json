@@ -1,0 +1,46 @@
+{
+  "sdkVersion": 2,
+  "name": "hermes",
+  "displayName": "Hermes",
+  "description": "Nous Research's tool-calling AI agent",
+  "accent": "#e0a32e",
+  "binary": "hermes",
+  "version": "0.1.0",
+  "icon": "icon.svg",
+  "skillInstallPath": "~/.hermes/skills/atrium/SKILL.md",
+  "binaryDiscovery": {
+    "commands": [
+      "hermes"
+    ],
+    "wellKnownPaths": [
+      "~/.local/bin/hermes",
+      "/usr/local/bin/hermes",
+      "/opt/homebrew/bin/hermes",
+      "~/.hermes/hermes-agent/venv/bin/hermes"
+    ]
+  },
+  "hooks": {
+    "session-start": "atrium://hooks/hermes/session-start",
+    "user-prompt-submit": "atrium://hooks/hermes/user-prompt-submit",
+    "pre-tool-use": "atrium://hooks/hermes/pre-tool-use",
+    "post-tool-use": "atrium://hooks/hermes/post-tool-use",
+    "stop": "atrium://hooks/hermes/stop"
+  },
+  "methods": {
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
+  }
+}

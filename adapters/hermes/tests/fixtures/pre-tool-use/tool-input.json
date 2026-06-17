@@ -1,0 +1,12 @@
+{
+  "hook_event_name": "pre_tool_call",
+  "tool_name": "terminal",
+  "tool_input": { "command": "ls -la" },
+  "session_id": "20260616_194500_ae5b11e7",
+  "cwd": "/Users/dev/project",
+  "extra": {
+    "task_id": "task-1",
+    "tool_call_id": "call-1",
+    "turn_id": "turn-1"
+  }
+}

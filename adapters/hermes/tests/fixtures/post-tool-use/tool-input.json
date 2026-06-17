@@ -1,0 +1,16 @@
+{
+  "hook_event_name": "post_tool_call",
+  "tool_name": "terminal",
+  "tool_input": { "command": "ls -la" },
+  "session_id": "20260616_194500_ae5b11e7",
+  "cwd": "/Users/dev/project",
+  "extra": {
+    "result": "file1.txt\nfile2.txt",
+    "duration_ms": 42,
+    "status": "success",
+    "error_type": null,
+    "error_message": null,
+    "task_id": "task-1",
+    "tool_call_id": "call-1"
+  }
+}

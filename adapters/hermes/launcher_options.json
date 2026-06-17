@@ -1,0 +1,43 @@
+{
+  "options": [
+    {
+      "key": "dangerouslySkipPermissions",
+      "label": "👮‍♂️",
+      "description": "--yolo (bypass dangerous-command approval prompts)",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "model",
+      "label": "model",
+      "description": "Model id (e.g. anthropic/claude-sonnet-4.6)",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "provider",
+      "label": "provider",
+      "description": "Inference provider override (e.g. openrouter, anthropic)",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ],
+  "suggestedFlags": [
+    { "flag": "--model", "description": "Model override (provider/model)" },
+    { "flag": "--provider", "description": "Inference provider" },
+    { "flag": "--toolsets", "description": "Comma-separated toolsets to enable" },
+    { "flag": "--skills", "description": "Preload one or more skills for the session" },
+    { "flag": "--worktree", "description": "Run in an isolated git worktree" },
+    { "flag": "--continue", "description": "Resume the most recent session" },
+    { "flag": "--max-turns", "description": "Max tool-calling iterations per turn" },
+    { "flag": "--checkpoints", "description": "Filesystem checkpoints before destructive ops" },
+    { "flag": "--safe-mode", "description": "Disable all customizations (troubleshooting)" }
+  ]
+}

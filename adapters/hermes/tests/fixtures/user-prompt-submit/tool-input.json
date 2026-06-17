@@ -1,0 +1,15 @@
+{
+  "hook_event_name": "pre_llm_call",
+  "tool_name": null,
+  "tool_input": null,
+  "session_id": "20260616_194500_ae5b11e7",
+  "cwd": "/Users/dev/project",
+  "extra": {
+    "user_message": "What is the weather?",
+    "is_first_turn": true,
+    "task_id": "task-1",
+    "turn_id": "turn-1",
+    "model": "anthropic/claude-sonnet-4.6",
+    "platform": "cli"
+  }
+}
