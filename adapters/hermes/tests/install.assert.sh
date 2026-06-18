@@ -19,6 +19,10 @@ for ev in on_session_start pre_llm_call pre_tool_call post_tool_call post_llm_ca
   grep -q "$ev" "$CONFIG" || { echo "missing hook event: $ev" >&2; exit 1; }
 done
 
+# Context-injection hook wired (delivers manifest + rename nudge).
+grep -q "inject-context.sh" "$CONFIG" || {
+  echo "context-injection hook not wired" >&2; exit 1; }
+
 # Consent allowlist pre-seeded so launch never blocks on the TTY prompt.
 [ -f "$ALLOW" ] || { echo "allowlist not created" >&2; exit 1; }
 grep -q "hermes-hook.sh" "$ALLOW" || { echo "allowlist not pre-seeded" >&2; exit 1; }

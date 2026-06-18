@@ -21,13 +21,14 @@ CONFIG_YAML="${HERMES_HOME}/config.yaml"
 ALLOWLIST="${HERMES_HOME}/shell-hooks-allowlist.json"
 HOOK_SCRIPT="${ADAPTER_DIR}/hermes-hook.sh"
 NORMALIZER="${ADAPTER_DIR}/normalize-hook-payload.sh"
+INJECT_SCRIPT="${ADAPTER_DIR}/inject-context.sh"
 PYHELPER="${ADAPTER_DIR}/manage_hermes_config.py"
 
 # Substring that identifies atrium-owned hook commands in config.yaml /
-# allowlist. Both dev and stable installs embed this path fragment, so a
-# (re)install cleans up any prior atrium entry before writing the current one —
-# only one instance's hooks exist at a time (no double-emit).
-MARKER="adapters/hermes/hermes-hook.sh"
+# allowlist. Matches every script under the adapter dir (hermes-hook.sh +
+# inject-context.sh), so a (re)install cleans up any prior atrium entry before
+# writing the current set — only one instance's hooks exist at a time.
+MARKER="adapters/hermes/"
 
 # Hermes shell-hook event names we wire. The key in config.yaml IS the Hermes
 # event name; hermes-hook.sh maps each to the atrium event(s) it emits.
@@ -72,6 +73,10 @@ build_events_json() {
     cmd="${HOOK_SCRIPT} ${ev}"
     arr="$(jq -c --arg ev "$ev" --arg cmd "$cmd" '. + [{event: $ev, command: $cmd, timeout: 10}]' <<<"$arr")"
   done
+  # Context injection: a second pre_llm_call entry that returns atrium's
+  # manifest + pane-rename nudge as {"context": ...} (Hermes appends it to the
+  # turn). Runs alongside the activity pre_llm_call entry; Hermes aggregates.
+  arr="$(jq -c --arg cmd "$INJECT_SCRIPT" '. + [{event: "pre_llm_call", command: $cmd, timeout: 15}]' <<<"$arr")"
   printf '%s' "$arr"
 }
 
@@ -82,7 +87,7 @@ do_install() {
     echo '{"error": "no python3 with ruamel.yaml or pyyaml found"}' >&2
     exit 1
   fi
-  chmod +x "$HOOK_SCRIPT" "$NORMALIZER" 2>/dev/null || true
+  chmod +x "$HOOK_SCRIPT" "$NORMALIZER" "$INJECT_SCRIPT" 2>/dev/null || true
 
   local events
   events="$(build_events_json)"

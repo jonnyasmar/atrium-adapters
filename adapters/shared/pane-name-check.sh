@@ -148,7 +148,7 @@ PANE_NAME="$("$ATRIUM_CLI" pane list --filter "id=$ATRIUM_PANE_ID" --json 2>/dev
 # fields in adapters/*/adapter.json. Empty string covers the case where
 # a pane has no name at all.
 case "$PANE_NAME" in
-  "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Grok"|"Antigravity"|"OpenCode"|"Pi"|"Cursor"|"Cursor Agent"|"Terminal"|"")
+  "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Grok"|"Antigravity"|"OpenCode"|"Pi"|"Cursor"|"Cursor Agent"|"Hermes"|"Terminal"|"")
     : # generic — fall through
     ;;
   *)
