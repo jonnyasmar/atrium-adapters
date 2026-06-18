@@ -146,9 +146,12 @@ PANE_NAME="$("$ATRIUM_CLI" pane list --filter "id=$ATRIUM_PANE_ID" --json 2>/dev
 
 # Generic launcher names we nudge against. Keep aligned with displayName
 # fields in adapters/*/adapter.json. Empty string covers the case where
-# a pane has no name at all.
+# a pane has no name at all. The python* entries cover adapters whose
+# foreground process name is the interpreter, not the binary (Hermes is a
+# Python app launched via a `hermes` wrapper, so atrium's process-name
+# tracking labels the pane "python3.11" until the agent renames it).
 case "$PANE_NAME" in
-  "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Grok"|"Antigravity"|"OpenCode"|"Pi"|"Cursor"|"Cursor Agent"|"Hermes"|"Terminal"|"")
+  "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Grok"|"Antigravity"|"OpenCode"|"Pi"|"Cursor"|"Cursor Agent"|"Hermes"|"Terminal"|"python"|"Python"|"python3"|"python3."*|"")
     : # generic — fall through
     ;;
   *)
