@@ -17,6 +17,18 @@ set -uo pipefail
 
 HERMES_EVENT="${1:-}"
 
+# Only report activity when running inside an atrium pane. Hermes shell hooks
+# live in the machine-wide config.yaml, so EVERY hermes process fires them — the
+# messaging gateway daemon, cron jobs, `hermes -z` oneshots, manual runs. atrium
+# injects ATRIUM_PANE_ID only into its panes, so its absence means this hermes
+# was not launched by atrium and has no pane to attribute activity to. Without
+# this gate those external processes emit phantom events onto atrium's hermes
+# panes. Print the no-op stdout hermes expects and exit cleanly.
+if [ -z "${ATRIUM_PANE_ID:-}" ]; then
+  printf '{}\n'
+  exit 0
+fi
+
 # Self-locate. The adapter dir is this script's dir; the atrium data dir is two
 # levels up (<data-dir>/adapters/hermes/). Deriving the CLI from our own
 # location means one fixed config.yaml entry resolves to whichever atrium

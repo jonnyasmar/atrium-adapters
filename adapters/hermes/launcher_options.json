@@ -3,7 +3,7 @@
     {
       "key": "dangerouslySkipPermissions",
       "label": "👮‍♂️",
-      "description": "--yolo (bypass dangerous-command approval prompts)",
+      "description": "--yolo",
       "type": "toggle",
       "default": false
     },
