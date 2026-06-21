@@ -8,7 +8,7 @@
 #   post_tool_use    : sessionId, toolName, toolInput, toolResult, …
 #   user_prompt_submit: sessionId, prompt, promptId, …
 #   session_start    : sessionId, source, cwd, …
-#   stop             : sessionId, cwd, …
+#   stop             : sessionId, cwd/workspaceRoot, …
 #
 # Atrium's activity-card reducer reads snake_case (`session_id`,
 # `tool_name`, `tool_input`, `tool_response`, `user_prompt`) and
@@ -113,7 +113,7 @@ case "$EVENT" in
     # Each line is {"type":"assistant"|"user"|"system","content":"…"}.
     # We want the LAST assistant message's content as plain text.
     session_id="$(printf '%s' "$base" | jq -r '.session_id // empty' 2>/dev/null)"
-    cwd="$(printf '%s' "$base" | jq -r '.cwd // empty' 2>/dev/null)"
+    cwd="$(printf '%s' "$base" | jq -r '.cwd // .workspace_root // .workspaceRoot // empty' 2>/dev/null)"
 
     chat_path="$(printf '%s' "$base" | jq -r '.transcript_path // .transcriptPath // empty' 2>/dev/null)"
     if [ -n "$chat_path" ] && [ ! -f "$chat_path" ]; then
@@ -121,7 +121,7 @@ case "$EVENT" in
     fi
 
     if [ -z "$chat_path" ] && [ -n "$session_id" ] && [ -n "$cwd" ]; then
-      encoded="$(printf '%s' "$cwd" | perl -MURI::Escape -e 'print uri_escape(<STDIN>, "^A-Za-z0-9");' 2>/dev/null || true)"
+      encoded="$(printf '%s' "$cwd" | perl -MURI::Escape -e 'print uri_escape(<STDIN>);' 2>/dev/null || true)"
       [ -z "$encoded" ] && encoded="${cwd//\//%2F}"
       candidate="${HOME}/.grok/sessions/${encoded}/${session_id}/chat_history.jsonl"
       [ -f "$candidate" ] && chat_path="$candidate"

@@ -1,7 +1,7 @@
 {
-  "session_id": "019e6b94-03cc-7512-adec-38b5338c115c",
-  "transcript_path": "adapters/grok/tests/fixtures/stop/chat_history.jsonl",
-  "cwd": "/Users/test/dev/myproject",
+  "sessionId": "019e6b94-03cc-7512-adec-38b5338c115c",
+  "transcriptPath": "adapters/grok/tests/fixtures/stop/chat_history.jsonl",
+  "workspaceRoot": "/Users/test/dev/myproject",
   "hook_event_name": "Stop",
   "stop_hook_active": false
 }
