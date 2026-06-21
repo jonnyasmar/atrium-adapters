@@ -113,6 +113,37 @@ Both `set-in-review` and `set-done` read `$ATRIUM_TASK_RUN_ID` by default (overr
 
 **Manual lifecycle** (rarely needed — atrium launches you): `task launch ATR-12 --pane-id "$ATRIUM_PANE_ID" --adapter <name>` (self-launch; `--adapter` required in piped/`--json` mode); `run show <id> --json`; `run complete <id>`; `run resume <id> --pane-id "$ATRIUM_PANE_ID"` (headless pickup of an interrupted run). Discover runs via `run list --task ATR-N` or `--workspace <id>`, with `--state interrupted`.
 
+## Predefining how a task launches (adapter + launch profile)
+
+A task card can carry a **launch config** — the same "Launch" section the create modal shows — so a later one-click Launch (or `task launch`) runs it with a chosen adapter + launch profile, on the right branch, transitioning the right statuses. Set it on `task create` **or** `task update` by passing `--adapter` (its presence attaches the config); everything else is optional and auto-derived.
+
+**Discover the options first** (don't guess names):
+
+```bash
+"$ATRIUM_CLI_PATH" adapter list                                  # which adapters are installed
+"$ATRIUM_CLI_PATH" launch-profile list --adapter claude-code     # that adapter's profiles (Default marked ★)
+"$ATRIUM_CLI_PATH" task status list                              # status ids, if you want to pin them
+```
+
+**Bind it:**
+
+```bash
+# Pre-bind a new task to claude-code + the "fable" launch profile.
+# Review/completion/in-progress statuses auto-derive from the workspace
+# columns (same logic as the UI), so you usually only need these two flags:
+"$ATRIUM_CLI_PATH" task create --title "Port the parser" --source "adapter:claude-code" \
+  --adapter claude-code --launch-profile fable
+
+# Omit --launch-profile to use the adapter's Default profile.
+# Add/replace the config on an existing card the same way:
+"$ATRIUM_CLI_PATH" task update ATR-12 --adapter codex --execution-mode worktree
+```
+
+- **`--launch-profile` is the HOW** (model / effort / CLI args / env — the launch profile). **`--agent` is the WHO** (a packaged agent's prompt + skills). They're orthogonal — set either or both. The legacy `--profile` flag is **not** the launch profile (it only labels an ad-hoc agent/skill selection); ignore it for launch binding.
+- Pin statuses explicitly with `--review-status` / `--completion-status` / `--in-progress-status` (ids from `task status list`); otherwise they're derived by name (`/review/i`, `/done|complete/i`, `/progress/i`) with positional fallbacks.
+- `--execution-mode worktree` isolates the run onto a sibling worktree (`--worktree-branch-source existing --worktree-branch <name>` to reuse a branch; the default `new` derives a fresh one at launch). `--merge-target <branch>` makes completion a merge request.
+- Bad adapter / profile / status ids fail fast with the valid options listed. Read a card's stored config back with `task show <id> --json` (`launchConfig` field).
+
 ## Workspace commands
 
 A workspace defines **named background commands** — its dev server, test watcher, build, etc. — that run in long-lived background terminals. They're the workspace's "Run" surface; you drive them with `workspace-command`, scoped to your workspace (no id needed — it resolves from your pane). A worktree inherits its parent's commands (own definitions win on a name clash).
