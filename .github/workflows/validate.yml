@@ -36,3 +36,38 @@ jobs:
             exit 1
           fi
           echo "All adapters passed validation."
+
+      # canonical-assets.json enumerates the atrium-owned files atrium pushes to
+      # user installs beyond per-adapter skills (the home context file, bundled
+      # skills, future global assets). atrium reads it at launch + on a periodic
+      # cadence to keep those files fresh without a relaunch. A listed file that
+      # doesn't exist on disk silently never reaches users — fail the build.
+      - name: Validate canonical-assets manifest
+        run: |
+          manifest=canonical-assets.json
+          [ -f "$manifest" ] || { echo "No $manifest; skipping"; exit 0; }
+          jq empty "$manifest" || { echo "::error::$manifest is not valid JSON"; exit 1; }
+          failed=0
+          count=$(jq '.assets | length' "$manifest")
+          for i in $(seq 0 $((count - 1))); do
+            target=$(jq -r ".assets[$i].target" "$manifest")
+            remote=$(jq -r ".assets[$i].remotePath" "$manifest")
+            id=$(jq -r ".assets[$i].id // .assets[$i].remotePath" "$manifest")
+            if [ ! -f "$remote" ]; then
+              echo "::error::canonical-assets '$id': remotePath '$remote' does not exist"
+              failed=1
+            fi
+            case "$target" in
+              atrium-home)
+                [ -n "$(jq -r ".assets[$i].destName // empty" "$manifest")" ] \
+                  || { echo "::error::'$id' target atrium-home requires destName"; failed=1; } ;;
+              bundled-skill)
+                [ -n "$(jq -r ".assets[$i].skillName // empty" "$manifest")" ] \
+                  || { echo "::error::'$id' target bundled-skill requires skillName"; failed=1; } ;;
+              *)
+                echo "::error::'$id' has unknown target '$target' (expected atrium-home | bundled-skill)"
+                failed=1 ;;
+            esac
+          done
+          if [ "$failed" -eq 1 ]; then exit 1; fi
+          echo "canonical-assets.json: all $count assets valid."

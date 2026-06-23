@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "id": "atrium-context",
+      "remotePath": "adapters/shared/atrium-context.md",
+      "target": "atrium-home",
+      "destName": "atrium-context.md"
+    },
+    {
+      "id": "atrium-create-brief",
+      "remotePath": "skills/atrium-create-brief/SKILL.md",
+      "target": "bundled-skill",
+      "skillName": "atrium-create-brief"
+    },
+    {
+      "id": "atrium-create-update",
+      "remotePath": "skills/atrium-create-update/SKILL.md",
+      "target": "bundled-skill",
+      "skillName": "atrium-create-update"
+    },
+    {
+      "id": "atrium-create-recap",
+      "remotePath": "skills/atrium-create-recap/SKILL.md",
+      "target": "bundled-skill",
+      "skillName": "atrium-create-recap"
+    }
+  ]
+}

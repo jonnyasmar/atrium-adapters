@@ -385,6 +385,38 @@ Clone this repo and run `./validate-adapter.sh adapters/claude-code/` for a refe
 
 ---
 
+## Canonical assets (atrium-owned pushed content)
+
+Beyond per-adapter configs, atrium ships **its own** files into every install: the
+always-injected session context, the canonical agent skill, that skill's
+references, and a few bundled synthesis-verb skills. Two manifests register what
+gets pushed:
+
+| Manifest | Owns | Installs to |
+|----------|------|-------------|
+| `canonical-assets.json` (repo root) | The home context file + bundled skills (and any future global asset) | `~/.atrium/<destName>`; sibling skill dirs at each adapter's `skillInstallPath` |
+| `skills/atrium/skill-assets.json` | The atrium skill's `references/*.md` | `references/` beside each installed `SKILL.md` |
+
+`canonical-assets.json` entries carry a `target`: `atrium-home` (needs `destName`)
+or `bundled-skill` (needs `skillName`). CI (`validate.yml`) fails the build if a
+listed `remotePath` doesn't exist on disk.
+
+**Delivery is launch + periodic, content-hash-gated.** atrium refreshes every
+listed asset at app launch *and* on its update-check cadence, rewriting a file
+only when its content actually differs. So long-running sessions pick up changes
+without a relaunch, and **without any version bump**:
+
+- **Editing** an already-listed file (`atrium-context.md`, `SKILL.md`, a
+  reference, a bundled skill) → propagates automatically on the next refresh. No
+  manifest change needed.
+- **Adding / renaming / removing** a pushed file → you **must** update the right
+  manifest (`canonical-assets.json` for global/bundled assets, `skill-assets.json`
+  for skill references), or it silently never reaches users. This is the one
+  allowlist gotcha — a new file on disk that no manifest lists is invisible to
+  atrium.
+
+---
+
 ## Available Adapters
 
 | Name | Description | Binary | Status |

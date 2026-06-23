@@ -75,7 +75,11 @@ Keep the SKILL.md body small and high-level. When a skill needs more than fits c
 
 Reference them lazily: *"read `references/long-diff-strategy.md` when the diff exceeds 500 lines"*. Discovery mode loads SKILL.md eagerly at SessionStart but does NOT preload `scripts/`/`references/`/`assets/` — those load only when the agent reads them. A 30-line SKILL.md with three 500-line references is cheaper at SessionStart than a 1500-line SKILL.md and behaves identically once activated.
 
-> **Propagation of atrium's own references:** files under `references/` only propagate to user installs if they're listed in `skill-assets.json`'s `references` array. When you add a reference to a skill that atrium ships, add it there too.
+> **Propagation of atrium's own pushed content:** atrium pushes its canonical files into every install via two manifests, and an unlisted new file silently never reaches users:
+> - A new **skill reference** under `references/` must be added to `skill-assets.json`'s `references` array.
+> - A new **global asset or bundled skill** (anything beyond a skill's own references — e.g. another always-injected file, a new synthesis-verb skill) must be added to `canonical-assets.json` at the repo root.
+>
+> *Editing* an already-listed file needs no manifest change — atrium re-pushes it (hash-gated) at launch and on its periodic update cadence. Only **adding / renaming / removing** a pushed file requires a manifest edit.
 
 ## Scaffold via the in-app UI when you can
 
