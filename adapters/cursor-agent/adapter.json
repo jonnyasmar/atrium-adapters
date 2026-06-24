@@ -19,6 +19,16 @@
       "/opt/homebrew/bin/cursor-agent"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "curl https://cursor.com/install -fsS | bash",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "curl https://cursor.com/install -fsS | bash",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/cursor-agent/session-start",
     "session-end": "atrium://hooks/cursor-agent/session-end",
