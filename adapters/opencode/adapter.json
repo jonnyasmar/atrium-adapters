@@ -22,6 +22,20 @@
       "~/.bun/bin/opencode"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "npm install -g opencode-ai",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "npm install -g opencode-ai",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "npm install -g opencode-ai",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/opencode/session-start",
     "session-end": "atrium://hooks/opencode/session-end",

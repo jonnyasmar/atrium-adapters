@@ -19,6 +19,20 @@
       "~/.local/bin/claude"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "npm install -g @anthropic-ai/claude-code",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "npm install -g @anthropic-ai/claude-code",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "npm install -g @anthropic-ai/claude-code",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/claude-code/session-start",
     "session-end": "atrium://hooks/claude-code/session-end",

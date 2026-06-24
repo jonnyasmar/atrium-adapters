@@ -182,6 +182,61 @@
       },
       "additionalProperties": false
     },
+    "install": {
+      "type": "object",
+      "description": "SDK v2. Optional. Per-platform install recipe atrium runs (in a visible managed terminal) from the Tools UI to install the adapter's CLI binary when it isn't found. Keys are platform ids; an absent platform key means atrium has no recipe for that OS and falls back to the manual 'Locate binary…' path. When the recipe field is omitted entirely the Install button is unavailable for every platform.",
+      "properties": {
+        "macos": {
+          "type": "object",
+          "required": ["cmd"],
+          "properties": {
+            "cmd": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Shell command line atrium runs to install the binary (e.g. 'npm install -g @anthropic-ai/claude-code')."
+            },
+            "postInstallAuth": {
+              "type": "boolean",
+              "description": "When true, the tool requires an interactive sign-in after install; atrium surfaces the Binary-row 'Sign-in required' note."
+            }
+          },
+          "additionalProperties": false
+        },
+        "linux": {
+          "type": "object",
+          "required": ["cmd"],
+          "properties": {
+            "cmd": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Shell command line atrium runs to install the binary (e.g. 'npm install -g @anthropic-ai/claude-code')."
+            },
+            "postInstallAuth": {
+              "type": "boolean",
+              "description": "When true, the tool requires an interactive sign-in after install; atrium surfaces the Binary-row 'Sign-in required' note."
+            }
+          },
+          "additionalProperties": false
+        },
+        "windows": {
+          "type": "object",
+          "required": ["cmd"],
+          "properties": {
+            "cmd": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Shell command line atrium runs to install the binary (e.g. 'npm install -g @anthropic-ai/claude-code')."
+            },
+            "postInstallAuth": {
+              "type": "boolean",
+              "description": "When true, the tool requires an interactive sign-in after install; atrium surfaces the Binary-row 'Sign-in required' note."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "skillInstallPath": {
       "type": "string",
       "minLength": 1,

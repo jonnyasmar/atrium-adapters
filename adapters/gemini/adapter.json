@@ -19,6 +19,20 @@
       "~/.npm/bin/gemini"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "npm install -g @google/gemini-cli",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "npm install -g @google/gemini-cli",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "npm install -g @google/gemini-cli",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/gemini/session-start",
     "session-end": "atrium://hooks/gemini/session-end",

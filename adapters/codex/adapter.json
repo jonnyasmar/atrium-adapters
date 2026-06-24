@@ -21,6 +21,20 @@
       "~/.cargo/bin/codex"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "npm install -g @openai/codex",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "npm install -g @openai/codex",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "npm install -g @openai/codex",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/codex/session-start",
     "session-end": "atrium://hooks/codex/session-end",
