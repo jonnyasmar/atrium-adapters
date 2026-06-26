@@ -29,6 +29,7 @@ Each bucket is one top-level verb. Run `<verb> --help` for its full surface.
 - **`note`** — Workspace-scoped notes in four modes (markdown, sketch, canvas, html): new / list / read / write / search / open / delete / `canvas-patch` / history. Markdown supports mermaid via fenced code blocks. See **Notes** below.
 - **`room`** — List, switch, close rooms.
 - **`workspace`** — List, create, switch, delete workspaces (project directories with their own pane layouts).
+- **`worktree`** — Create/list/remove git worktrees, each bound to its own child workspace. **Use `worktree create`, never raw `git worktree add`** — see **Worktrees** below.
 - **`workspace-command`** — The workspace's named background commands (dev server, watcher, etc.): list / status / start / stop / restart / logs / clear / create / edit / delete. **Check before you launch** — see **Workspace commands** below.
 - **`browser`** — Drive browser panes: navigate, click, fill, type, press, select, scroll, eval JS, screenshot, snapshot, wait, read attributes. Always prefer this over Playwright or any browser MCP.
 - **`agent`** — List active agent panes and send framed messages between them. See **Agent-to-agent messaging** below.
@@ -167,6 +168,18 @@ A workspace defines **named background commands** — its dev server, test watch
 Commands resolve by **label or id** (id wins). Full verb surface — `create` / `edit` / `delete` manage the definitions themselves — via `workspace-command --help` and `workspace-command <verb> --help`.
 
 atrium also injects the live defined-and-running list into your session automatically (at session start, and a terse "already running" nudge before a shell command), so you often already know — but `list`/`status` is the authoritative check.
+
+## Worktrees
+
+Need a git worktree? Use `atrium worktree create --branch <name>` — **never** raw `git worktree add`. The CLI mirrors the New Worktree modal: it runs `git worktree add`, copies `.worktreeinclude` files, runs the parent's post-create commands, and binds a **child workspace** to the new path so it appears in atrium with its own panes and commands. A bare `git worktree add` leaves an orphan atrium can't see (recoverable later with `worktree adopt`, but create it right the first time).
+
+```bash
+"$ATRIUM_CLI_PATH" worktree create --branch feature/x           # new branch off the parent's current branch
+"$ATRIUM_CLI_PATH" worktree create --branch fix/y --base main   # new branch off a specific base
+"$ATRIUM_CLI_PATH" worktree list --json                         # bound worktrees (--orphans to find unbound ones)
+```
+
+Full surface (`remove` / `forget` / `adopt` / `prune`) via `worktree --help`.
 
 ## Notes
 
