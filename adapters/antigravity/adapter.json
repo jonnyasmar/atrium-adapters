@@ -20,6 +20,16 @@
       "~/.npm/bin/agy"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/antigravity/session-start",
     "session-end": "atrium://hooks/antigravity/session-end",

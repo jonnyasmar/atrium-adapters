@@ -19,6 +19,16 @@
       "~/.hermes/hermes-agent/venv/bin/hermes"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/hermes/session-start",
     "user-prompt-submit": "atrium://hooks/hermes/user-prompt-submit",

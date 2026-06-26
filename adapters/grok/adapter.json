@@ -20,6 +20,16 @@
       "~/.local/bin/grok"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "curl -fsSL https://raw.githubusercontent.com/superagent-ai/grok-cli/main/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "curl -fsSL https://raw.githubusercontent.com/superagent-ai/grok-cli/main/install.sh | bash",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/grok/session-start",
     "pre-tool-use": "atrium://hooks/grok/pre-tool-use",

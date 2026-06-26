@@ -21,6 +21,20 @@
       "~/.bun/bin/pi"
     ]
   },
+  "install": {
+    "macos": {
+      "cmd": "npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+      "postInstallAuth": true
+    }
+  },
   "hooks": {
     "session-start": "atrium://hooks/pi/session-start",
     "session-end": "atrium://hooks/pi/session-end",
