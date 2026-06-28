@@ -109,4 +109,29 @@ run_depth quick 2
 run_depth standard 4
 run_depth deep 5
 
+# isMeta user turns (skill-load content, image breadcrumbs) are synthetic
+# injections, not user prompts — they must never surface as canonical events.
+assert_no_meta() {
+  local depth="$1"
+  local tmp
+  tmp="$(mktemp)"
+  ATRIUM_TEST_TRANSCRIPT_ROOT="$FIXTURE_DIR" \
+    "$ADAPTER_DIR/extract_session.sh" \
+      --session-id "$SESSION_ID" \
+      --cwd /tmp \
+      --depth "$depth" \
+    > "$tmp"
+  if grep -qE "Base directory for this skill|\[Image:" "$tmp"; then
+    echo "[FAIL] depth=$depth leaked isMeta prose into canonical output" >&2
+    cat "$tmp" >&2
+    rm -f "$tmp"
+    return 1
+  fi
+  rm -f "$tmp"
+  echo "[PASS] depth=$depth drops isMeta user turns"
+}
+
+assert_no_meta standard
+assert_no_meta deep
+
 echo "[PASS] claude-code extractor fixture test complete"

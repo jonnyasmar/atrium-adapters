@@ -1,4 +1,6 @@
 {"type":"user","message":{"role":"user","content":[{"type":"text","text":"list files in /tmp"}]},"timestamp":"2026-05-23T18:00:00Z","sessionId":"fixture-cc-001","cwd":"/tmp"}
+{"type":"user","isMeta":true,"message":{"role":"user","content":[{"type":"text","text":"Base directory for this skill: /Users/test/.claude/skills/example\n\n# Example skill body"}]},"timestamp":"2026-05-23T18:00:00Z"}
+{"type":"user","isMeta":true,"message":{"role":"user","content":[{"type":"text","text":"[Image: original 2560x1600, displayed at 2000x1250. Multiply coordinates by 1.28 to map to original image.]"}]},"timestamp":"2026-05-23T18:00:00Z"}
 {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I'll run ls /tmp"},{"type":"tool_use","id":"toolu_01","name":"Bash","input":{"command":"ls /tmp","description":"list files"}}]},"timestamp":"2026-05-23T18:00:01Z"}
 {"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01","tool":"Bash","content":"file1.txt\nfile2.txt\n","is_error":false}]},"timestamp":"2026-05-23T18:00:02Z"}
 {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"There are 2 files in /tmp"}]},"timestamp":"2026-05-23T18:00:03Z"}

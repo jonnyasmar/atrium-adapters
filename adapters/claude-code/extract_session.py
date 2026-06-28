@@ -116,7 +116,7 @@ def extract(transcript_path: Path, session_id: str, adapter: str, cwd: str, dept
             if started_at is None:
                 started_at = ts
             last_at = ts
-        if first_user_text is None and entry.get("type") == "user":
+        if first_user_text is None and entry.get("type") == "user" and not entry.get("isMeta"):
             msg = entry.get("message") or {}
             content = msg.get("content") if isinstance(msg, dict) else None
             text = _extract_text_blocks(content)
@@ -161,6 +161,13 @@ def extract(transcript_path: Path, session_id: str, adapter: str, cwd: str, dept
         content = msg.get("content") if isinstance(msg, dict) else None
 
         if entry_type == "user":
+            # Claude Code logs synthetic injected turns — image breadcrumbs,
+            # skill-load content ("Base directory for this skill: ..."),
+            # "Continue from where you left off", session-hook notices, and
+            # local-command caveats — as isMeta user messages. They aren't
+            # prompts the user sent, so their prose must not surface in the
+            # prompt-history strip or Omni Chat transcript.
+            is_meta = bool(entry.get("isMeta"))
             # Prose-or-tool-result. If content is a list of tool_result blocks,
             # emit those; otherwise emit prose.
             if isinstance(content, list):
@@ -192,7 +199,7 @@ def extract(transcript_path: Path, session_id: str, adapter: str, cwd: str, dept
                 # Also emit any text content as prose
                 text = _extract_text_blocks(content)
                 text = re.sub(r"<command-(name|message|args)>.*?</command-\1>", "", text, flags=re.DOTALL).strip()
-                if text:
+                if text and not is_meta:
                     emit({
                         "type": "prose",
                         "role": "user",
@@ -203,7 +210,7 @@ def extract(transcript_path: Path, session_id: str, adapter: str, cwd: str, dept
             else:
                 text = _extract_text_blocks(content)
                 text = re.sub(r"<command-(name|message|args)>.*?</command-\1>", "", text, flags=re.DOTALL).strip()
-                if text:
+                if text and not is_meta:
                     emit({
                         "type": "prose",
                         "role": "user",
