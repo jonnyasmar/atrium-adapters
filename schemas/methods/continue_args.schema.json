@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "continue_args output",
+  "description": "Output schema for the continue_args method (static JSON). Declares the CLI args atrium appends when relaunching a bare terminal-hosted invocation of this agent on restore, so it reattaches its most-recent session instead of starting fresh.",
+  "type": "object",
+  "required": ["appendArgs"],
+  "properties": {
+    "appendArgs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Args appended verbatim to the stored launch command (e.g. [\"--continue\"])."
+    }
+  }
+}

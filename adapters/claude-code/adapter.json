@@ -64,6 +64,9 @@
     },
     "list_plugin_skills": {
       "script": "list_plugin_skills.sh"
+    },
+    "continue_args": {
+      "static": "continue_args.json"
     }
   },
   "retention": {
