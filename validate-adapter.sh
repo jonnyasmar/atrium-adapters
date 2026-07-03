@@ -551,6 +551,7 @@ get_method_args() {
     build_resume_command)   echo "test-session-id {}" ;;
     check_auth)             echo "" ;;
     hooks)                  echo "status" ;;
+    statusline)             echo "status" ;;
     *)                      echo "" ;;
   esac
 }
