@@ -37,11 +37,19 @@ ensure_settings_file() {
 # The command string atrium installs into `.statusLine.command`. Resolves
 # ATRIUM_DATA_DIR at tick time so stable/dev/beta panes each reach their own
 # instance's relay script (the PTY layer injects ATRIUM_DATA_DIR at spawn).
+#
+# settings.json is GLOBAL but the relay script lives per-instance-data-dir,
+# so a pane from an instance that hasn't installed this adapter version yet
+# would point at a missing script. The command therefore guards existence:
+# run the relay when present, else fall back to the user's saved original
+# statusline (the chain file) so their display never breaks — and it never
+# spews a "No such file" error into the status bar.
 relay_command() {
-  # The ${ATRIUM_DATA_DIR:-...} stays a literal on purpose — it must resolve
-  # at statusline-tick time in the pane shell, not now at install time.
+  # The ${ATRIUM_DATA_DIR:-...} / $HOME refs stay literal on purpose — they
+  # must resolve at statusline-tick time in the pane shell, not at install
+  # time.
   # shellcheck disable=SC2016
-  printf 'ATRIUM_STATUSLINE_MARKER=%s; "${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/claude-code/statusline-relay.sh"' \
+  printf 'ATRIUM_STATUSLINE_MARKER=%s; __s="${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/claude-code/statusline-relay.sh"; if [ -x "$__s" ]; then exec "$__s"; fi; __c="$HOME/.claude/.atrium-statusline-chain"; [ -s "$__c" ] && exec sh -c "$(cat "$__c")"' \
     "$MARKER"
 }
 
