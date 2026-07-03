@@ -26,9 +26,17 @@ if [ -n "${ATRIUM_PANE_ID:-}" ] && command -v jq >/dev/null 2>&1; then
     [ -f "$cache" ] && prev="$(cat "$cache" 2>/dev/null || true)"
     if [ "$rl" != "$prev" ]; then
       printf '%s' "$rl" > "$cache" 2>/dev/null || true
+      # tokenBound: whether THIS session actually runs as a pane-bound
+      # account (CLAUDE_CODE_OAUTH_TOKEN in the claude process env, which
+      # this relay inherits). Atrium attributes unbound sessions to the
+      # ambient login regardless of the pane's binding — without this bit a
+      # failed/absent token injection painted the ambient account's usage
+      # onto the bound account's row.
+      bound=false
+      [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && bound=true
       # Fire-and-forget: an orphaned bg job in a non-interactive script is
       # not SIGHUP'd on exit, and the socket write is a few ms.
-      printf '{"rate_limits":%s}' "$rl" \
+      printf '{"rate_limits":%s,"tokenBound":%s}' "$rl" "$bound" \
         | "${ATRIUM_CLI_PATH:-atrium}" hook emit usage-update \
             --adapter claude-code --pane-id "${ATRIUM_PANE_ID}" >/dev/null 2>&1 &
     fi
