@@ -31,7 +31,8 @@ session-end\tSessionEnd\t*
 pre-tool-use\tPreToolUse\t.*
 post-tool-use\tPostToolUse\t.*
 stop\tStop\t.*
-user-prompt-submit\tUserPromptSubmit\t.*'
+user-prompt-submit\tUserPromptSubmit\t.*
+permission-request\tPermissionRequest\t.*'
 
 # Build the hook command string for a given event. Resolved at hook-fire time
 # against the pane's injected env vars so stable/dev/beta can coexist. Trails
@@ -507,7 +508,7 @@ do_status() {
     if [ "$start" = "true" ] && [ "$end" = "true" ]; then
       session="true"
     fi
-    activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop UserPromptSubmit)"
+    activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop UserPromptSubmit PermissionRequest)"
   fi
 
   local installed="false"

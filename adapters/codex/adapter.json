@@ -41,7 +41,8 @@
     "pre-tool-use": "atrium://hooks/codex/pre-tool-use",
     "post-tool-use": "atrium://hooks/codex/post-tool-use",
     "stop": "atrium://hooks/codex/stop",
-    "user-prompt-submit": "atrium://hooks/codex/user-prompt-submit"
+    "user-prompt-submit": "atrium://hooks/codex/user-prompt-submit",
+    "permission-request": "atrium://hooks/codex/permission-request"
   },
   "methods": {
     "list_recent_sessions": {
