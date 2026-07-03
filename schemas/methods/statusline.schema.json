@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "statusline output",
+  "description": "Output schema for the statusline method (install, uninstall, and status subcommands manage the Claude Code statusLine relay).",
+  "oneOf": [
+    {
+      "title": "status response",
+      "type": "object",
+      "required": ["installed", "subcommand"],
+      "properties": {
+        "subcommand": {
+          "type": "string",
+          "const": "status",
+          "description": "Discriminator field identifying this as a status response."
+        },
+        "installed": {
+          "type": "boolean",
+          "description": "Whether the atrium statusLine relay is currently installed."
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "install response",
+      "type": "object",
+      "required": ["installed", "subcommand"],
+      "properties": {
+        "subcommand": {
+          "type": "string",
+          "const": "install",
+          "description": "Discriminator field identifying this as an install response."
+        },
+        "installed": {
+          "type": "boolean",
+          "description": "Whether the statusLine relay was successfully installed."
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "uninstall response",
+      "type": "object",
+      "required": ["uninstalled", "subcommand"],
+      "properties": {
+        "subcommand": {
+          "type": "string",
+          "const": "uninstall",
+          "description": "Discriminator field identifying this as an uninstall response."
+        },
+        "uninstalled": {
+          "type": "boolean",
+          "description": "Whether the statusLine relay was successfully uninstalled."
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
+}
