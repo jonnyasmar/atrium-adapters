@@ -1,0 +1,37 @@
+{
+  "options": [
+    {
+      "key": "model",
+      "label": "model",
+      "description": "Override the default model (e.g. claude-sonnet-4)",
+      "type": "text",
+      "default": "",
+      "choices": [
+        "opus",
+        "sonnet",
+        "haiku",
+        "gpt-5.5",
+        "gemini-3-pro",
+        "grok-build"
+      ]
+    },
+    {
+      "key": "provider",
+      "label": "provider",
+      "description": "Override the LLM provider (anthropic, openai, gemini, ...)",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ],
+  "suggestedFlags": [
+    { "flag": "--provider", "description": "Model provider" },
+    { "flag": "--cwd", "description": "Working directory" }
+  ]
+}
