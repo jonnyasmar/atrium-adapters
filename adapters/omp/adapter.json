@@ -5,7 +5,7 @@
   "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
   "accent": "#f97316",
   "binary": "omp",
-  "version": "16.3.3",
+  "version": "16.3.4",
   "icon": "icon.svg",
   "skillInstallPath": "~/.omp/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.omp/agent/skills",
@@ -23,15 +23,15 @@
   },
   "install": {
     "macos": {
-      "cmd": "npm install -g @oh-my-pi/pi-coding-agent",
+      "cmd": "npm install -g bun @oh-my-pi/pi-coding-agent",
       "postInstallAuth": true
     },
     "linux": {
-      "cmd": "npm install -g @oh-my-pi/pi-coding-agent",
+      "cmd": "npm install -g bun @oh-my-pi/pi-coding-agent",
       "postInstallAuth": true
     },
     "windows": {
-      "cmd": "npm install -g @oh-my-pi/pi-coding-agent",
+      "cmd": "npm install -g bun @oh-my-pi/pi-coding-agent",
       "postInstallAuth": true
     }
   },
