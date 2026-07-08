@@ -4,28 +4,50 @@ set -euo pipefail
 # build_resume_command.sh — Build the command to resume a Codex session.
 # Codex resume format: codex [--dangerously-bypass-approvals-and-sandbox] resume <session_id>
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["codex", "resume", "session-id"]}
+# Output: {"command": ["codex", ...flags, "resume", "session-id"]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"
 
-# Parse dangerouslySkipPermissions from flags JSON
+json_escape() {
+  echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+CMD='["codex"'
+
 SKIP_PERMISSIONS=false
 if command -v jq &>/dev/null; then
   SKIP_PERMISSIONS="$(echo "$FLAGS" | jq -r '.dangerouslySkipPermissions // .dangerous_skip_permissions // false' 2>/dev/null)" || SKIP_PERMISSIONS=false
+  if [ "$SKIP_PERMISSIONS" = "true" ]; then
+    CMD="${CMD}, \"--dangerously-bypass-approvals-and-sandbox\""
+  fi
+
+  MODEL="$(echo "$FLAGS" | jq -r '.model // ""' 2>/dev/null)" || MODEL=""
+  if [ -n "$MODEL" ]; then
+    CMD="${CMD}, \"-m\", \"$(json_escape "$MODEL")\""
+  fi
+
+  EFFORT="$(echo "$FLAGS" | jq -r '.effort // ""' 2>/dev/null)" || EFFORT=""
+  if [ -n "$EFFORT" ]; then
+    CMD="${CMD}, \"-c\", \"model_reasoning_effort=\\\"$(json_escape "$EFFORT")\\\"\""
+  fi
+
+  EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
+  if [ -n "$EXTRA" ]; then
+    for arg in $EXTRA; do
+      CMD="${CMD}, \"$(json_escape "$arg")\""
+    done
+  fi
 else
   # Fallback: grep for the key
   if echo "$FLAGS" | grep -qE '"dangerouslySkipPermissions"\s*:\s*true|"dangerous_skip_permissions"\s*:\s*true'; then
     SKIP_PERMISSIONS=true
   fi
+  if [ "$SKIP_PERMISSIONS" = "true" ]; then
+    CMD="${CMD}, \"--dangerously-bypass-approvals-and-sandbox\""
+  fi
 fi
 
-# Escape session ID for JSON output
-ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-
-if [ "$SKIP_PERMISSIONS" = "true" ]; then
-  echo "{\"command\": [\"codex\", \"--dangerously-bypass-approvals-and-sandbox\", \"resume\", \"${ESCAPED_SESSION_ID}\"]}"
-else
-  echo "{\"command\": [\"codex\", \"resume\", \"${ESCAPED_SESSION_ID}\"]}"
-fi
+CMD="${CMD}, \"resume\", \"$(json_escape "$SESSION_ID")\"]"
+echo "{\"command\": ${CMD}}"
 exit 0

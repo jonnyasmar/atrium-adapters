@@ -15,6 +15,7 @@ EXTRA=""
 if command -v jq &>/dev/null; then
   YOLO="$(echo "$FLAGS" | jq -r '.yolo // .dangerouslySkipPermissions // false' 2>/dev/null)" || YOLO=false
   PLAN="$(echo "$FLAGS" | jq -r '.plan // false' 2>/dev/null)" || PLAN=false
+  MODEL="$(echo "$FLAGS" | jq -r '.model // ""' 2>/dev/null)" || MODEL=""
   EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
 else
   if echo "$FLAGS" | grep -qE '"yolo"\s*:\s*true|"dangerouslySkipPermissions"\s*:\s*true'; then
@@ -31,6 +32,9 @@ ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
 CMD='["cursor-agent"'
 [ "$YOLO" = "true" ] && CMD="${CMD}, \"--force\""
 [ "$PLAN" = "true" ] && CMD="${CMD}, \"--plan\""
+if [ -n "${MODEL:-}" ]; then
+  CMD="${CMD}, \"--model\", \"${MODEL}\""
+fi
 if [ -n "$EXTRA" ]; then
   for arg in $EXTRA; do
     CMD="${CMD}, \"${arg}\""
