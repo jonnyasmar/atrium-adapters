@@ -165,6 +165,49 @@
       },
       "additionalProperties": false
     },
+    "chatTransport": {
+      "type": "object",
+      "description": "SDK v2. Optional. Declares the adapter-owned chat runtime transport and its capabilities for composer-first agent chat panes. Omitted adapters continue to use terminal launch behavior only.",
+      "required": ["kind", "capabilities"],
+      "properties": {
+        "kind": {
+          "enum": ["claude-sdk", "codex-app-server"]
+        },
+        "capabilities": {
+          "type": "object",
+          "required": [
+            "resume",
+            "setModel",
+            "thinking",
+            "permissionCallback",
+            "commandDiscovery",
+            "planMode",
+            "contextUsage",
+            "imageInput",
+            "checkpointing",
+            "subagentEvents",
+            "steering",
+            "backgroundTasks"
+          ],
+          "properties": {
+            "resume": { "type": "boolean" },
+            "setModel": { "type": "boolean" },
+            "thinking": { "type": "boolean" },
+            "permissionCallback": { "type": "boolean" },
+            "commandDiscovery": { "type": "boolean" },
+            "planMode": { "type": "boolean" },
+            "contextUsage": { "type": "boolean" },
+            "imageInput": { "type": "boolean" },
+            "checkpointing": { "type": "boolean" },
+            "subagentEvents": { "type": "boolean" },
+            "steering": { "type": "boolean" },
+            "backgroundTasks": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "binaryDiscovery": {
       "type": "object",
       "description": "SDK v2. Replaces the v1 detect_binary.sh method. atrium walks 'commands' against PATH and falls back to 'wellKnownPaths' to locate the CLI binary.",
