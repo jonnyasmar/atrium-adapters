@@ -5,7 +5,7 @@
   "description": "OpenAI's AI coding assistant",
   "accent": "#059669",
   "binary": "codex",
-  "version": "1.20.0",
+  "version": "1.20.1",
   "icon": "icon.svg",
   "skillInstallPath": "~/.codex/skills/atrium/SKILL.md",
   "skillsDir": "~/.codex/skills",
@@ -88,23 +88,6 @@
       "kind": "hookSpecificOutput",
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
-    }
-  },
-  "chatTransport": {
-    "kind": "codex-app-server",
-    "capabilities": {
-      "resume": true,
-      "setModel": true,
-      "thinking": true,
-      "permissionCallback": true,
-      "commandDiscovery": false,
-      "planMode": true,
-      "contextUsage": false,
-      "imageInput": true,
-      "checkpointing": false,
-      "subagentEvents": false,
-      "steering": true,
-      "backgroundTasks": false
     }
   }
 }
