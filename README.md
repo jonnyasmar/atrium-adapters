@@ -423,7 +423,6 @@ without a relaunch, and **without any version bump**:
 |------|-------------|--------|--------|
 | [claude-code](adapters/claude-code/) | Anthropic's AI coding assistant | `claude` | Official |
 | [codex](adapters/codex/) | OpenAI's AI coding assistant | `codex` | Official |
-| [gemini](adapters/gemini/) | Google's AI coding assistant | `gemini` | Official |
 | [antigravity](adapters/antigravity/) | Google's agent-first terminal CLI (successor to Gemini CLI) | `agy` | Official |
 | [grok](adapters/grok/) | xAI's terminal coding agent | `grok` | Official |
 | [opencode](adapters/opencode/) | Open-source AI coding agent built for the terminal | `opencode` | Official |

@@ -115,7 +115,7 @@
           ]
         },
         "userPromptSubmit": {
-          "description": "Envelope wrapping the sigil-resolution response for the UserPromptSubmit (or equivalent) hook. 'hookSpecificOutput' is the Claude-Code-shaped envelope used by claude-code/codex/gemini/grok. 'none' is used by adapters with no same-turn injection primitive (cursor-agent).",
+          "description": "Envelope wrapping the sigil-resolution response for the UserPromptSubmit (or equivalent) hook. 'hookSpecificOutput' is the Claude-Code-shaped envelope used by claude-code/codex/grok. 'none' is used by adapters with no same-turn injection primitive (cursor-agent).",
           "oneOf": [
             { "type": "object", "required": ["kind"], "properties": { "kind": { "const": "none" } }, "additionalProperties": false },
             {
@@ -124,7 +124,7 @@
               "properties": {
                 "kind": { "const": "hookSpecificOutput" },
                 "hookEventName": { "type": "string", "minLength": 1, "description": "Value placed in hookSpecificOutput.hookEventName (e.g. 'UserPromptSubmit', 'BeforeAgent')." },
-                "includeSystemMessage": { "type": "boolean", "description": "When true, the envelope also includes a top-level 'systemMessage' field with the resolution status line. Defaults to false. Set true for claude-code/gemini/grok; false for codex." }
+                "includeSystemMessage": { "type": "boolean", "description": "When true, the envelope also includes a top-level 'systemMessage' field with the resolution status line. Defaults to false. Set true for claude-code/grok; false for codex." }
               },
               "additionalProperties": false
             }

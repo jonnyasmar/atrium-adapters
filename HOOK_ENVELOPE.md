@@ -98,7 +98,6 @@ Adapter scripts must complete in under 50ms (CLAUDE.md). The normalizer is one `
 ## Reference implementations
 
 - `adapters/claude-code/normalize-hook-payload.sh` — simplest case (direct field copy)
-- `adapters/gemini/normalize-hook-payload.sh` — tool-name renames
 - `adapters/codex/normalize-hook-payload.sh` — patch-text parsing
 
 New adapters can crib whichever is closest to their payload shape.

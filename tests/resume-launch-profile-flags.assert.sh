@@ -43,11 +43,6 @@ assert_command \
   '["cursor-agent","--force","--plan","--model","cursor-model","--foo","bar","--resume","sess-123"]'
 
 assert_command \
-  "gemini" \
-  '{"yolo":true,"model":"gemini-pro","extraArgs":"--debug"}' \
-  '["gemini","--resume","sess-123","--yolo","--model","gemini-pro","--debug"]'
-
-assert_command \
   "antigravity" \
   '{"dangerouslySkipPermissions":true,"sandbox":true,"model":"ag-model","extraArgs":"--foo bar"}' \
   '["agy","--conversation","sess-123","--dangerously-skip-permissions","--sandbox","--model","ag-model","--foo","bar"]'

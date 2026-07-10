@@ -3,7 +3,7 @@
 # rename its pane while it still carries a generic launcher name.
 #
 # Args:
-#   $1  shape — one of: claude | codex | gemini | grok | cursor | raw
+#   $1  shape — one of: claude | codex | grok | cursor | raw
 #       (controls stdout envelope shape; `raw` emits the bare nudge text for
 #       plugin/extension adapters that wrap it themselves. Mirrors the
 #       per-adapter `hookEnvelopes`
@@ -39,7 +39,7 @@
 
 set -u
 
-SHAPE="${1:?shape arg required (claude|codex|gemini|grok|cursor|raw)}"
+SHAPE="${1:?shape arg required (claude|codex|grok|cursor|raw)}"
 
 # Default no-op output. Shell-hook shapes need valid JSON (`{}`); the `raw`
 # shape (consumed by plugin/extension adapters + antigravity's injectSteps
@@ -93,14 +93,6 @@ build_envelope() {
       # envelope as the claude/codex arm.
       EMIT="$(jq -n --arg c "$context" \
         '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: $c}}' \
-        2>/dev/null || printf '%s' '{}')"
-      ;;
-    gemini)
-      # Gemini BeforeAgent: hookSpecificOutput.additionalContext, with
-      # hookEventName mirroring the firing event (same envelope shape as
-      # the SessionStart manifest inject emitted by SkillsHandler).
-      EMIT="$(jq -n --arg c "$context" \
-        '{hookSpecificOutput: {hookEventName: "BeforeAgent", additionalContext: $c}}' \
         2>/dev/null || printf '%s' '{}')"
       ;;
     cursor)
