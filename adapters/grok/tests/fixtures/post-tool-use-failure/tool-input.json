@@ -1,0 +1,11 @@
+{
+  "sessionId": "019e6b94-03cc-7512-adec-38b5338c115c",
+  "toolName": "run_terminal_command",
+  "toolInput": {
+    "command": "false"
+  },
+  "toolUseId": "call-fail-1",
+  "error": "exit code 1",
+  "workspaceRoot": "/Users/test/dev/myproject",
+  "hook_event_name": "PostToolUseFailure"
+}

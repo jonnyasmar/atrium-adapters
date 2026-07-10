@@ -63,8 +63,8 @@ base="$(
 )"
 
 case "$EVENT" in
-  post-tool-use)
-    enriched="$(printf '%s' "$base" | jq -c '
+  post-tool-use|post-tool-use-failure)
+    enriched="$(printf '%s' "$base" | jq -c --arg event "$EVENT" '
       . as $p
       | (.tool_name // "") as $tool
       # tool_input may be a JSON string (from base remap of camelCase
@@ -98,10 +98,26 @@ case "$EVENT" in
             null
           end
         ) as $atrium
-      | if ($atrium != null) and (($atrium.filePaths // []) | length > 0) then
-          $p + {_atrium: $atrium}
+      | (if $event == "post-tool-use-failure" then
+          {
+            error: (
+              .error
+              // .message
+              // .reason
+              // (if (.tool_response // .toolResult // null) != null
+                  then (.tool_response // .toolResult | if type == "string" then . else tojson end)
+                  else "tool failed"
+                 end)
+            )
+          }
         else
-          $p
+          {}
+        end) as $fail
+      | $p + $fail
+      | if ($atrium != null) and (($atrium.filePaths // []) | length > 0) then
+          . + {_atrium: $atrium}
+        else
+          .
         end
     ' 2>/dev/null || printf '%s' "$base")"
     printf '%s' "$enriched"

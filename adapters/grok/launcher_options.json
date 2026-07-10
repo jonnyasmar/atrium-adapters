@@ -13,7 +13,11 @@
       "description": "Model id",
       "type": "select",
       "default": "",
-      "choices": [{ "value": "grok-build", "label": "Grok Build" }]
+      "choices": [
+        { "value": "grok-4.5", "label": "Grok 4.5" },
+        { "value": "grok-composer-2.5-fast", "label": "Grok Composer 2.5 Fast" },
+        { "value": "grok-build", "label": "Grok Build" }
+      ]
     },
     {
       "key": "effort",
@@ -37,6 +41,7 @@
     { "flag": "--allow", "description": "Permission allow rule" },
     { "flag": "--deny", "description": "Permission deny rule" },
     { "flag": "--disallowed-tools", "description": "Tools to disallow" },
+    { "flag": "--permission-mode", "description": "Permission mode (bypassPermissions / default / plan / …)" },
     { "flag": "--continue", "description": "Continue the most recent conversation" },
     { "flag": "--resume", "description": "Resume a session" },
     { "flag": "--cwd", "description": "Working directory" },

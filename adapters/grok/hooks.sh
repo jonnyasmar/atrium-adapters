@@ -57,11 +57,15 @@ NORMALIZER_REF='"${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/grok/normalize-hook-
 # we omit there too for consistency with the reference plugin shape
 # (hookify, example-plugin).
 EVENTS=$'session-start\tSessionStart\t
+session-end\tSessionEnd\t
 pre-tool-use\tPreToolUse\t
 post-tool-use\tPostToolUse\t
+post-tool-use-failure\tPostToolUseFailure\t
 stop\tStop\t
+stop-failure\tStopFailure\t
 notification\tNotification\t
 user-prompt-submit\tUserPromptSubmit\t
+subagent-start\tSubagentStart\t
 subagent-stop\tSubagentStop\t'
 
 # Build the hook command string for a given event. EVERY event is
@@ -70,10 +74,18 @@ subagent-stop\tSubagentStop\t'
 # activity-card reducer reads snake_case, so the remap is required
 # for the card to render tool calls + prompts at all. Trails with
 # `exit 0` so any CLI failure never blocks grok's tool/turn lifecycle.
+#
+# PostToolUseFailure has no atrium-side event of its own — normalize
+# enriches it with `error` and we re-emit as `post-tool-use` so failed
+# tools show on the activity card instead of vanishing.
 build_hook_command() {
   local event="$1"
+  local emit_event="$event"
+  if [ "$event" = "post-tool-use-failure" ]; then
+    emit_event="post-tool-use"
+  fi
   printf '%s; %s %s | "${ATRIUM_CLI_PATH:-%s}" hook emit %s --adapter grok --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$NORMALIZER_REF" "$event" "$ATRIUM_CLI_FALLBACK" "$event"
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$NORMALIZER_REF" "$event" "$ATRIUM_CLI_FALLBACK" "$emit_event"
 }
 
 # Build the plugin's hooks/hooks.json content.

@@ -1,0 +1,8 @@
+{"type":"system","content":"You are Grok Build."}
+{"type":"user","content":[{"type":"text","text":"<user_info>\nOS Version: macos\n</user_info>"}]}
+{"type":"user","content":[{"type":"text","text":"<user_query>\nRead the README and summarize it in one sentence.\n</user_query>"}]}
+{"type":"reasoning","id":"rs_test","summary":[{"type":"summary_text","text":"I should read the README."}]}
+{"type":"assistant","content":"I'll read the README.","tool_calls":[{"id":"call-1","name":"read_file","arguments":"{\"target_file\":\"README.md\"}"},{"id":"call-2","name":"run_terminal_command","arguments":"{\"command\":\"wc -l README.md\"}"}]}
+{"type":"tool_result","tool_call_id":"call-1","content":"# My Project\n\nA demo repo."}
+{"type":"tool_result","tool_call_id":"call-2","content":"       3 README.md"}
+{"type":"assistant","content":"The README is a one-line demo project description."}

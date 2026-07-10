@@ -5,7 +5,7 @@
   "description": "xAI's terminal coding agent",
   "accent": "#e11d48",
   "binary": "grok",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "icon": "icon.svg",
   "skillInstallPath": "~/.grok/skills/atrium/SKILL.md",
   "skillsDir": "~/.grok/skills",
@@ -22,21 +22,28 @@
   },
   "install": {
     "macos": {
-      "cmd": "curl -fsSL https://raw.githubusercontent.com/superagent-ai/grok-cli/main/install.sh | bash",
+      "cmd": "curl -fsSL https://x.ai/cli/install.sh | bash",
       "postInstallAuth": true
     },
     "linux": {
-      "cmd": "curl -fsSL https://raw.githubusercontent.com/superagent-ai/grok-cli/main/install.sh | bash",
+      "cmd": "curl -fsSL https://x.ai/cli/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "irm https://x.ai/cli/install.ps1 | iex",
       "postInstallAuth": true
     }
   },
   "hooks": {
     "session-start": "atrium://hooks/grok/session-start",
+    "session-end": "atrium://hooks/grok/session-end",
     "pre-tool-use": "atrium://hooks/grok/pre-tool-use",
     "post-tool-use": "atrium://hooks/grok/post-tool-use",
     "stop": "atrium://hooks/grok/stop",
+    "stop-failure": "atrium://hooks/grok/stop-failure",
     "notification": "atrium://hooks/grok/notification",
     "user-prompt-submit": "atrium://hooks/grok/user-prompt-submit",
+    "subagent-start": "atrium://hooks/grok/subagent-start",
     "subagent-stop": "atrium://hooks/grok/subagent-stop"
   },
   "methods": {
@@ -55,6 +62,15 @@
     "launcher_options": {
       "static": "launcher_options.json"
     }
+  },
+  "sessionExtractor": {
+    "script": "extract_session.sh",
+    "schemaVersion": 1,
+    "supportsDepths": [
+      "quick",
+      "standard",
+      "deep"
+    ]
   },
   "hookEnvelopes": {
     "sessionStartManifest": {
