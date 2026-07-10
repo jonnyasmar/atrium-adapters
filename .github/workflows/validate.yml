@@ -16,6 +16,11 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      - name: Validate manifests against JSON schema
+        run: |
+          python3 -m pip install --quiet jsonschema
+          python3 check-schemas.py
+
       - name: Make validate-adapter.sh executable
         run: chmod +x validate-adapter.sh
 
