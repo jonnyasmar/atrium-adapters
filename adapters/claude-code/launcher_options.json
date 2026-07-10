@@ -16,7 +16,7 @@
       "choices": [
         { "value": "fable", "label": "Claude Fable 5" },
         { "value": "opus", "label": "Claude Opus 4.8" },
-        { "value": "sonnet", "label": "Claude Sonnet 4.6" },
+        { "value": "sonnet", "label": "Claude Sonnet 5" },
         { "value": "haiku", "label": "Claude Haiku 4.5" }
       ]
     },
@@ -26,7 +26,7 @@
       "description": "Reasoning effort",
       "type": "select",
       "default": "high",
-      "choices": ["low", "medium", "high", "xhigh", "max", "ultracode"]
+      "choices": ["low", "medium", "high", "xhigh", "max"]
     },
     {
       "key": "extraArgs",

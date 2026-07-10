@@ -13,10 +13,7 @@
       "description": "Model id",
       "type": "select",
       "default": "",
-      "choices": [
-        { "value": "grok-build", "label": "Grok Build" },
-        { "value": "grok-composer-2.5-fast", "label": "Composer 2.5 Fast" }
-      ]
+      "choices": [{ "value": "grok-build", "label": "Grok Build" }]
     },
     {
       "key": "effort",
