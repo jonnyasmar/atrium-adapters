@@ -5,7 +5,7 @@
   "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
   "accent": "#06b6d4",
   "binary": "pi",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "icon": "icon.svg",
   "skillInstallPath": "~/.pi/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.pi/agent/skills",
@@ -85,6 +85,27 @@
       "kind": "hookSpecificOutput",
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
+    }
+  },
+  "chatTransport": {
+    "kind": "pi-rpc",
+    "args": [
+      "--mode",
+      "rpc"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": true,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": true,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": true,
+      "backgroundTasks": false
     }
   }
 }
