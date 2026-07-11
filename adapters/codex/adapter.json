@@ -91,5 +91,22 @@
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
     }
+  },
+  "chatTransport": {
+    "kind": "codex-app-server",
+    "capabilities": {
+      "resume": true,
+      "setModel": true,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": false,
+      "planMode": true,
+      "contextUsage": false,
+      "imageInput": true,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": true,
+      "backgroundTasks": false
+    }
   }
 }

@@ -117,5 +117,22 @@
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
     }
+  },
+  "chatTransport": {
+    "kind": "claude-sdk",
+    "capabilities": {
+      "resume": true,
+      "setModel": true,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": true,
+      "contextUsage": true,
+      "imageInput": true,
+      "checkpointing": true,
+      "subagentEvents": true,
+      "steering": true,
+      "backgroundTasks": true
+    }
   }
 }
