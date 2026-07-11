@@ -5,7 +5,7 @@
   "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
   "accent": "#f97316",
   "binary": "omp",
-  "version": "16.4.0",
+  "version": "16.4.1",
   "icon": "icon.svg",
   "skillInstallPath": "~/.omp/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.omp/agent/skills",
@@ -87,6 +87,26 @@
       "kind": "hookSpecificOutput",
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
+    }
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "acp"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": false,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": false,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
     }
   }
 }

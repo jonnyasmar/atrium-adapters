@@ -5,7 +5,7 @@
   "description": "Cursor's agent CLI",
   "accent": "#6366f1",
   "binary": "cursor-agent",
-  "version": "0.4.10",
+  "version": "0.4.11",
   "skillsDir": "~/.cursor/skills",
   "binaryDiscovery": {
     "commands": [
@@ -77,6 +77,26 @@
     },
     "postToolUse": {
       "kind": "none"
+    }
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "acp"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": false,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": false,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
     }
   }
 }

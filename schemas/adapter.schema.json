@@ -180,7 +180,11 @@
       "required": ["kind", "capabilities"],
       "properties": {
         "kind": {
-          "enum": ["claude-sdk", "codex-app-server"]
+          "enum": ["claude-sdk", "codex-app-server", "acp"]
+        },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" }
         },
         "capabilities": {
           "type": "object",

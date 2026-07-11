@@ -5,7 +5,7 @@
   "description": "Nous Research's tool-calling AI agent",
   "accent": "#e0a32e",
   "binary": "hermes",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "icon": "icon.svg",
   "skillInstallPath": "~/.hermes/skills/atrium/SKILL.md",
   "binaryDiscovery": {
@@ -51,6 +51,26 @@
     },
     "launcher_options": {
       "static": "launcher_options.json"
+    }
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "acp"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": false,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": false,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
     }
   }
 }

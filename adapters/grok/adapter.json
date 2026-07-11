@@ -85,5 +85,26 @@
     "postToolUse": {
       "kind": "none"
     }
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "agent",
+      "stdio"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": false,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": false,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
+    }
   }
 }
