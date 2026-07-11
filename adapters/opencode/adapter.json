@@ -5,7 +5,7 @@
   "description": "Open-source AI coding agent built for the terminal (opencode.ai)",
   "accent": "#a855f7",
   "binary": "opencode",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "icon": "icon.svg",
   "skillInstallPath": "~/.config/opencode/agent/atrium/SKILL.md",
   "skillsDir": "~/.config/opencode/agent",
@@ -87,6 +87,26 @@
       "kind": "hookSpecificOutput",
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
+    }
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "acp"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": false,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": false,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
     }
   }
 }

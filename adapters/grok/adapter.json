@@ -5,7 +5,7 @@
   "description": "xAI's terminal coding agent",
   "accent": "#e11d48",
   "binary": "grok",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "icon": "icon.svg",
   "skillInstallPath": "~/.grok/skills/atrium/SKILL.md",
   "skillsDir": "~/.grok/skills",
@@ -84,6 +84,27 @@
     },
     "postToolUse": {
       "kind": "none"
+    }
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "agent",
+      "stdio"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": false,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": false,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
     }
   }
 }
