@@ -89,5 +89,26 @@
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
     }
+  },
+  "chatTransport": {
+    "kind": "pi-rpc",
+    "args": [
+      "--mode",
+      "rpc"
+    ],
+    "capabilities": {
+      "resume": false,
+      "setModel": true,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": true,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": true,
+      "backgroundTasks": false
+    }
   }
 }
