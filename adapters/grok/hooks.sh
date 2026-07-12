@@ -116,12 +116,14 @@ build_hooks_json() {
   # resolve-manifest` would all produce output grok throws away — wiring
   # them just burns a CLI call per prompt.
   #
-  # Fallback (v0.4.0+): build_launch_command.sh / build_resume_command.sh
-  # append atrium-context + a static pane-rename instruction via
-  # `grok --rules` (see atrium-session-rules.sh). That covers session
-  # orientation; live per-turn rename nags and same-turn sigil injection
-  # remain unavailable. If a future grok adds additionalContext support
-  # for UserPromptSubmit/SessionStart, re-add the wiring + flip
+  # Fallback (v0.4.0+): launch/resume argv[0] is grok-with-atrium-rules.sh,
+  # which execs `grok --rules "$(atrium-session-rules.sh)" …`. Rules cannot
+  # live as multi-line argv tokens — atrium types launch lines via
+  # unquoted `cmd.join(" ")`, so embedded newlines submit a broken
+  # partial command. The wrapper keeps the PTY line single-line.
+  # Live per-turn rename nags and same-turn sigil injection remain
+  # unavailable. If a future grok adds additionalContext support for
+  # UserPromptSubmit/SessionStart, re-add the wiring + flip
   # hookEnvelopes back to hookSpecificOutput/identity.
   jq -n --argjson hooks "$hooks" \
     '{description: "atrium-grok hook bridge", hooks: $hooks}'

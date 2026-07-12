@@ -47,39 +47,31 @@ assert_command \
   '{"dangerouslySkipPermissions":true,"sandbox":true,"model":"ag-model","extraArgs":"--foo bar"}' \
   '["agy","--conversation","sess-123","--dangerously-skip-permissions","--sandbox","--model","ag-model","--foo","bar"]'
 
-# Grok appends a multi-line `--rules` blob (atrium-context + pane-rename).
-# Assert structure rather than a full argv snapshot of the rules text.
+# Grok launches via grok-with-atrium-rules.sh (rules injected inside the
+# wrapper — never as multi-line argv, which breaks atrium's unquoted
+# cmd.join(" ") PTY typing). Assert wrapper + flag preservation.
 {
   adapter="grok"
   flags='{"alwaysApprove":true,"model":"grok-build","effort":"max","extraArgs":"--cwd /tmp"}'
   script="${ROOT}/adapters/${adapter}/build_resume_command.sh"
+  wrapper="${ROOT}/adapters/${adapter}/grok-with-atrium-rules.sh"
   actual="$(bash "$script" "$SESSION_ID" "$flags")"
   cmd="$(echo "$actual" | jq -c '.command')"
-  rules="$(echo "$actual" | jq -r '
-    .command as $c
-    | ($c | index("--rules")) as $i
-    | if $i == null then empty else $c[$i + 1] end
+  expected="$(jq -nc \
+    --arg w "$(cd "$(dirname "$wrapper")" && pwd)/grok-with-atrium-rules.sh" \
+    '[$w,"--always-approve","--model","grok-build","--reasoning-effort","max","--cwd","/tmp","-r","sess-123"]')"
+  # Normalize wrapper path from actual (script resolves via its own SCRIPT_DIR).
+  actual_norm="$(echo "$actual" | jq -c --arg w "$(cd "$(dirname "$wrapper")" && pwd)/grok-with-atrium-rules.sh" '
+    .command[0] = $w | .command
   ')"
-  prefix="$(echo "$actual" | jq -c '
-    .command
-    | . as $c
-    | ($c | index("--rules")) as $i
-    | if $i == null then $c
-      else $c[:$i] + $c[$i+2:]
-      end
-  ')"
-  expected_prefix='["grok","--always-approve","--model","grok-build","--reasoning-effort","max","--cwd","/tmp","-r","sess-123"]'
-  if [[ "$prefix" == "$(echo "$expected_prefix" | jq -c '.')" ]] \
-    && [[ -n "$rules" ]] \
-    && printf '%s' "$rules" | grep -q "You're in atrium" \
-    && printf '%s' "$rules" | grep -q 'pane rename'; then
-    printf '[PASS] %s resume preserves launch-profile flags + atrium --rules\n' "$adapter"
+  if [[ "$actual_norm" == "$expected" ]] \
+    && [[ "$(echo "$actual" | jq -r '.command[0]')" == *"/grok-with-atrium-rules.sh" ]] \
+    && ! echo "$actual" | jq -e '.command | index("--rules")' >/dev/null; then
+    printf '[PASS] %s resume preserves launch-profile flags via rules wrapper\n' "$adapter"
   else
-    printf '[FAIL] %s resume command mismatch (flags+rules)\n' "$adapter"
-    printf '  prefix expected: %s\n' "$expected_prefix"
-    printf '  prefix actual:   %s\n' "$prefix"
-    printf '  rules present:   %s\n' "$( [[ -n "$rules" ]] && echo yes || echo no )"
-    printf '  full command:    %s\n' "$cmd"
+    printf '[FAIL] %s resume command mismatch (wrapper+flags)\n' "$adapter"
+    printf '  expected: %s\n' "$expected"
+    printf '  actual:   %s\n' "$cmd"
     FAILURES=$((FAILURES + 1))
   fi
 }
