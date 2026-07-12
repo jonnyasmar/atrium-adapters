@@ -47,10 +47,42 @@ assert_command \
   '{"dangerouslySkipPermissions":true,"sandbox":true,"model":"ag-model","extraArgs":"--foo bar"}' \
   '["agy","--conversation","sess-123","--dangerously-skip-permissions","--sandbox","--model","ag-model","--foo","bar"]'
 
-assert_command \
-  "grok" \
-  '{"alwaysApprove":true,"model":"grok-build","effort":"max","extraArgs":"--cwd /tmp"}' \
-  '["grok","--always-approve","--model","grok-build","--reasoning-effort","max","--cwd","/tmp","-r","sess-123"]'
+# Grok appends a multi-line `--rules` blob (atrium-context + pane-rename).
+# Assert structure rather than a full argv snapshot of the rules text.
+{
+  adapter="grok"
+  flags='{"alwaysApprove":true,"model":"grok-build","effort":"max","extraArgs":"--cwd /tmp"}'
+  script="${ROOT}/adapters/${adapter}/build_resume_command.sh"
+  actual="$(bash "$script" "$SESSION_ID" "$flags")"
+  cmd="$(echo "$actual" | jq -c '.command')"
+  rules="$(echo "$actual" | jq -r '
+    .command as $c
+    | ($c | index("--rules")) as $i
+    | if $i == null then empty else $c[$i + 1] end
+  ')"
+  prefix="$(echo "$actual" | jq -c '
+    .command
+    | . as $c
+    | ($c | index("--rules")) as $i
+    | if $i == null then $c
+      else $c[:$i] + $c[$i+2:]
+      end
+  ')"
+  expected_prefix='["grok","--always-approve","--model","grok-build","--reasoning-effort","max","--cwd","/tmp","-r","sess-123"]'
+  if [[ "$prefix" == "$(echo "$expected_prefix" | jq -c '.')" ]] \
+    && [[ -n "$rules" ]] \
+    && printf '%s' "$rules" | grep -q "You're in atrium" \
+    && printf '%s' "$rules" | grep -q 'pane rename'; then
+    printf '[PASS] %s resume preserves launch-profile flags + atrium --rules\n' "$adapter"
+  else
+    printf '[FAIL] %s resume command mismatch (flags+rules)\n' "$adapter"
+    printf '  prefix expected: %s\n' "$expected_prefix"
+    printf '  prefix actual:   %s\n' "$prefix"
+    printf '  rules present:   %s\n' "$( [[ -n "$rules" ]] && echo yes || echo no )"
+    printf '  full command:    %s\n' "$cmd"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
 
 assert_command \
   "hermes" \

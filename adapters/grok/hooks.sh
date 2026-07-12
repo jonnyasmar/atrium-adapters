@@ -106,18 +106,23 @@ build_hooks_json() {
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
 
-  # NO context-injection wiring (pane-rename nudge / sigils / manifest).
-  # Grok only consumes stdout from BLOCKING hooks (PreToolUse, for the
-  # allow/deny decision); ALL other hooks are "passive" and their stdout is
-  # ignored (per ~/.grok/docs/user-guide/10-hooks.md "Passive Hooks" + a
-  # live `grok -p` probe where an injected UserPromptSubmit additionalContext
-  # directive was NOT obeyed, 2026-06-04). So `pane-name-check.sh`,
-  # `skills resolve-prompt-sigils`, and `skills resolve-manifest` would all
-  # produce output grok throws away — wiring them just burns a CLI call per
-  # prompt. Grok therefore can't self-rename or receive the atrium context
-  # (capability ceiling, like cursor-agent's per-prompt path). If a future
-  # grok adds additionalContext support for UserPromptSubmit/SessionStart,
-  # re-add the wiring + flip hookEnvelopes back to hookSpecificOutput/identity.
+  # NO hook-based context-injection wiring (pane-rename nudge / sigils /
+  # manifest). Grok only consumes stdout from BLOCKING hooks (PreToolUse,
+  # for the allow/deny decision); ALL other hooks are "passive" and their
+  # stdout is ignored (per ~/.grok/docs/user-guide/10-hooks.md "Passive
+  # Hooks" + a live `grok -p` probe where an injected UserPromptSubmit
+  # additionalContext directive was NOT obeyed, 2026-06-04). So
+  # `pane-name-check.sh`, `skills resolve-prompt-sigils`, and `skills
+  # resolve-manifest` would all produce output grok throws away — wiring
+  # them just burns a CLI call per prompt.
+  #
+  # Fallback (v0.4.0+): build_launch_command.sh / build_resume_command.sh
+  # append atrium-context + a static pane-rename instruction via
+  # `grok --rules` (see atrium-session-rules.sh). That covers session
+  # orientation; live per-turn rename nags and same-turn sigil injection
+  # remain unavailable. If a future grok adds additionalContext support
+  # for UserPromptSubmit/SessionStart, re-add the wiring + flip
+  # hookEnvelopes back to hookSpecificOutput/identity.
   jq -n --argjson hooks "$hooks" \
     '{description: "atrium-grok hook bridge", hooks: $hooks}'
 }

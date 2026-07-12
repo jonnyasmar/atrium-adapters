@@ -4,43 +4,48 @@ set -euo pipefail
 # build_resume_command.sh — Build the command to resume a Grok session.
 # Takes $1 = session ID, $2 = JSON flags
 # Output: {"command": ["grok", ...flags, "-r", "session-id"]}
+#
+# Same `--rules` injection as launch — covers sessions started before the
+# rules wiring existed, and any resume path that re-evaluates argv. See
+# atrium-session-rules.sh.
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-ALWAYS_APPROVE=false
-MODEL=""
-EFFORT=""
-EXTRA=""
-if command -v jq &>/dev/null; then
-  ALWAYS_APPROVE="$(echo "$FLAGS" | jq -r '.alwaysApprove // false' 2>/dev/null)" || ALWAYS_APPROVE=false
-  MODEL="$(echo "$FLAGS" | jq -r '.model // ""' 2>/dev/null)" || MODEL=""
-  EFFORT="$(echo "$FLAGS" | jq -r '.effort // ""' 2>/dev/null)" || EFFORT=""
-  EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
-else
-  if echo "$FLAGS" | grep -qE '"alwaysApprove"\s*:\s*true'; then
-    ALWAYS_APPROVE=true
-  fi
+if ! command -v jq &>/dev/null; then
+  # Minimal fallback without jq — no rules, escape session id best-effort.
+  ESCAPED_SESSION_ID="$(printf '%s' "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+  echo "{\"command\": [\"grok\", \"-r\", \"${ESCAPED_SESSION_ID}\"]}"
+  exit 0
 fi
 
-ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+if ! printf '%s' "$FLAGS" | jq empty 2>/dev/null; then
+  FLAGS='{}'
+fi
 
-CMD='["grok"'
-if [ "$ALWAYS_APPROVE" = "true" ]; then
-  CMD="${CMD}, \"--always-approve\""
+RULES=""
+if [ -x "${SCRIPT_DIR}/atrium-session-rules.sh" ] || [ -f "${SCRIPT_DIR}/atrium-session-rules.sh" ]; then
+  RULES="$(bash "${SCRIPT_DIR}/atrium-session-rules.sh" 2>/dev/null || true)"
 fi
-if [ -n "$MODEL" ]; then
-  CMD="${CMD}, \"--model\", \"${MODEL}\""
-fi
-if [ -n "$EFFORT" ]; then
-  CMD="${CMD}, \"--reasoning-effort\", \"${EFFORT}\""
-fi
-if [ -n "$EXTRA" ]; then
-  for arg in $EXTRA; do
-    CMD="${CMD}, \"${arg}\""
-  done
-fi
-CMD="${CMD}, \"-r\", \"${ESCAPED_SESSION_ID}\"]"
 
-echo "{\"command\": ${CMD}}"
+jq -n \
+  --argjson flags "$FLAGS" \
+  --arg rules "$RULES" \
+  --arg session "$SESSION_ID" \
+  '{
+    command:
+      ["grok"]
+      + (if $flags.alwaysApprove == true then ["--always-approve"] else [] end)
+      + (if (($flags.model // "") | length) > 0 then ["--model", $flags.model] else [] end)
+      + (if (($flags.effort // "") | length) > 0 then ["--reasoning-effort", $flags.effort] else [] end)
+      + (
+          if (($flags.extraArgs // "") | length) > 0
+          then ($flags.extraArgs | split(" ") | map(select(length > 0)))
+          else []
+          end
+        )
+      + (if ($rules | length) > 0 then ["--rules", $rules] else [] end)
+      + ["-r", $session]
+  }'
 exit 0
