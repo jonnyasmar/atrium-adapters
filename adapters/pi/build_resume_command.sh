@@ -12,6 +12,11 @@ set -euo pipefail
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"
+
+if [[ "$SESSION_ID" =~ _([[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12})$ ]]; then
+  SESSION_ID="${BASH_REMATCH[1]}"
+fi
+
 ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
 CMD="[\"pi\", \"--session\", \"${ESCAPED_SESSION_ID}\""
 

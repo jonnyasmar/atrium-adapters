@@ -289,15 +289,21 @@ let lastAssistantMessage: string | null = null;
 // injected once per session as a persistent hidden message; this gates that.
 let manifestInjected = false;
 
-// Derive a stable session id from the pi session file path. pi stores
-// sessions as `~/.pi/agent/sessions/<cwd-encoded>/<uuid>.jsonl`; the
-// basename minus extension is the session uuid. For brand-new ephemeral
-// sessions (file not written yet), fall back to the pane id so atrium
-// can still create the activity card.
-function resolveSessionId(ctx: { sessionManager?: { getSessionFile?: () => string | null } }): string {
+type PiSessionManager = {
+  getSessionId?: () => string | null;
+  getSessionFile?: () => string | null;
+};
+
+function resolveSessionId(ctx: { sessionManager?: PiSessionManager }): string {
+  const id = ctx?.sessionManager?.getSessionId?.();
+  if (id && typeof id === "string") return id;
+
   const file = ctx?.sessionManager?.getSessionFile?.();
   if (file && typeof file === "string") {
-    return basename(file).replace(/\.jsonl$/i, "");
+    const stem = basename(file).replace(/\.jsonl$/i, "");
+    return (
+      stem.match(/(?:^|_)([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i)?.[1] ?? stem
+    );
   }
   return ATRIUM_PANE_ID || "pi-ephemeral";
 }
@@ -323,7 +329,7 @@ function extractMessageText(message: unknown): string {
 export default function (pi: ExtensionAPI) {
   // ── Session lifecycle ─────────────────────────────────────────────
   pi.on("session_start", async (event, ctx) => {
-    sessionId = resolveSessionId(ctx as { sessionManager?: { getSessionFile?: () => string | null } });
+    sessionId = resolveSessionId(ctx as { sessionManager?: PiSessionManager });
     lastAssistantMessage = null;
     manifestInjected = false;
     emit("session-start", {
