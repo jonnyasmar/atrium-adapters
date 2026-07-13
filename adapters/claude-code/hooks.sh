@@ -49,7 +49,9 @@ user-prompt-submit\tUserPromptSubmit\t.*
 permission-request\tPermissionRequest\t.*
 subagent-start\tSubagentStart\t.*
 subagent-stop\tSubagentStop\t.*
-stop-failure\tStopFailure\t.*'
+stop-failure\tStopFailure\t.*
+pre-compact\tPreCompact\t.*
+post-compact\tPostCompact\t.*'
 
 # Build the hook command string for a given event. Resolved at hook-fire
 # time against the pane's injected env vars so stable/dev/beta can

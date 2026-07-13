@@ -5,7 +5,7 @@
   "description": "OpenAI's AI coding assistant",
   "accent": "#059669",
   "binary": "codex",
-  "version": "1.20.1",
+  "version": "1.20.2",
   "icon": "icon.svg",
   "skillInstallPath": "~/.codex/skills/atrium/SKILL.md",
   "skillsDir": "~/.codex/skills",
@@ -42,7 +42,9 @@
     "post-tool-use": "atrium://hooks/codex/post-tool-use",
     "stop": "atrium://hooks/codex/stop",
     "user-prompt-submit": "atrium://hooks/codex/user-prompt-submit",
-    "permission-request": "atrium://hooks/codex/permission-request"
+    "permission-request": "atrium://hooks/codex/permission-request",
+    "pre-compact": "atrium://hooks/codex/pre-compact",
+    "post-compact": "atrium://hooks/codex/post-compact"
   },
   "methods": {
     "list_recent_sessions": {

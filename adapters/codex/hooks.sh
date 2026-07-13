@@ -32,7 +32,9 @@ pre-tool-use\tPreToolUse\t.*
 post-tool-use\tPostToolUse\t.*
 stop\tStop\t.*
 user-prompt-submit\tUserPromptSubmit\t.*
-permission-request\tPermissionRequest\t.*'
+permission-request\tPermissionRequest\t.*
+pre-compact\tPreCompact\t
+post-compact\tPostCompact\t'
 
 # Build the hook command string for a given event. Resolved at hook-fire time
 # against the pane's injected env vars so stable/dev/beta can coexist. Trails
