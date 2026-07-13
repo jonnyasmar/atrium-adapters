@@ -18,7 +18,16 @@ fi
 # including legacy command shapes from prior releases. Add legacy alternates
 # when bumping the command format; prune once old releases age out.
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
-ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh|inject-context\.sh'
+# claude-hook-entry.sh is the post-1.19.2 emit path (Cursor dual-fire guard).
+# Legacy inline `hook emit` / inject-context tokens stay so uninstall still
+# strips pre-bump installs.
+ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|claude-hook-entry\.sh|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh|inject-context\.sh'
+
+# Cursor Agent also executes ~/.claude/settings.json hooks. Prefix every
+# non-entry atrium command with this so those hijacked invocations no-op
+# before they can emit as claude-code, inject Claude context, or nudge
+# rename under a Cursor pane. Real Claude Code never sets the var.
+CURSOR_GUARD='[ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0'
 
 # Event table: kebab-case event name, Claude settings key, matcher.
 # Each event becomes one hook entry in the corresponding settings.json key.
@@ -42,30 +51,19 @@ subagent-start\tSubagentStart\t.*
 subagent-stop\tSubagentStop\t.*
 stop-failure\tStopFailure\t.*'
 
-# Build the hook command string for a given event. Resolved at hook-fire time
-# against the pane's injected env vars so stable/dev/beta can coexist. Trails
-# with `exit 0` so any CLI failure never breaks the agent session.
-#
-# For `post-tool-use` and `stop` events, the native payload is piped
-# through `normalize-hook-payload.sh` first (with the event name as $1)
-# so atrium consumes the canonical envelope: `post-tool-use` gets the
-# `_atrium` write-attribution envelope (see ../../HOOK_ENVELOPE.md);
-# `stop` gets `last_assistant_message` scraped from the transcript so
-# the final reply reaches the activity card and timeline. Other events
-# stream straight to `atrium hook emit`.
+# Build the hook command string for a given event. Resolved at hook-fire
+# time against the pane's injected env vars so stable/dev/beta can
+# coexist. All lifecycle emit goes through claude-hook-entry.sh, which:
+#   - refuses Cursor Agent dual-fires (CURSOR_INVOKED_AS + payload shape)
+#   - normalizes post-tool-use / stop payloads
+#   - trails with exit 0 so any CLI failure never breaks the session
+# Path uses ${ATRIUM_DATA_DIR:-...} so the same settings.json entry hits
+# whichever atrium channel launched the pane (PTY injects ATRIUM_DATA_DIR).
 build_hook_command() {
   local event="$1"
-  local normalizer=""
-  if [ "$event" = "post-tool-use" ] || [ "$event" = "stop" ]; then
-    # Use ${ATRIUM_DATA_DIR:-...} so the same hook entry resolves to whichever
-    # atrium channel (stable / dev / beta) launched the pane. The PTY layer
-    # injects ATRIUM_DATA_DIR at pane spawn (src-tauri/src/pty/manager.rs).
-    # Pass the event name as $1 so the normalizer branches per-event
-    # (post-tool-use → _atrium write envelope; stop → last_assistant_message).
-    normalizer="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/normalize-hook-payload.sh\" \"$event\" | "
-  fi
-  printf '%s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter claude-code --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$event"
+  local entry
+  entry="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/claude-hook-entry.sh\" $event"
+  printf '%s; %s; exit 0' "$ATRIUM_HOOK_MARKER_PREFIX" "$entry"
 }
 
 # Assemble the full hooks object by walking the event table, then append the
@@ -95,8 +93,8 @@ build_all_hooks() {
   # hook per section gives each section its own 10K budget (max headroom).
   local ctx_section ctx_cmd ctx_entry
   for ctx_section in context agent skills; do
-    ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
-      "$ATRIUM_HOOK_MARKER_PREFIX" "$ctx_section")"
+    ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
       '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
@@ -106,9 +104,10 @@ build_all_hooks() {
   # per-prompt reminder until the pane is renamed off its default
   # launcher name. Resolved at hook-fire time via ${ATRIUM_DATA_DIR:-...}
   # so stable / dev / beta installs on the same machine don't clobber
-  # each other's hook entries.
+  # each other's hook entries. Cursor-guarded so a dual-fired Cursor
+  # session doesn't get Claude rename nudges.
   local rename_cmd rename_entry
-  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh claude"
+  rename_cmd="$CURSOR_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh claude"
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
@@ -121,8 +120,8 @@ build_all_hooks() {
   # `{}\n` (no-op envelope). The `|| true` trailer guarantees the hook
   # never blocks prompt submission (NFR8-style fail-open).
   local sigil_cmd sigil_entry
-  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
-    "$ATRIUM_HOOK_MARKER_PREFIX")"
+  sigil_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD")"
   sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
@@ -147,7 +146,7 @@ build_all_hooks() {
   # `none` and wire no injection there (the grok-revert lesson: no dead wiring).
   # Resolved via ${ATRIUM_DATA_DIR:-...} so stable / dev / beta installs coexist.
   local inject_base inject_ss inject_ups inject_pt inject_post
-  inject_base="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
+  inject_base="$CURSOR_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
   inject_ss="$(jq -n --arg cmd "$inject_base session-start" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
