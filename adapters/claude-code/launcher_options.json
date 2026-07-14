@@ -65,7 +65,6 @@
     { "flag": "--max-budget-usd", "description": "Max dollars to spend on the API" },
     { "flag": "--include-partial-messages", "description": "Include partial chunks" },
     { "flag": "--from-pr", "description": "Resume a session linked to a PR" },
-    { "flag": "--disable-slash-commands", "description": "Disable all skills" },
-    { "flag": "--no-session-persistence", "description": "Don't persist the session" }
+    { "flag": "--disable-slash-commands", "description": "Disable all skills" }
   ]
 }

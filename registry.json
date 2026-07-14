@@ -12,7 +12,7 @@
         "macos"
       ],
       "official": true,
-      "version": "1.19.3",
+      "version": "1.19.4",
       "minAppVersion": "0.228.0",
       "models": [
         "fable",
