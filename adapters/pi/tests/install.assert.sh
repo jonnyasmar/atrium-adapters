@@ -40,6 +40,21 @@ if ! grep -q 'emit("permission-request"' "$EXT_FILE"; then
   exit 1
 fi
 
+if ! grep -q '"permissions:ui_prompt"' "$EXT_FILE"; then
+  echo "install.assert: $EXT_FILE does not observe pi-permission-system UI prompts" >&2
+  exit 1
+fi
+
+if ! grep -q '"permissions:decision"' "$EXT_FILE"; then
+  echo "install.assert: $EXT_FILE does not observe pi-permission-system decisions" >&2
+  exit 1
+fi
+
+if ! grep -q 'emit("permission-response"' "$EXT_FILE"; then
+  echo "install.assert: $EXT_FILE does not resolve permission prompts" >&2
+  exit 1
+fi
+
 # All wired pi events must be present.
 for event in '"session_start"' '"session_shutdown"' '"tool_call"' '"tool_result"' '"input"' '"agent_end"'; do
   if ! grep -q "pi.on($event" "$EXT_FILE"; then

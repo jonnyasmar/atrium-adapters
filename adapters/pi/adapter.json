@@ -5,7 +5,7 @@
   "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
   "accent": "#06b6d4",
   "binary": "pi",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "icon": "icon.svg",
   "skillInstallPath": "~/.pi/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.pi/agent/skills",
@@ -41,6 +41,7 @@
     "pre-tool-use": "atrium://hooks/pi/pre-tool-use",
     "post-tool-use": "atrium://hooks/pi/post-tool-use",
     "permission-request": "atrium://hooks/pi/permission-request",
+    "permission-response": "atrium://hooks/pi/permission-response",
     "stop": "atrium://hooks/pi/stop",
     "user-prompt-submit": "atrium://hooks/pi/user-prompt-submit"
   },
