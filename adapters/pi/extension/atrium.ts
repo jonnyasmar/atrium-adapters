@@ -26,6 +26,8 @@ import { basename, join } from "node:path";
 const ATRIUM_CLI = process.env.ATRIUM_CLI_PATH || "atrium";
 const ATRIUM_PANE_ID = process.env.ATRIUM_PANE_ID || "";
 const ATRIUM_ACTIVE = Boolean(process.env.ATRIUM) && Boolean(ATRIUM_PANE_ID);
+const INPUT_REQUEST_TOOLS_ENV = "ATRIUM_INPUT_REQUEST_TOOLS_PI";
+const DEFAULT_INPUT_REQUEST_TOOLS: string[] = [];
 
 const DEBUG_LOG =
   process.env.ATRIUM_PI_EXTENSION_LOG || join(tmpdir(), "atrium-pi-extension.log");
@@ -44,6 +46,25 @@ function debug(...parts: unknown[]) {
     // Best-effort logging.
   }
 }
+
+function inputRequestTools(): ReadonlySet<string> {
+  const raw = process.env[INPUT_REQUEST_TOOLS_ENV];
+  if (raw == null) return new Set(DEFAULT_INPUT_REQUEST_TOOLS);
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set(DEFAULT_INPUT_REQUEST_TOOLS);
+    return new Set(
+      parsed
+        .filter((tool): tool is string => typeof tool === "string")
+        .map((tool) => tool.trim())
+        .filter(Boolean),
+    );
+  } catch {
+    return new Set(DEFAULT_INPUT_REQUEST_TOOLS);
+  }
+}
+
+const INPUT_REQUEST_TOOLS = inputRequestTools();
 
 debug("atrium pi extension loaded", { ATRIUM_ACTIVE, ATRIUM_CLI, ATRIUM_PANE_ID });
 
@@ -359,12 +380,17 @@ export default function (pi: ExtensionAPI) {
       toolCallId?: string;
       input?: unknown;
     };
-    emit("pre-tool-use", {
+    const payload = {
       session_id: sessionId,
       tool_name: e.toolName,
       tool_input: stringify(e.input),
       tool_call_id: e.toolCallId,
-    });
+    };
+    if (e.toolName && INPUT_REQUEST_TOOLS.has(e.toolName)) {
+      emit("permission-request", { ...payload, request_kind: "question" });
+      return;
+    }
+    emit("pre-tool-use", payload);
   });
 
   // tool_result fires after a tool executes, before the LLM receives the

@@ -93,6 +93,15 @@
         "pattern": "^atrium://"
       }
     },
+    "inputRequestTools": {
+      "type": "array",
+      "description": "SDK v2. Optional exact, case-sensitive tool names whose invocation waits for user input. An empty array advertises user configuration without shipping defaults.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
     "hookEnvelopes": {
       "type": "object",
       "description": "SDK v2. Optional. Declares the per-event response-envelope shape atrium core emits when the underlying tool fires SessionStart, UserPromptSubmit, PreToolUse, and PostToolUse hooks. This is ALSO the per-event injection-capability matrix (Epic 77): for each event, 'kind: none' (or an omitted field) means the adapter CANNOT have context injected back into that event ('cannot inject unless verified' — the conservative default); any non-none 'kind' means the adapter IS injection-capable for that event and atrium renders the assembled context in that envelope shape. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their capability + envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit, and PreToolUse/PostToolUse incapable — the Claude-Code-compatible defaults).",

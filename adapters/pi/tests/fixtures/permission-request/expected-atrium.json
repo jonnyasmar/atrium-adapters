@@ -1,0 +1,6 @@
+{
+  "session_id": "pi_session_test_xyz",
+  "tool_name": "rpiv-ask",
+  "tool_input": "{\"prompt\":\"Which database?\"}",
+  "request_kind": "question"
+}

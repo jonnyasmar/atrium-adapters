@@ -5,7 +5,7 @@
   "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
   "accent": "#f97316",
   "binary": "omp",
-  "version": "16.3.4",
+  "version": "16.4.0",
   "icon": "icon.svg",
   "skillInstallPath": "~/.omp/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.omp/agent/skills",
@@ -40,9 +40,11 @@
     "session-end": "atrium://hooks/omp/session-end",
     "pre-tool-use": "atrium://hooks/omp/pre-tool-use",
     "post-tool-use": "atrium://hooks/omp/post-tool-use",
+    "permission-request": "atrium://hooks/omp/permission-request",
     "stop": "atrium://hooks/omp/stop",
     "user-prompt-submit": "atrium://hooks/omp/user-prompt-submit"
   },
+  "inputRequestTools": ["ask"],
   "methods": {
     "build_launch_command": {
       "script": "build_launch_command.sh"

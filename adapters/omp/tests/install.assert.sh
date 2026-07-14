@@ -24,6 +24,16 @@ if ! grep -q 'export default function' "$EXT_FILE"; then
   exit 1
 fi
 
+if ! grep -q 'ATRIUM_INPUT_REQUEST_TOOLS_OMP' "$EXT_FILE"; then
+  echo "install.assert: $EXT_FILE missing configurable input-request tools" >&2
+  exit 1
+fi
+
+if ! grep -q 'emit("permission-request"' "$EXT_FILE"; then
+  echo "install.assert: $EXT_FILE does not emit permission-request for input tools" >&2
+  exit 1
+fi
+
 # All wired pi events must be present.
 for event in '"session_start"' '"session_shutdown"' '"tool_call"' '"tool_result"' '"input"' '"agent_end"'; do
   if ! grep -q "pi.on($event" "$EXT_FILE"; then

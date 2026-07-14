@@ -1,0 +1,6 @@
+{
+  "session_id": "omp_session_test_xyz",
+  "tool_name": "ask",
+  "tool_input": "{\"prompt\":\"Which database?\"}",
+  "request_kind": "question"
+}
