@@ -1,0 +1,9 @@
+{
+  "session_id": "pi_session_test_xyz",
+  "tool_name": "bash",
+  "tool_input": "Allow git push?",
+  "request_kind": "permission",
+  "permission_request_id": "perm_test_123",
+  "permission_result": "deny",
+  "permission_resolution": "user_denied"
+}

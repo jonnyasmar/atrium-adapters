@@ -30,7 +30,8 @@ const INPUT_REQUEST_TOOLS_ENV = "ATRIUM_INPUT_REQUEST_TOOLS_PI";
 const DEFAULT_INPUT_REQUEST_TOOLS: string[] = [];
 
 const DEBUG_LOG =
-  process.env.ATRIUM_PI_EXTENSION_LOG || join(tmpdir(), "atrium-pi-extension.log");
+  process.env.ATRIUM_PI_EXTENSION_LOG ||
+  join(tmpdir(), "atrium-pi-extension.log");
 const DEBUG = process.env.ATRIUM_PI_EXTENSION_DEBUG !== "0";
 
 function debug(...parts: unknown[]) {
@@ -66,7 +67,11 @@ function inputRequestTools(): ReadonlySet<string> {
 
 const INPUT_REQUEST_TOOLS = inputRequestTools();
 
-debug("atrium pi extension loaded", { ATRIUM_ACTIVE, ATRIUM_CLI, ATRIUM_PANE_ID });
+debug("atrium pi extension loaded", {
+  ATRIUM_ACTIVE,
+  ATRIUM_CLI,
+  ATRIUM_PANE_ID,
+});
 
 function stringify(value: unknown): string {
   if (value == null) return "";
@@ -179,7 +184,10 @@ function parseAdditionalContext(raw: string): string {
 // and read `.atriumContext`. `event` is the kebab-case event path (session-start
 // | user-prompt-submit | post-tool-use). Fail-open: any error / timeout / no
 // port resolves to "" so a slow or unreachable hook server never blocks the turn.
-function fetchPipelineContext(event: string, timeoutMs = 2000): Promise<string> {
+function fetchPipelineContext(
+  event: string,
+  timeoutMs = 2000,
+): Promise<string> {
   if (!ATRIUM_ACTIVE) return Promise.resolve("");
 
   const dataDir = process.env.ATRIUM_DATA_DIR || join(homedir(), ".atrium");
@@ -226,7 +234,9 @@ function fetchPipelineContext(event: string, timeoutMs = 2000): Promise<string> 
           res.on("end", () => {
             try {
               const j = JSON.parse(body) as { atriumContext?: unknown };
-              finish(typeof j.atriumContext === "string" ? j.atriumContext : "");
+              finish(
+                typeof j.atriumContext === "string" ? j.atriumContext : "",
+              );
             } catch {
               finish("");
             }
@@ -306,6 +316,7 @@ async function renameNudgeIfGeneric(): Promise<string> {
 //   message_end events where role === "assistant".
 let sessionId: string | null = null;
 let lastAssistantMessage: string | null = null;
+let pendingPermissionPrompt: PermissionUiPromptEvent | null = null;
 // The atrium SessionStart context (manifest + run-command pipeline context) is
 // injected once per session as a persistent hidden message; this gates that.
 let manifestInjected = false;
@@ -313,6 +324,23 @@ let manifestInjected = false;
 type PiSessionManager = {
   getSessionId?: () => string | null;
   getSessionFile?: () => string | null;
+};
+
+type PermissionUiPromptEvent = {
+  requestId?: string;
+  source?: string;
+  surface?: string | null;
+  value?: string | null;
+  message?: string;
+  agentName?: string | null;
+};
+
+type PermissionDecisionEvent = {
+  surface?: string;
+  value?: string;
+  result?: "allow" | "deny";
+  resolution?: string;
+  agentName?: string | null;
 };
 
 function resolveSessionId(ctx: { sessionManager?: PiSessionManager }): string {
@@ -323,7 +351,9 @@ function resolveSessionId(ctx: { sessionManager?: PiSessionManager }): string {
   if (file && typeof file === "string") {
     const stem = basename(file).replace(/\.jsonl$/i, "");
     return (
-      stem.match(/(?:^|_)([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i)?.[1] ?? stem
+      stem.match(
+        /(?:^|_)([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i,
+      )?.[1] ?? stem
     );
   }
   return ATRIUM_PANE_ID || "pi-ephemeral";
@@ -339,7 +369,10 @@ function extractMessageText(message: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
-      .filter((p): p is { type?: string; text?: string } => !!p && typeof p === "object")
+      .filter(
+        (p): p is { type?: string; text?: string } =>
+          !!p && typeof p === "object",
+      )
       .filter((p) => p.type === "text" && typeof p.text === "string")
       .map((p) => p.text as string)
       .join("");
@@ -348,10 +381,62 @@ function extractMessageText(message: unknown): string {
 }
 
 export default function (pi: ExtensionAPI) {
+  const unsubscribePermissionPrompt = pi.events.on(
+    "permissions:ui_prompt",
+    (raw) => {
+      if (!raw || typeof raw !== "object") return;
+      const event = raw as PermissionUiPromptEvent;
+      if (typeof event.requestId !== "string") return;
+
+      pendingPermissionPrompt = event;
+      emit("permission-request", {
+        session_id: sessionId,
+        tool_name: event.surface ?? "permission",
+        tool_input: event.message ?? event.value ?? "Permission required",
+        request_kind: "permission",
+        permission_request_id: event.requestId,
+        permission_source: event.source,
+        agent_name: event.agentName,
+      });
+    },
+  );
+
+  const unsubscribePermissionDecision = pi.events.on(
+    "permissions:decision",
+    (raw) => {
+      if (!pendingPermissionPrompt || !raw || typeof raw !== "object") return;
+      const event = raw as PermissionDecisionEvent;
+      if (
+        typeof event.resolution !== "string" ||
+        !event.resolution.startsWith("user_")
+      ) {
+        return;
+      }
+
+      emit("permission-response", {
+        session_id: sessionId,
+        tool_name:
+          event.surface ?? pendingPermissionPrompt.surface ?? "permission",
+        tool_input:
+          pendingPermissionPrompt.message ??
+          event.value ??
+          pendingPermissionPrompt.value ??
+          "Permission resolved",
+        request_kind: "permission",
+        permission_request_id: pendingPermissionPrompt.requestId,
+        permission_result: event.result,
+        permission_resolution: event.resolution,
+        agent_name: event.agentName ?? pendingPermissionPrompt.agentName,
+      });
+      pendingPermissionPrompt = null;
+    },
+  );
+
   // ── Session lifecycle ─────────────────────────────────────────────
   pi.on("session_start", async (event, ctx) => {
     sessionId = resolveSessionId(ctx as { sessionManager?: PiSessionManager });
     lastAssistantMessage = null;
+    pendingPermissionPrompt = null;
     manifestInjected = false;
     emit("session-start", {
       session_id: sessionId,
@@ -371,6 +456,9 @@ export default function (pi: ExtensionAPI) {
       last_assistant_message: lastAssistantMessage,
     });
     emit("session-end", { session_id: sessionId, reason });
+    pendingPermissionPrompt = null;
+    unsubscribePermissionPrompt();
+    unsubscribePermissionDecision();
   });
 
   // ── Tool lifecycle ────────────────────────────────────────────────
