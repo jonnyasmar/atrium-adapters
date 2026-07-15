@@ -13,6 +13,8 @@ set -euo pipefail
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 CONFIG_TOML="${HOME}/.codex/config.toml"
 HOOKS_JSON="${HOME}/.codex/hooks.json"
+CONFIG_LOCK="${HOME}/.codex/.atrium-hooks.lock"
+CONFIG_LOCK_HELD=false
 
 if ! command -v jq &>/dev/null; then
   echo '{"error": "jq is required for hook management"}' >&2
@@ -168,15 +170,47 @@ ensure_codex_dir() {
   [ -d "$dir" ] || mkdir -p "$dir"
 }
 
+release_config_lock() {
+  if [ "$CONFIG_LOCK_HELD" = "true" ] && [ "$(cat "$CONFIG_LOCK" 2>/dev/null || true)" = "$$" ]; then
+    rm -f "$CONFIG_LOCK"
+  fi
+  CONFIG_LOCK_HELD=false
+}
+
+acquire_config_lock() {
+  ensure_codex_dir
+
+  local attempts=0 owner current
+  while ! (set -o noclobber; printf '%s\n' "$$" > "$CONFIG_LOCK") 2>/dev/null; do
+    owner="$(cat "$CONFIG_LOCK" 2>/dev/null || true)"
+    if [[ "$owner" =~ ^[0-9]+$ ]] && ! kill -0 "$owner" 2>/dev/null; then
+      current="$(cat "$CONFIG_LOCK" 2>/dev/null || true)"
+      if [ "$current" = "$owner" ]; then
+        rm -f "$CONFIG_LOCK"
+        continue
+      fi
+    fi
+
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge 600 ]; then
+      echo "atrium hooks: timed out waiting for Codex config lock: $CONFIG_LOCK" >&2
+      return 1
+    fi
+    sleep 0.05
+  done
+
+  CONFIG_LOCK_HELD=true
+  trap release_config_lock EXIT HUP INT TERM
+}
+
 ensure_hooks_file() {
   ensure_codex_dir
   [ -f "$HOOKS_JSON" ] || echo '{}' > "$HOOKS_JSON"
 }
 
-# Enable the hooks feature flag in config.toml. Handles four cases:
-# missing file, existing [features] section, no [features] section, and
-# legacy `codex_hooks = ...` lines (deprecated in current Codex; we strip
-# them so the deprecation warning stops firing).
+# Enable the hooks feature flag in config.toml. Duplicate [features] tables are
+# invalid TOML, so consolidate their unique keys into the first table while
+# replacing legacy/current hook flags with one canonical `hooks = true` entry.
 enable_hooks_feature() {
   ensure_codex_dir
 
@@ -185,36 +219,64 @@ enable_hooks_feature() {
     return 0
   fi
 
-  local tmp="${CONFIG_TOML}.atrium-tmp"
+  local tmp
+  tmp="$(mktemp "${CONFIG_TOML}.atrium-tmp.XXXXXX")"
+  awk '
+    function feature_key(line, key) {
+      if (line !~ /^[[:space:]]*[A-Za-z0-9_-]+[[:space:]]*=/) return ""
+      key = line
+      sub(/^[[:space:]]*/, "", key)
+      sub(/[[:space:]]*=.*/, "", key)
+      return key
+    }
+    function emit_features(    i) {
+      print "[features]"
+      print "hooks = true"
+      for (i = 1; i <= feature_count; i++) print feature_lines[i]
+    }
+    {
+      if ($0 ~ /^[[:space:]]*\[[[:space:]]*features[[:space:]]*\][[:space:]]*$/) {
+        if (!seen_features) {
+          seen_features = 1
+          output[++output_count] = feature_marker
+        }
+        in_features = 1
+        next
+      }
+      if ($0 ~ /^[[:space:]]*\[[^]]+\][[:space:]]*$/) in_features = 0
 
-  # Drop any legacy `codex_hooks` line so codex no longer warns about it.
-  # Done as a first pass so the rest of the function sees a clean file.
-  sed '/^[[:space:]]*codex_hooks[[:space:]]*=/d' "$CONFIG_TOML" > "$tmp"
+      if (in_features) {
+        key = feature_key($0)
+        if (key == "hooks" || key == "codex_hooks") next
+        if (key != "" && seen_feature_key[key]++) next
+        feature_lines[++feature_count] = $0
+        next
+      }
 
-  if grep -qE '^\s*hooks\s*=\s*true' "$tmp" 2>/dev/null; then
-    mv "$tmp" "$CONFIG_TOML"
-    return 0
-  fi
-
-  local tmp2="${CONFIG_TOML}.atrium-tmp2"
-  if grep -qE '^\[features\]' "$tmp" 2>/dev/null; then
-    if grep -qE '^\s*hooks\s*=' "$tmp" 2>/dev/null; then
-      sed 's/^\([[:space:]]*hooks[[:space:]]*=[[:space:]]*\).*/\1true/' "$tmp" > "$tmp2"
-    else
-      sed '/^\[features\]/a\
-hooks = true' "$tmp" > "$tmp2"
-    fi
-  else
-    printf '%s\n\n[features]\nhooks = true\n' "$(cat "$tmp")" > "$tmp2"
-  fi
-  mv "$tmp2" "$CONFIG_TOML"
-  rm -f "$tmp"
+      if ($0 ~ /^[[:space:]]*codex_hooks[[:space:]]*=/) next
+      output[++output_count] = $0
+    }
+    END {
+      if (!seen_features) {
+        for (i = 1; i <= output_count; i++) print output[i]
+        if (output_count > 0 && output[output_count] != "") print ""
+        emit_features()
+      } else {
+        for (i = 1; i <= output_count; i++) {
+          if (output[i] == feature_marker) emit_features()
+          else print output[i]
+        }
+      }
+    }
+  ' feature_marker="__ATRIUM_FEATURES__" "$CONFIG_TOML" > "$tmp"
+  mv "$tmp" "$CONFIG_TOML"
 }
 
 disable_hooks_feature() {
   [ -f "$CONFIG_TOML" ] || return 0
   if grep -qE '^\s*(codex_hooks|hooks)\s*=' "$CONFIG_TOML" 2>/dev/null; then
-    local tmp="${CONFIG_TOML}.atrium-tmp"
+    local tmp
+    tmp="$(mktemp "${CONFIG_TOML}.atrium-tmp.XXXXXX")"
     # Flip both legacy `codex_hooks` and current `hooks` to false. Leaving
     # the legacy key behind would re-trigger the deprecation warning, but
     # disable is non-destructive by contract — users who want it gone can
@@ -228,7 +290,8 @@ disable_hooks_feature() {
 # Legacy cleanup from when atrium shipped an MCP server instead of the CLI skill.
 remove_atrium_mcp_config() {
   [ -f "$CONFIG_TOML" ] || return 0
-  local tmp="${CONFIG_TOML}.atrium-tmp"
+  local tmp
+  tmp="$(mktemp "${CONFIG_TOML}.atrium-tmp.XXXXXX")"
   awk '
     BEGIN { skip = 0 }
     /^\[mcp_servers\.atrium(\.env)?\]$/ { skip = 1; next }
@@ -240,7 +303,7 @@ remove_atrium_mcp_config() {
 
 uninstall_mcp_server() {
   if command -v codex &>/dev/null; then
-    codex mcp remove atrium 2>/dev/null || true
+    codex mcp remove atrium >/dev/null 2>&1 || true
   fi
   remove_atrium_mcp_config
 }
@@ -262,7 +325,7 @@ trust_all_hooks() {
     return 0
   fi
   python3 - "$HOOKS_JSON" "$CONFIG_TOML" <<'PYEOF'
-import hashlib, json, os, re, sys
+import hashlib, json, os, re, sys, tempfile
 from pathlib import Path
 
 hooks_path = Path(sys.argv[1])
@@ -366,10 +429,16 @@ if state_entries:
         parts.append('enabled = true\n')
         parts.append(f'trusted_hash = "{state_entries[key]}"\n')
 
-tmp = config_path.with_suffix(config_path.suffix + '.atrium-tmp')
-tmp.write_text(''.join(parts))
-tmp.replace(config_path)
-print(f"atrium hooks: pre-trusted {len(state_entries)} hook(s)", file=sys.stderr)
+fd, tmp_name = tempfile.mkstemp(
+    prefix=f'{config_path.name}.atrium-tmp.', dir=config_path.parent
+)
+os.close(fd)
+tmp = Path(tmp_name)
+try:
+    tmp.write_text(''.join(parts))
+    tmp.replace(config_path)
+finally:
+    tmp.unlink(missing_ok=True)
 PYEOF
 }
 
@@ -383,7 +452,7 @@ untrust_atrium_hooks() {
     return 0
   fi
   python3 - "$HOOKS_JSON" "$CONFIG_TOML" <<'PYEOF'
-import re, sys
+import os, re, sys, tempfile
 from pathlib import Path
 
 hooks_path = Path(sys.argv[1])
@@ -407,9 +476,16 @@ for line in text.splitlines():
 while out and not out[-1].strip():
     out.pop()
 content = ('\n'.join(out) + '\n') if out else ''
-tmp = config_path.with_suffix(config_path.suffix + '.atrium-tmp')
-tmp.write_text(content)
-tmp.replace(config_path)
+fd, tmp_name = tempfile.mkstemp(
+    prefix=f'{config_path.name}.atrium-tmp.', dir=config_path.parent
+)
+os.close(fd)
+tmp = Path(tmp_name)
+try:
+    tmp.write_text(content)
+    tmp.replace(config_path)
+finally:
+    tmp.unlink(missing_ok=True)
 PYEOF
 }
 
@@ -424,11 +500,12 @@ has_atrium_hooks_in() {
 }
 
 do_install() {
-  enable_hooks_feature
-  ensure_hooks_file
-
   local new_hooks
   new_hooks="$(build_all_hooks)"
+
+  acquire_config_lock
+  enable_hooks_feature
+  ensure_hooks_file
 
   # Deep-merge atrium hooks under the .hooks wrapper. Also strip legacy
   # root-level SessionStart/SessionEnd/on_user_prompt keys that older
@@ -448,7 +525,8 @@ do_install() {
     | del(.SessionStart, .SessionEnd, .on_user_prompt)
     ' "$HOOKS_JSON")"
 
-  local tmp="${HOOKS_JSON}.atrium-tmp"
+  local tmp
+  tmp="$(mktemp "${HOOKS_JSON}.atrium-tmp.XXXXXX")"
   printf '%s\n' "$updated" > "$tmp"
   mv "$tmp" "$HOOKS_JSON"
 
@@ -459,6 +537,7 @@ do_install() {
 }
 
 do_uninstall() {
+  acquire_config_lock
   disable_hooks_feature
   untrust_atrium_hooks
 
@@ -485,7 +564,8 @@ do_uninstall() {
     | del(.SessionStart, .SessionEnd, .on_user_prompt)
     ' "$HOOKS_JSON")"
 
-  local tmp="${HOOKS_JSON}.atrium-tmp"
+  local tmp
+  tmp="$(mktemp "${HOOKS_JSON}.atrium-tmp.XXXXXX")"
   printf '%s\n' "$updated" > "$tmp"
   mv "$tmp" "$HOOKS_JSON"
 
