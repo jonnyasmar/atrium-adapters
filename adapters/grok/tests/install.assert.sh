@@ -74,6 +74,30 @@ if [[ "$unmarked" != "0" ]]; then
   exit 1
 fi
 
+# Context-capable events carry dedicated delivery hooks in addition to the
+# activity hook. SessionStart also has three manifest-section hooks;
+# UserPromptSubmit has rename + sigil hooks.
+counts="$(jq -c '[
+  (.hooks.SessionStart | length),
+  (.hooks.UserPromptSubmit | length),
+  (.hooks.PreToolUse | length),
+  (.hooks.PostToolUse | length)
+]' "$HOOKS_FILE")"
+if [[ "$counts" != '[5,4,2,2]' ]]; then
+  echo "install.assert: unexpected context hook counts: $counts" >&2
+  exit 1
+fi
+
+if ! jq -e '[
+  .hooks.SessionStart[].hooks[].command,
+  .hooks.UserPromptSubmit[].hooks[].command,
+  .hooks.PreToolUse[].hooks[].command,
+  .hooks.PostToolUse[].hooks[].command
+] | any(test("inject-context\\.sh"))' "$HOOKS_FILE" >/dev/null; then
+  echo "install.assert: context delivery hook missing" >&2
+  exit 1
+fi
+
 # PostToolUseFailure must re-emit as atrium post-tool-use (no dedicated
 # atrium event); the normalize step still receives post-tool-use-failure.
 # The normalizer path is double-quoted in the installed command

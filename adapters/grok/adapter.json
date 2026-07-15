@@ -5,7 +5,7 @@
   "description": "xAI's terminal coding agent",
   "accent": "#e11d48",
   "binary": "grok",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "icon": "icon.svg",
   "skillInstallPath": "~/.grok/skills/atrium/SKILL.md",
   "skillsDir": "~/.grok/skills",
@@ -74,16 +74,23 @@
   },
   "hookEnvelopes": {
     "sessionStartManifest": {
-      "kind": "none"
+      "kind": "hookSpecificOutput",
+      "hookEventName": "SessionStart"
     },
     "userPromptSubmit": {
-      "kind": "none"
+      "kind": "hookSpecificOutput",
+      "hookEventName": "UserPromptSubmit",
+      "includeSystemMessage": true
     },
     "preToolUse": {
-      "kind": "none"
+      "kind": "hookSpecificOutput",
+      "hookEventName": "PreToolUse",
+      "includeSystemMessage": false
     },
     "postToolUse": {
-      "kind": "none"
+      "kind": "hookSpecificOutput",
+      "hookEventName": "PostToolUse",
+      "includeSystemMessage": false
     }
   },
   "chatTransport": {

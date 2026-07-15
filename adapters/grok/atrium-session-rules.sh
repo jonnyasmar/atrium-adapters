@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 # atrium-session-rules.sh — emit the Grok `--rules` payload on stdout.
 #
-# Grok only consumes stdout from blocking PreToolUse hooks; SessionStart /
-# UserPromptSubmit are passive and their stdout is ignored (see hooks.sh and
-# ~/.grok/docs/user-guide/10-hooks.md). So atrium cannot deliver atrium-context
-# or the pane-rename nudge via hook envelopes the way Claude/Codex do.
-#
-# Instead, build_launch_command.sh / build_resume_command.sh append this blob
-# with `grok --rules …` so it lands in the session system prompt.
+# Released Grok builds before additionalContext support ignore passive hook
+# stdout. Keep this launch-time fallback so those builds still receive atrium
+# context and a one-shot pane-rename instruction. Newer builds also receive
+# live event context from hooks.sh.
 #
 # Exit 0 always. Empty stdout is fine (caller skips --rules).
 

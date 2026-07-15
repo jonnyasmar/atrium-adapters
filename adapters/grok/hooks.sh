@@ -106,25 +106,51 @@ build_hooks_json() {
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
 
-  # NO hook-based context-injection wiring (pane-rename nudge / sigils /
-  # manifest). Grok only consumes stdout from BLOCKING hooks (PreToolUse,
-  # for the allow/deny decision); ALL other hooks are "passive" and their
-  # stdout is ignored (per ~/.grok/docs/user-guide/10-hooks.md "Passive
-  # Hooks" + a live `grok -p` probe where an injected UserPromptSubmit
-  # additionalContext directive was NOT obeyed, 2026-06-04). So
-  # `pane-name-check.sh`, `skills resolve-prompt-sigils`, and `skills
-  # resolve-manifest` would all produce output grok throws away — wiring
-  # them just burns a CLI call per prompt.
-  #
-  # Fallback (v0.4.0+): launch/resume argv[0] is grok-with-atrium-rules.sh,
-  # which execs `grok --rules "$(atrium-session-rules.sh)" …`. Rules cannot
-  # live as multi-line argv tokens — atrium types launch lines via
-  # unquoted `cmd.join(" ")`, so embedded newlines submit a broken
-  # partial command. The wrapper keeps the PTY line single-line.
-  # Live per-turn rename nags and same-turn sigil injection remain
-  # unavailable. If a future grok adds additionalContext support for
-  # UserPromptSubmit/SessionStart, re-add the wiring + flip
-  # hookEnvelopes back to hookSpecificOutput/identity.
+  # SessionStart manifest. Split into three hooks so each section receives
+  # Grok's per-hook output budget independently.
+  local ctx_section ctx_cmd ctx_entry
+  for ctx_section in context agent skills; do
+    ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok --section %s 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$ctx_section")"
+    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
+      '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+    hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
+  done
+
+  # Prompt-time rename reminder and +name@scope sigil resolution. Both emit
+  # the same hookSpecificOutput.additionalContext envelope Grok consumes.
+  local rename_cmd rename_entry sigil_cmd sigil_entry
+  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh grok"
+  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
+    '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
+
+  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok 2>/dev/null || printf "{}\\n"' \
+    "$ATRIUM_HOOK_MARKER_PREFIX")"
+  sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
+    '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
+
+  # Dynamic providers run through atrium's hook server. The delivery script
+  # extracts atriumContext and renders Grok's Claude-compatible envelope.
+  local inject_base inject_event inject_key inject_cmd inject_entry
+  inject_base="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/grok/inject-context.sh"
+  while IFS=$'\t' read -r inject_event inject_key; do
+    inject_cmd="$inject_base $inject_event"
+    inject_entry="$(jq -n --arg cmd "$inject_cmd" \
+      '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+    hooks="$(jq --arg key "$inject_key" --argjson entry "$inject_entry" \
+      '.[$key] += $entry' <<< "$hooks")"
+  done <<'EOF'
+session-start	SessionStart
+user-prompt-submit	UserPromptSubmit
+pre-tool-use	PreToolUse
+post-tool-use	PostToolUse
+EOF
+
+  # Keep the launch-time --rules wrapper as a compatibility fallback for
+  # released Grok builds that predate additionalContext support. Patched/new
+  # builds gain live context; older builds retain their static atrium rules.
   jq -n --argjson hooks "$hooks" \
     '{description: "atrium-grok hook bridge", hooks: $hooks}'
 }
