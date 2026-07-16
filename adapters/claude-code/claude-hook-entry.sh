@@ -20,6 +20,12 @@
 
 set -u
 
+# Chat sidecar owns atrium hooks via SDK callbacks (ATRIUM_CHAT_SDK_HOOKS=1
+# from build_chat_env) — skip shell dual-fire for every event.
+if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]; then
+  exit 0
+fi
+
 EVENT="${1:?event name required}"
 ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
 ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -39,6 +39,15 @@
 
 set -u
 
+# Chat sidecar owns atrium UserPromptSubmit work via SDK hooks — no-op.
+if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]; then
+  case "${1:-}" in
+    raw) printf '\n' ;;
+    *) printf '%s\n' '{}' ;;
+  esac
+  exit 0
+fi
+
 SHAPE="${1:?shape arg required (claude|codex|grok|cursor|raw)}"
 
 # Default no-op output. Shell-hook shapes need valid JSON (`{}`); the `raw`

@@ -71,6 +71,12 @@ check "claude pre-tool-use emits" 1 \
 {"session_id":"abc","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"ls"}}
 JSON
 
+# 6. Chat sidecar SDK hooks own atrium dispatch → no shell dual-fire
+check "ATRIUM_CHAT_SDK_HOOKS suppresses emit" 0 \
+  env -u CURSOR_INVOKED_AS ATRIUM_CHAT_SDK_HOOKS=1 bash "$ENTRY" session-start <<'JSON'
+{"session_id":"abc","transcript_path":"/Users/x/.claude/projects/foo/abc.jsonl","cwd":"/tmp"}
+JSON
+
 echo "---"
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]

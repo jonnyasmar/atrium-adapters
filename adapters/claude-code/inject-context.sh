@@ -30,6 +30,15 @@
 # NFR5 / Rule 7). Budget: ONE HTTP round-trip to localhost.
 set -uo pipefail
 
+# Chat sidecar owns injection via SDK hooks — skip shell dual-fire.
+# Still emit the per-event no-op so strict JSON hook parsers stay happy.
+if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]; then
+  case "${1:-}" in
+    user-prompt-submit | pre-tool-use | post-tool-use) printf '%s\n' '{}' ;;
+  esac
+  exit 0
+fi
+
 EVENT="${1:-}"
 
 # Per-event no-op: SessionStart consumes raw stdout, so its no-op is an EMPTY

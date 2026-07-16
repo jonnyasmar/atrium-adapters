@@ -29,6 +29,11 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|claude-hook-entry\.sh|atrium hook emi
 # rename under a Cursor pane. Real Claude Code never sets the var.
 CURSOR_GUARD='[ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0'
 
+# Chat sidecar (ATRIUM_CHAT_SDK_HOOKS=1) owns atrium dispatch via SDK hooks.
+# Prefix non-entry commands so shell dual-fire is suppressed when user
+# settings still load for chat. claude-hook-entry.sh has its own early-exit.
+CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
+
 # Event table: kebab-case event name, Claude settings key, matcher.
 # Each event becomes one hook entry in the corresponding settings.json key.
 #
@@ -95,8 +100,8 @@ build_all_hooks() {
   # hook per section gives each section its own 10K budget (max headroom).
   local ctx_section ctx_cmd ctx_entry
   for ctx_section in context agent skills; do
-    ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
-      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$ctx_section")"
+    ctx_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$CHAT_SDK_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
       '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
@@ -109,7 +114,7 @@ build_all_hooks() {
   # each other's hook entries. Cursor-guarded so a dual-fired Cursor
   # session doesn't get Claude rename nudges.
   local rename_cmd rename_entry
-  rename_cmd="$CURSOR_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh claude"
+  rename_cmd="$CURSOR_GUARD; $CHAT_SDK_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh claude"
   rename_entry="$(jq -n --arg cmd "$rename_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
@@ -122,8 +127,8 @@ build_all_hooks() {
   # `{}\n` (no-op envelope). The `|| true` trailer guarantees the hook
   # never blocks prompt submission (NFR8-style fail-open).
   local sigil_cmd sigil_entry
-  sigil_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD")"
+  sigil_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$CHAT_SDK_GUARD")"
   sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
@@ -148,7 +153,7 @@ build_all_hooks() {
   # `none` and wire no injection there (the grok-revert lesson: no dead wiring).
   # Resolved via ${ATRIUM_DATA_DIR:-...} so stable / dev / beta installs coexist.
   local inject_base inject_ss inject_ups inject_pt inject_post
-  inject_base="$CURSOR_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
+  inject_base="$CURSOR_GUARD; $CHAT_SDK_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
   inject_ss="$(jq -n --arg cmd "$inject_base session-start" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
