@@ -27,6 +27,14 @@ if command -v jq &>/dev/null; then
     CMD="${CMD}, \"-c\", \"model_reasoning_effort=\\\"${EFFORT}\\\"\""
   fi
 
+  # Fast mode: lower-latency service tier (orthogonal to reasoning effort).
+  # Docs: service_tier="fast" + features.fast_mode=true. ChatGPT credit plans
+  # only — API-key sessions use token pricing and ignore the credit multiplier.
+  FAST="$(echo "$FLAGS" | jq -r '.fast // false' 2>/dev/null)" || FAST="false"
+  if [ "$FAST" = "true" ]; then
+    CMD="${CMD}, \"--enable\", \"fast_mode\", \"-c\", \"service_tier=\\\"fast\\\"\""
+  fi
+
   EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
   if [ -n "$EXTRA" ]; then
     for arg in $EXTRA; do

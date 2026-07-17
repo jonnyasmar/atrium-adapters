@@ -33,6 +33,13 @@
       "choices": ["low", "medium", "high", "xhigh", "max", "ultra"]
     },
     {
+      "key": "fast",
+      "label": "⚡ Fast",
+      "description": "service_tier=fast — 1.5× speed, higher credit use (ChatGPT plans)",
+      "type": "toggle",
+      "default": false
+    },
+    {
       "key": "extraArgs",
       "label": "args",
       "description": "Additional CLI arguments",

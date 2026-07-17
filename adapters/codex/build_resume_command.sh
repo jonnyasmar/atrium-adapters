@@ -32,6 +32,11 @@ if command -v jq &>/dev/null; then
     CMD="${CMD}, \"-c\", \"model_reasoning_effort=\\\"$(json_escape "$EFFORT")\\\"\""
   fi
 
+  FAST="$(echo "$FLAGS" | jq -r '.fast // false' 2>/dev/null)" || FAST="false"
+  if [ "$FAST" = "true" ]; then
+    CMD="${CMD}, \"--enable\", \"fast_mode\", \"-c\", \"service_tier=\\\"fast\\\"\""
+  fi
+
   EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
   if [ -n "$EXTRA" ]; then
     for arg in $EXTRA; do
