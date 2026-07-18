@@ -100,7 +100,7 @@
       "stdio"
     ],
     "capabilities": {
-      "resume": false,
+      "resume": true,
       "setModel": false,
       "thinking": true,
       "permissionCallback": true,
