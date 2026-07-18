@@ -3,21 +3,21 @@
     {
       "key": "model",
       "label": "model",
-      "description": "Override the default model (e.g. anthropic/claude-sonnet-4)",
+      "description": "Override the default model (provider/model, e.g. openai/gpt-5.4)",
       "type": "text",
       "default": "",
       "choices": [
-        "anthropic/claude-opus-4-8",
-        "anthropic/claude-sonnet-4-6",
-        "anthropic/claude-haiku-4-5",
-        "openai/gpt-5.5",
-        "openai/gpt-5.4",
-        "google/gemini-3-pro",
-        "google/gemini-3.5-flash",
         "opencode/big-pickle",
         "opencode/deepseek-v4-flash-free",
         "opencode/mimo-v2.5-free",
-        "opencode/nemotron-3-super-free"
+        "opencode/nemotron-3-ultra-free",
+        "openai/gpt-5.4",
+        "openai/gpt-5.3-codex",
+        "openai/gpt-5-mini",
+        "openrouter/anthropic/claude-sonnet-4",
+        "openrouter/anthropic/claude-opus-4.1",
+        "openrouter/google/gemini-2.5-pro",
+        "openrouter/x-ai/grok-4.3"
       ]
     },
     {
