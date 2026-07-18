@@ -80,8 +80,8 @@ build_post_tool_use_command() {
 # the established pattern).
 #
 # Stdout: piped to inject-context.sh, which (on invocationNum==0) emits an
-# agy `injectSteps` envelope carrying the atrium SessionStart manifest +
-# resolved sigils + the pane-rename nudge — agy's confirmed same-turn
+# agy `injectSteps` envelope carrying the atrium SessionStart manifest,
+# pipeline context, and resolved sigils — agy's confirmed same-turn
 # context-injection primitive. Continuations / any failure emit `{}`.
 build_pre_invocation_command() {
   # PreInvocation fires for EVERY model call. In an agentic tool loop a

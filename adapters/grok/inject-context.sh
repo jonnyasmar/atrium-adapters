@@ -10,6 +10,9 @@ noop() {
   exit 0
 }
 
+# Chat sidecar owns injection; emit Grok's JSON no-op envelope.
+[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || noop
+
 case "$EVENT" in
   session-start | user-prompt-submit | pre-tool-use | post-tool-use) ;;
   *) noop ;;

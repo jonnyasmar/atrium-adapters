@@ -107,18 +107,6 @@ build_all_hooks() {
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
   done
 
-  # Pane-name nudge: appended to UserPromptSubmit so the agent gets a
-  # per-prompt reminder until the pane is renamed off its default
-  # launcher name. Resolved at hook-fire time via ${ATRIUM_DATA_DIR:-...}
-  # so stable / dev / beta installs on the same machine don't clobber
-  # each other's hook entries. Cursor-guarded so a dual-fired Cursor
-  # session doesn't get Claude rename nudges.
-  local rename_cmd rename_entry
-  rename_cmd="$CURSOR_GUARD; $CHAT_SDK_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh claude"
-  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
-    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
-  hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
-
   # `+name@scope` sigil auto-resolve: appended to UserPromptSubmit so the
   # CLI scans the prompt for sigils, resolves bodies via the registry,
   # and emits `{"hookSpecificOutput": {"additionalContext": <bodies>},
@@ -143,7 +131,7 @@ build_all_hooks() {
   #   - SessionStart      → run-command defined+running list (raw-text/identity,
   #     a SECOND SessionStart context source alongside resolve-manifest).
   #   - UserPromptSubmit  → the pipeline atriumContext, additive to the existing
-  #     sigil/nudge UserPromptSubmit entries (hookSpecificOutput; `{}` no-op).
+  #     sigil UserPromptSubmit entry (hookSpecificOutput; `{}` no-op).
   #   - PreToolUse        → terse "already running" nudge before a shell-class
   #     tool call (hookSpecificOutput.additionalContext; `{}` no-op otherwise).
   #   - PostToolUse       → post-action context (the PostToolUse payload carries

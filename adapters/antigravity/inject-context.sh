@@ -10,7 +10,6 @@
 #   2b. the UserPromptSubmit pipeline `atriumContext` (Epic 78 Story 78.3 —
 #      agy's PreInvocation hook IS its UserPromptSubmit-equivalent),
 #   3. resolved `+name` sigil bodies for this turn's prompt,
-#   4. the pane-rename nudge while the pane name is still generic.
 #
 # agy is injection-CAPABLE at SessionStart + UserPromptSubmit (both via this one
 # PreInvocation hook, fired per user turn): it has no native SessionStart, so
@@ -44,6 +43,9 @@ emit_noop() {
   printf '{}\n'
   exit 0
 }
+
+# Chat sidecar owns injection; emit agy's JSON no-op envelope.
+[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || emit_noop
 
 [ -n "${ATRIUM_PANE_ID:-}" ] || emit_noop
 command -v jq >/dev/null 2>&1 || emit_noop
@@ -124,12 +126,6 @@ sigils="$(jq -cn --arg p "$prompt" '{prompt: $p}' 2>/dev/null \
   | "$CLI" skills resolve-prompt-sigils --pane-id "$ATRIUM_PANE_ID" --adapter antigravity 2>/dev/null \
   | jq -r '.hookSpecificOutput.additionalContext // empty' 2>/dev/null || true)"
 add_step "$sigils"
-
-# 4. Rename nudge — canonical text + generic-name check live in
-#    pane-name-check.sh's `raw` shape (single source); empty when the pane
-#    has already been renamed.
-nudge="$("$DATA/adapters/shared/pane-name-check.sh" raw 2>/dev/null || true)"
-add_step "$nudge"
 
 if [ "$steps_json" = "[]" ]; then
   emit_noop

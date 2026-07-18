@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
-# pane-name-check.sh — UserPromptSubmit hook entry that nudges the agent to
-# rename its pane while it still carries a generic launcher name.
+# pane-name-check.sh — raw-shape pane rename nudge for adapters that cannot
+# consume atrium's UserPromptSubmit context-injection pipeline.
+#
+# The context-injection pipeline provider is the canonical nudge path for
+# pipeline-capable adapters. This script remains for raw/native hook shapes
+# that cannot consume that pipeline, and for cleaning up legacy hook wiring.
 #
 # Args:
 #   $1  shape — one of: claude | codex | grok | cursor | raw
 #       (controls stdout envelope shape; `raw` emits the bare nudge text for
 #       plugin/extension adapters that wrap it themselves. Mirrors the
-#       per-adapter `hookEnvelopes`
-#       declaration in adapter.json that SkillsHandler uses for sigil
-#       resolution per NFR18). Only wire this for adapters whose
-#       hookEnvelopes.userPromptSubmit kind is NOT "none" — adapters that
-#       can't inject same-turn context (antigravity, opencode, pi) get no
-#       per-prompt nudge. cursor-agent is also "none" today (its
-#       beforeSubmitPrompt stdout isn't consumed); the cursor shape below
-#       is retained only so the no-op stays JSON-valid if re-wired.
+#       per-adapter `hookEnvelopes` declaration in adapter.json that
+#       SkillsHandler uses for sigil resolution per NFR18). Do not wire this
+#       alongside a consumable UserPromptSubmit pipeline route: the provider
+#       already contributes the same nudge there. Cursor Agent's UPS kind is
+#       `none`, and Hermes declares no UPS envelope, so their raw/native paths
+#       remain valid consumers.
 #
 # Behavior:
 #   - Always emits valid JSON to stdout. Codex strictly parses every

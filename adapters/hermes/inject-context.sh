@@ -18,6 +18,12 @@
 # no-op {}. Fail-open — any error degrades to {} so a turn never breaks.
 set -uo pipefail
 
+# Chat sidecar owns injection; Hermes expects a JSON object on stdout.
+if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]; then
+  printf '{}\n'
+  exit 0
+fi
+
 # Only inject inside an atrium pane. External hermes processes (gateway, cron,
 # oneshots) have neither var and must get nothing.
 [ -n "${ATRIUM:-}" ] || { printf '{}\n'; exit 0; }

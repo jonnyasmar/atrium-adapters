@@ -22,6 +22,7 @@ const ATRIUM_CLI = process.env.ATRIUM_CLI_PATH || "atrium";
 const ATRIUM_PANE_ID = process.env.ATRIUM_PANE_ID || "";
 const ATRIUM_ACTIVE = Boolean(process.env.ATRIUM) && Boolean(ATRIUM_PANE_ID);
 const ATRIUM_DATA_DIR = process.env.ATRIUM_DATA_DIR || join(homedir(), ".atrium");
+const CHAT_SDK_HOOKS = Boolean(process.env.ATRIUM_CHAT_SDK_HOOKS);
 
 const DEBUG_LOG = process.env.ATRIUM_PLUGIN_LOG || join(tmpdir(), "atrium-opencode-plugin.log");
 const DEBUG = process.env.ATRIUM_PLUGIN_DEBUG !== "0";
@@ -177,32 +178,6 @@ async function fetchPipelineContext(event, sessionID, model, timeoutMs = 2000) {
   }
 }
 
-// Generic launcher names atrium nudges the agent to rename away from.
-// Mirrors adapters/shared/pane-name-check.sh — opencode can't use that
-// shell script (it shapes a hook-stdout envelope), so the same check lives
-// here and the nudge is pushed onto the system prompt.
-const GENERIC_PANE_NAMES = new Set([
-  "OpenCode",
-  "Claude Code",
-  "Codex",
-  "Codex CLI",
-  "Gemini",
-  "Gemini CLI",
-  "Grok",
-  "Antigravity",
-  "Pi",
-  "Cursor",
-  "Cursor Agent",
-  "Terminal",
-  "",
-]);
-
-const RENAME_NUDGE = `[atrium] This pane is still using its default launcher name. Before responding, rename it to a 10–20 char description of the work:
-
-  $ATRIUM_CLI_PATH pane rename "$ATRIUM_PANE_ID" --name "<new name>"
-
-Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"), describe the work not your role, no status/timestamp/adapter name. If the user has already chosen a name, leave it alone.`;
-
 // Extract the injected context string from a resolve-prompt-sigils response
 // (claude-shaped hookSpecificOutput envelope); "" for the no-op `{}` envelope.
 function parseAdditionalContext(raw) {
@@ -234,19 +209,6 @@ let pendingSigilPrompt = null;
 // continuation request after the tool runs).
 let pendingUserPromptInject = false;
 let pendingPostToolInject = false;
-
-async function renameNudgeIfGeneric() {
-  const out = await runAtriumCapture(["pane", "list", "--filter", `id=${ATRIUM_PANE_ID}`, "--json"]);
-  if (!out.trim()) return "";
-  try {
-    const arr = JSON.parse(out);
-    const name = Array.isArray(arr) ? arr[0]?.name : undefined;
-    if (typeof name === "string" && GENERIC_PANE_NAMES.has(name)) return RENAME_NUDGE;
-  } catch {
-    /* tolerate */
-  }
-  return "";
-}
 
 // Module-level state: remember the most recent assistant message text so
 // we can attach it to the `stop` event. opencode doesn't deliver it in
@@ -402,12 +364,9 @@ export const AtriumPlugin = async (_input, _options) => {
     // server, this adapter's SessionStart-equivalent delivery), the Epic 78
     // Story 78.3 pipeline atriumContext for UserPromptSubmit (after a user
     // message) and PostToolUse (on the continuation after a tool runs), and the
-    // pane-rename nudge while the pane name is still generic. Every fetch is
-    // fail-open. (Per-prompt `+name` sigil expansion isn't wired here yet —
-    // system.transform has no prompt text; that needs messages.transform and
-    // is a follow-up.)
+    // resolved `+name` sigil bodies. Every fetch is fail-open.
     "experimental.chat.system.transform": async (input, output) => {
-      if (!ATRIUM_ACTIVE || !output || !Array.isArray(output.system)) return;
+      if (CHAT_SDK_HOOKS || !ATRIUM_ACTIVE || !output || !Array.isArray(output.system)) return;
       if (manifestCache == null) {
         const m = await runAtriumCapture([
           "skills",
@@ -443,8 +402,6 @@ export const AtriumPlugin = async (_input, _options) => {
         postCtx = await fetchPipelineContext("post-tool-use", input?.sessionID, input?.model);
         if (postCtx) output.system.push(postCtx);
       }
-      const nudge = await renameNudgeIfGeneric();
-      if (nudge) output.system.push(nudge);
       // Per-prompt `+name` sigil bodies — resolve once per user message
       // (the prompt was captured in chat.message), then clear so tool-loop
       // continuation requests don't re-inject a stale prompt's sigils.
@@ -464,7 +421,6 @@ export const AtriumPlugin = async (_input, _options) => {
         runCommand: runCtx.length > 0,
         userPromptSubmit: upsCtx.length > 0,
         postToolUse: postCtx.length > 0,
-        nudge: nudge.length > 0,
         sigils: sigilCtx.length > 0,
       });
     },

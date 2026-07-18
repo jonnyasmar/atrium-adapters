@@ -27,6 +27,12 @@ fi
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh|inject-context\.sh'
 
+# Chat-sidecar sessions receive injected context from the daemon. Keep the
+# engine-native command hooks terminal-only while lifecycle `hook emit`
+# commands above/below remain unguarded.
+CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
+CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
+
 # Event table: kebab-case event name, Codex settings key, matcher.
 EVENTS=$'session-start\tSessionStart\tstartup|resume
 session-end\tSessionEnd\t*
@@ -92,23 +98,12 @@ build_all_hooks() {
   # hook per section gives each section its own 10K budget (max headroom).
   local ctx_section ctx_cmd ctx_entry
   for ctx_section in context agent skills; do
-    ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex --section %s 2>/dev/null || true' \
-      "$ATRIUM_HOOK_MARKER_PREFIX" "$ctx_section")"
+    ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex --section %s 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
       '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
   done
-
-  # Pane-name nudge: appended to UserPromptSubmit so the agent gets a
-  # per-prompt reminder until the pane is renamed off its default
-  # launcher name. Resolved at hook-fire time via ${ATRIUM_DATA_DIR:-...}
-  # so stable / dev / beta installs on the same machine don't clobber
-  # each other's hook entries.
-  local rename_cmd rename_entry
-  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh codex"
-  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
-    '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
-  hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
 
   # `+name@scope` sigil auto-resolve: appended to UserPromptSubmit so the
   # CLI scans the prompt for sigils, resolves bodies via the registry,
@@ -121,8 +116,8 @@ build_all_hooks() {
   # parser is satisfied. The `|| true` trailer is NOT needed here
   # because the CLI always exits 0 on NFR8 failure.
   local sigil_cmd sigil_entry
-  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex 2>/dev/null || printf "{}\\n"' \
-    "$ATRIUM_HOOK_MARKER_PREFIX")"
+  sigil_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex 2>/dev/null || printf "{}\\n"' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_JSON_NOOP" "$CHAT_SDK_GUARD")"
   sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
@@ -137,7 +132,7 @@ build_all_hooks() {
   #   - SessionStart      → run-command defined+running list (a SECOND
   #     SessionStart context source alongside resolve-manifest).
   #   - UserPromptSubmit  → the pipeline atriumContext, additive to the existing
-  #     sigil/nudge UserPromptSubmit entries (`{}` no-op otherwise).
+  #     sigil UserPromptSubmit entry (`{}` no-op otherwise).
   #   - PreToolUse        → terse "already running" nudge before a shell-class
   #     tool call (`{}` no-op otherwise).
   #   - PostToolUse       → post-action context (the PostToolUse payload carries

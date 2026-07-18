@@ -76,14 +76,14 @@ fi
 
 # Context-capable events carry dedicated delivery hooks in addition to the
 # activity hook. SessionStart also has three manifest-section hooks;
-# UserPromptSubmit has rename + sigil hooks.
+# UserPromptSubmit has a sigil hook.
 counts="$(jq -c '[
   (.hooks.SessionStart | length),
   (.hooks.UserPromptSubmit | length),
   (.hooks.PreToolUse | length),
   (.hooks.PostToolUse | length)
 ]' "$HOOKS_FILE")"
-if [[ "$counts" != '[5,4,2,2]' ]]; then
+if [[ "$counts" != '[5,3,2,2]' ]]; then
   echo "install.assert: unexpected context hook counts: $counts" >&2
   exit 1
 fi

@@ -30,6 +30,11 @@ HOOKS_FILE="${HOOKS_DIR}/atrium-grok.json"
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh'
 
+# Chat-sidecar sessions receive injected context from the daemon. Lifecycle
+# `hook emit` commands intentionally remain unguarded.
+CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
+CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
+
 # Channel discovery — bake the right CLI fallback path into hook
 # commands so dev/stable installs don't clobber each other. The probe
 # inspects the running script's own location so a single machine with
@@ -110,23 +115,18 @@ build_hooks_json() {
   # Grok's per-hook output budget independently.
   local ctx_section ctx_cmd ctx_entry
   for ctx_section in context agent skills; do
-    ctx_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok --section %s 2>/dev/null || true' \
-      "$ATRIUM_HOOK_MARKER_PREFIX" "$ctx_section")"
+    ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok --section %s 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
       '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
   done
 
-  # Prompt-time rename reminder and +name@scope sigil resolution. Both emit
-  # the same hookSpecificOutput.additionalContext envelope Grok consumes.
-  local rename_cmd rename_entry sigil_cmd sigil_entry
-  rename_cmd="\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/shared/pane-name-check.sh grok"
-  rename_entry="$(jq -n --arg cmd "$rename_cmd" \
-    '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
-  hooks="$(jq --argjson r "$rename_entry" '.UserPromptSubmit += $r' <<< "$hooks")"
-
-  sigil_cmd="$(printf '%s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok 2>/dev/null || printf "{}\\n"' \
-    "$ATRIUM_HOOK_MARKER_PREFIX")"
+  # Prompt-time +name@scope sigil resolution emits the
+  # hookSpecificOutput.additionalContext envelope Grok consumes.
+  local sigil_cmd sigil_entry
+  sigil_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter grok 2>/dev/null || printf "{}\\n"' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_JSON_NOOP" "$CHAT_SDK_GUARD")"
   sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
     '[{hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"

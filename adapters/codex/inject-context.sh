@@ -22,20 +22,27 @@
 # and post-tool-use (whose payload carries the tool RESULT for post-action
 # providers).
 #
-# When there's nothing to inject (or anything fails) it emits the `{}` no-op and
-# exits 0 — the hook NEVER blocks the session or the tool call (fail-open, NFR5
-# / Rule 7). codex 0.120+ strictly parses hook stdout as a JSON envelope, so the
-# no-op is `{}` (not an empty body). Budget: ONE HTTP round-trip to localhost.
+# When there's nothing to inject (or anything fails) it emits the per-event
+# no-op (empty for raw SessionStart, `{}` for JSON-envelope events) and exits 0
+# — the hook NEVER blocks the session or tool call (fail-open, NFR5 / Rule 7).
+# Budget: ONE HTTP round-trip to localhost.
 set -uo pipefail
 
 EVENT="${1:-}"
 
-# Per-event no-op. codex's strict JSON parser wants a well-formed envelope even
-# when there's nothing to inject, so the no-op is `{}` for every event.
+# Per-event no-op. SessionStart consumes raw stdout, so its no-op is empty;
+# Codex's strict parser requires `{}` for JSON-envelope events.
 noop() {
-  printf '%s\n' '{}'
+  case "$EVENT" in
+    user-prompt-submit | pre-tool-use | post-tool-use) printf '%s\n' '{}' ;;
+    *) : ;;
+  esac
   exit 0
 }
+
+# Chat sidecar owns injection. Keep the native hook parser satisfied without
+# contacting the hook server or double-delivering daemon-owned context.
+[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || noop
 
 case "$EVENT" in
   session-start | user-prompt-submit | pre-tool-use | post-tool-use) ;;

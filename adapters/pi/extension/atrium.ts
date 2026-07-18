@@ -26,6 +26,7 @@ import { basename, join } from "node:path";
 const ATRIUM_CLI = process.env.ATRIUM_CLI_PATH || "atrium";
 const ATRIUM_PANE_ID = process.env.ATRIUM_PANE_ID || "";
 const ATRIUM_ACTIVE = Boolean(process.env.ATRIUM) && Boolean(ATRIUM_PANE_ID);
+const CHAT_SDK_HOOKS = Boolean(process.env.ATRIUM_CHAT_SDK_HOOKS);
 const INPUT_REQUEST_TOOLS_ENV = "ATRIUM_INPUT_REQUEST_TOOLS_PI";
 const DEFAULT_INPUT_REQUEST_TOOLS: string[] = [];
 
@@ -255,55 +256,6 @@ function fetchPipelineContext(
       finish("");
     }
   });
-}
-
-// Generic launcher names atrium nudges the agent to rename away from.
-// Mirrors adapters/shared/pane-name-check.sh — pi can't use that shell
-// script (it shapes a hook-stdout envelope), so the same check lives here
-// and the nudge is injected via before_agent_start.systemPrompt.
-const GENERIC_PANE_NAMES = new Set([
-  "Pi",
-  "Claude Code",
-  "Codex",
-  "Codex CLI",
-  "Gemini",
-  "Gemini CLI",
-  "Grok",
-  "Antigravity",
-  "OpenCode",
-  "Cursor",
-  "Cursor Agent",
-  "Terminal",
-  "",
-]);
-
-const RENAME_NUDGE = `[atrium] This pane is still using its default launcher name. Before responding, rename it to a 10–20 char description of the work:
-
-  $ATRIUM_CLI_PATH pane rename "$ATRIUM_PANE_ID" --name "<new name>"
-
-Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"), describe the work not your role, no status/timestamp/adapter name. If the user has already chosen a name, leave it alone.`;
-
-// Returns the rename nudge when the pane still carries a generic launcher
-// name, else "". Silent on any CLI failure.
-async function renameNudgeIfGeneric(): Promise<string> {
-  const out = await runAtriumCapture([
-    "pane",
-    "list",
-    "--filter",
-    `id=${ATRIUM_PANE_ID}`,
-    "--json",
-  ]);
-  if (!out.trim()) return "";
-  try {
-    const arr = JSON.parse(out) as Array<{ name?: unknown }>;
-    const name = Array.isArray(arr) ? arr[0]?.name : undefined;
-    if (typeof name === "string" && GENERIC_PANE_NAMES.has(name)) {
-      return RENAME_NUDGE;
-    }
-  } catch {
-    /* tolerate */
-  }
-  return "";
 }
 
 // ── Module-level state ──────────────────────────────────────────────
@@ -543,13 +495,12 @@ export default function (pi: ExtensionAPI) {
   //      into one persistent hidden message,
   //   2. the UserPromptSubmit pipeline atriumContext (Epic 78 Story 78.3) —
   //      fetched per turn (this hook IS pi's UserPromptSubmit-equivalent),
-  //   3. resolved `+name` sigil bodies for this prompt,
-  //   4. the pane-rename nudge while the pane name is still generic.
+  //   3. resolved `+name` sigil bodies for this prompt.
   // (PostToolUse pipeline context is delivered separately, on the tool_result
   // hook.) All fetches are fail-open (empty string on any error) so a slow or
   // unreachable atrium CLI never blocks pi's turn.
   pi.on("before_agent_start", async (event) => {
-    if (!ATRIUM_ACTIVE) return undefined;
+    if (!ATRIUM_ACTIVE || CHAT_SDK_HOOKS) return undefined;
     const e = event as { prompt?: string; systemPrompt?: string };
     const result: {
       message?: { customType: string; content: string; display: boolean };
@@ -606,9 +557,6 @@ export default function (pi: ExtensionAPI) {
     const sigilCtx = parseAdditionalContext(sigilOut);
     if (sigilCtx) additions.push(sigilCtx);
 
-    const nudge = await renameNudgeIfGeneric();
-    if (nudge) additions.push(nudge);
-
     if (additions.length > 0) {
       result.systemPrompt = `${e.systemPrompt ?? ""}\n\n${additions.join("\n\n")}`;
     }
@@ -617,7 +565,6 @@ export default function (pi: ExtensionAPI) {
       manifest: result.message != null,
       userPromptSubmit: upsCtx.trim().length > 0,
       sigils: sigilCtx.length > 0,
-      nudge: nudge.length > 0,
     });
     return Object.keys(result).length > 0 ? result : undefined;
   });
