@@ -27,9 +27,10 @@ fi
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh|inject-context\.sh'
 
-# Chat-sidecar sessions receive injected context from the daemon. Keep the
-# engine-native command hooks terminal-only while lifecycle `hook emit`
-# commands above/below remain unguarded.
+# Chat-sidecar sessions receive injected context from the daemon AND their
+# activity from the chat runtime's turn bridge — lifecycle `hook emit`
+# commands are guarded too, else the engine's hook stream double-feeds the
+# activity card and (with no engine stop hook) wedges it in "working".
 CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
 CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
 
@@ -57,8 +58,11 @@ post-compact\tPostCompact\t'
 build_hook_command() {
   local event="$1"
   local trailer="exit 0"
+  local guard="$CHAT_SDK_GUARD"
   if [ "$event" = "user-prompt-submit" ]; then
     trailer='printf "{}\n"; exit 0'
+    # The parser needs a `{}` envelope even when the chat guard trips.
+    guard="$CHAT_SDK_JSON_NOOP; $CHAT_SDK_GUARD"
   fi
   # For `post-tool-use` events, the native payload is piped through
   # `normalize-hook-payload.sh` first so atrium consumes the canonical
@@ -70,8 +74,8 @@ build_hook_command() {
   if [ "$event" = "post-tool-use" ]; then
     normalizer="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/codex/normalize-hook-payload.sh\" | "
   fi
-  printf '%s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter codex --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; %s' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$normalizer" "$event" "$trailer"
+  printf '%s; %s; %s"${ATRIUM_CLI_PATH:-atrium}" hook emit %s --adapter codex --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; %s' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$guard" "$normalizer" "$event" "$trailer"
 }
 
 # Assemble the full hooks object by walking the event table, then append the

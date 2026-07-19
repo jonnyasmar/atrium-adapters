@@ -87,6 +87,10 @@ function stringify(value: unknown): string {
 function emit(event: string, payload?: Record<string, unknown>) {
   debug("emit", event, payload ?? {});
   if (!ATRIUM_ACTIVE) return;
+  // Chat-sidecar sessions get activity from the chat runtime's turn bridge —
+  // engine-side lifecycle emits double-feed the activity card and (with no
+  // settling stop behind them) wedge it in "working".
+  if (CHAT_SDK_HOOKS) return;
   try {
     const child = spawn(
       ATRIUM_CLI,

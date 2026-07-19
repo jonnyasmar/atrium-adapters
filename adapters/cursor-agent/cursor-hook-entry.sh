@@ -25,6 +25,11 @@ set -u
 EVENT="${1:?event name required}"
 ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
 
+# Chat-sidecar sessions get activity from the chat runtime's turn bridge —
+# engine-side lifecycle emits double-feed the activity card and (with no
+# settling stop behind them) wedge it in "working".
+[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0
+
 # Base transform: alias conversation_id → session_id when the latter is
 # absent. Atrium's shared adapter-detection path reads payload.session_id
 # uniformly; Cursor emits conversation_id on every hook but session_id

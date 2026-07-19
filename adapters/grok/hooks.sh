@@ -30,8 +30,10 @@ HOOKS_FILE="${HOOKS_DIR}/atrium-grok.json"
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh'
 
-# Chat-sidecar sessions receive injected context from the daemon. Lifecycle
-# `hook emit` commands intentionally remain unguarded.
+# Chat-sidecar sessions receive injected context from the daemon AND their
+# activity from the chat runtime's turn bridge — lifecycle `hook emit`
+# commands are guarded too, else the engine's hook stream double-feeds the
+# activity card and (with no engine stop hook) wedges it in "working".
 CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
 CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
 
@@ -89,8 +91,8 @@ build_hook_command() {
   if [ "$event" = "post-tool-use-failure" ]; then
     emit_event="post-tool-use"
   fi
-  printf '%s; %s %s | "${ATRIUM_CLI_PATH:-%s}" hook emit %s --adapter grok --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$NORMALIZER_REF" "$event" "$ATRIUM_CLI_FALLBACK" "$emit_event"
+  printf '%s; %s; %s %s | "${ATRIUM_CLI_PATH:-%s}" hook emit %s --adapter grok --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$NORMALIZER_REF" "$event" "$ATRIUM_CLI_FALLBACK" "$emit_event"
 }
 
 # Build the plugin's hooks/hooks.json content.

@@ -5,7 +5,7 @@
   "description": "Cursor's agent CLI",
   "accent": "#6366f1",
   "binary": "cursor-agent",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "skillsDir": "~/.cursor/skills",
   "binaryDiscovery": {
     "commands": [
@@ -86,7 +86,7 @@
     ],
     "capabilities": {
       "resume": false,
-      "setModel": false,
+      "setModel": true,
       "thinking": true,
       "permissionCallback": true,
       "commandDiscovery": true,
@@ -94,7 +94,7 @@
       "contextUsage": false,
       "imageInput": false,
       "checkpointing": false,
-      "subagentEvents": false,
+      "subagentEvents": true,
       "steering": false,
       "backgroundTasks": false
     }

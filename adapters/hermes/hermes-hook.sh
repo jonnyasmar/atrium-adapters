@@ -17,6 +17,12 @@ set -uo pipefail
 
 HERMES_EVENT="${1:-}"
 
+# Chat-sidecar sessions get activity from the chat runtime's turn bridge —
+# engine-side lifecycle emits double-feed the activity card and (with no
+# settling stop behind them) wedge it in "working". Hermes ignores stdout
+# here, so the plain early exit is safe.
+[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || { printf '{}\n'; exit 0; }
+
 # Only report activity when running inside an atrium pane. Hermes shell hooks
 # live in the machine-wide config.yaml, so EVERY hermes process fires them — the
 # messaging gateway daemon, cron jobs, `hermes -z` oneshots, manual runs. atrium

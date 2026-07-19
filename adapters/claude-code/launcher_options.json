@@ -14,10 +14,26 @@
       "type": "select",
       "default": "",
       "choices": [
-        { "value": "fable", "label": "Claude Fable 5" },
-        { "value": "opus", "label": "Claude Opus 4.8" },
-        { "value": "sonnet", "label": "Claude Sonnet 5" },
-        { "value": "haiku", "label": "Claude Haiku 4.5" }
+        {
+          "value": "fable",
+          "label": "Claude Fable 5",
+          "efforts": ["low", "medium", "high", "xhigh", "max", "ultracode"]
+        },
+        {
+          "value": "opus",
+          "label": "Claude Opus 4.8",
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        },
+        {
+          "value": "sonnet",
+          "label": "Claude Sonnet 5",
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        },
+        {
+          "value": "haiku",
+          "label": "Claude Haiku 4.5",
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        }
       ]
     },
     {

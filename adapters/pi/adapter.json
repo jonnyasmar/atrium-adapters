@@ -5,7 +5,7 @@
   "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
   "accent": "#06b6d4",
   "binary": "pi",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "icon": "icon.svg",
   "skillInstallPath": "~/.pi/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.pi/agent/skills",
