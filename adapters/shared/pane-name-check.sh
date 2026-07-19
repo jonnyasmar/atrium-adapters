@@ -140,12 +140,14 @@ ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
 [ -x "$ATRIUM_CLI" ] || command -v "$ATRIUM_CLI" >/dev/null 2>&1 || exit 0
 
 # Look up current pane name. Tolerate any failure silently — better to
-# skip the nudge than to break the prompt cycle.
-PANE_NAME="$("$ATRIUM_CLI" pane list --filter "id=$ATRIUM_PANE_ID" --json 2>/dev/null \
-  | jq -r '.[0].name // empty' 2>/dev/null \
-  || true)"
-
-[ -n "$PANE_NAME" ] || exit 0
+# skip the nudge than to break the prompt cycle. Un-renamed panes store
+# name "" (the header label is a UI fallback), so "no pane row" and
+# "empty name" must be distinguished: gating on a non-empty name would
+# silently skip exactly the unnamed panes the "" case-arm below exists
+# to nudge.
+PANE_JSON="$("$ATRIUM_CLI" pane list --filter "id=$ATRIUM_PANE_ID" --json 2>/dev/null || true)"
+printf '%s' "$PANE_JSON" | jq -e '.[0]' >/dev/null 2>&1 || exit 0
+PANE_NAME="$(printf '%s' "$PANE_JSON" | jq -r '.[0].name // ""' 2>/dev/null || true)"
 
 # Generic launcher names we nudge against. Keep aligned with displayName
 # fields in adapters/*/adapter.json. Empty string covers the case where
