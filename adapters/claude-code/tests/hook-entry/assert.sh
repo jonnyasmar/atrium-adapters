@@ -77,6 +77,22 @@ check "ATRIUM_CHAT_SDK_HOOKS suppresses emit" 0 \
 {"session_id":"abc","transcript_path":"/Users/x/.claude/projects/foo/abc.jsonl","cwd":"/tmp"}
 JSON
 
+# 7. Grok-shaped payload (camelCase fork dual-fire) → no emit
+check "grok payload shape suppresses emit" 0 \
+  env -u CURSOR_INVOKED_AS bash "$ENTRY" pre-tool-use <<'JSON'
+{"hookEventName":"pre_tool_use","sessionId":"019f7af6-5c95-7ba3-88d7-15291b5c672f","cwd":"/tmp","workspaceRoot":"/tmp/","timestamp":"2026-07-19T15:24:37.859Z"}
+JSON
+
+# 8. Object payload without claude's session_id → no emit
+check "sessionless object payload suppresses emit" 0 \
+  env -u CURSOR_INVOKED_AS bash "$ENTRY" notification <<'JSON'
+{"message":"waiting for input","cwd":"/tmp"}
+JSON
+
+# 9. Empty stdin still passes through (bare lifecycle ping)
+check "empty stdin emits" 1 \
+  env -u CURSOR_INVOKED_AS bash "$ENTRY" session-start </dev/null
+
 echo "---"
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]

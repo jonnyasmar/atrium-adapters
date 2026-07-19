@@ -39,15 +39,22 @@ fi
 
 input="$(cat)"
 
-# Payload-shape guard: Cursor-shaped hooks carry generation_id and/or
-# is_background_agent; real Claude Code session/tool payloads do not.
-# (Claude uses transcript_path + session_id; Cursor uses conversation_id
-# + generation_id + model: composer-*.) Empty/non-object stdin is fine —
-# pass through so bare lifecycle pings still work under Claude.
+# Payload-shape guard: real Claude Code payloads always carry snake_case
+# session_id (+ transcript_path). Cursor-shaped hooks carry generation_id
+# and/or is_background_agent; Grok scans ~/.claude/settings.json for hooks
+# and dual-fires them with its own camelCase shape (hookEventName/sessionId,
+# no session_id). Refuse to claim the pane as claude-code for any of these —
+# a foreign emit wedges the pane's fleet status under the wrong adapter.
+# Empty/non-object stdin is fine — pass through so bare lifecycle pings
+# still work under Claude.
 if [ -n "$input" ] && command -v jq >/dev/null 2>&1; then
   if printf '%s' "$input" | jq -e '
     type == "object"
-    and (has("generation_id") or has("is_background_agent"))
+    and (
+      has("generation_id") or has("is_background_agent")
+      or has("hookEventName")
+      or (has("session_id") | not)
+    )
   ' >/dev/null 2>&1; then
     exit 0
   fi
