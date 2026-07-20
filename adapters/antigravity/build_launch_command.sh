@@ -3,10 +3,10 @@ set -euo pipefail
 
 # build_launch_command.sh — Build the command to launch Antigravity CLI (agy).
 # Takes $1 = JSON flags from launcher options
-# Output: {"command": ["agy", ...flags]}
+# Output: {"command": ["AGY_CLI_DISABLE_AUTO_UPDATE=true", "agy", ...flags]}
 
 FLAGS="${1:-"{}"}"
-CMD='["agy"'
+CMD='["AGY_CLI_DISABLE_AUTO_UPDATE=true", "agy"'
 
 if command -v jq &>/dev/null; then
   SKIP="$(echo "$FLAGS" | jq -r '.dangerouslySkipPermissions // false' 2>/dev/null)" || SKIP="false"

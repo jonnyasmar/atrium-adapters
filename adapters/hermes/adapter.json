@@ -5,7 +5,11 @@
   "description": "Nous Research's tool-calling AI agent",
   "accent": "#e0a32e",
   "binary": "hermes",
-  "version": "0.2.4",
+  "version": "0.2.5",
+  "updateCommand": [
+    "hermes",
+    "update"
+  ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.hermes/skills/atrium/SKILL.md",
   "binaryDiscovery": {
@@ -45,6 +49,9 @@
     },
     "build_resume_command": {
       "script": "build_resume_command.sh"
+    },
+    "check_update": {
+      "script": "check_update.sh"
     },
     "hooks": {
       "script": "hooks.sh"

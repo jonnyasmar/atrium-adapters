@@ -3,10 +3,10 @@ set -euo pipefail
 
 # build_launch_command.sh — Build the command to launch Cursor Agent.
 # Takes $1 = JSON flags from launcher options
-# Output: {"command": ["cursor-agent", ...flags]}
+# Output: {"command": ["cursor-agent", "--disable-auto-update", ...flags]}
 
 FLAGS="${1:-"{}"}"
-CMD='["cursor-agent"'
+CMD='["cursor-agent", "--disable-auto-update"'
 
 if command -v jq &>/dev/null; then
   YOLO="$(echo "$FLAGS" | jq -r '.yolo // .dangerouslySkipPermissions // false' 2>/dev/null)" || YOLO="false"

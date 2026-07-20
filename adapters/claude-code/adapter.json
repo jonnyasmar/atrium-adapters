@@ -5,7 +5,11 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97757",
   "binary": "claude",
-  "version": "1.19.6",
+  "version": "1.19.7",
+  "updateCommand": [
+    "claude",
+    "update"
+  ],
   "skillInstallPath": "~/.claude/skills/atrium/skill.md",
   "skillsDir": "~/.claude/skills",
   "binaryDiscovery": {
@@ -57,6 +61,9 @@
     },
     "build_resume_command": {
       "script": "build_resume_command.sh"
+    },
+    "check_update": {
+      "script": "check_update.sh"
     },
     "hooks": {
       "script": "hooks.sh"
@@ -120,6 +127,9 @@
   },
   "chatTransport": {
     "kind": "claude-sdk",
+    "launchEnv": {
+      "DISABLE_AUTOUPDATER": "1"
+    },
     "capabilities": {
       "resume": true,
       "setModel": true,

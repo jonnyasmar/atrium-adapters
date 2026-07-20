@@ -7,10 +7,10 @@ set -euo pipefail
 # ~/.pi/agent/extensions/atrium.ts (installed by hooks.sh).
 #
 # Takes $1 = JSON flags from launcher options
-# Output: {"command": ["pi", ...flags]}
+# Output: {"command": ["PI_SKIP_VERSION_CHECK=1", "pi", ...flags]}
 
 FLAGS="${1:-"{}"}"
-CMD='["pi"'
+CMD='["PI_SKIP_VERSION_CHECK=1", "pi"'
 
 if command -v jq &>/dev/null; then
   PROVIDER="$(echo "$FLAGS" | jq -r '.provider // ""' 2>/dev/null)" || PROVIDER=""

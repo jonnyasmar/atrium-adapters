@@ -5,7 +5,11 @@
   "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
   "accent": "#f97316",
   "binary": "omp",
-  "version": "16.4.3",
+  "version": "16.4.4",
+  "updateCommand": [
+    "omp",
+    "update"
+  ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.omp/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.omp/agent/skills",
@@ -52,6 +56,9 @@
     "build_resume_command": {
       "script": "build_resume_command.sh"
     },
+    "check_update": {
+      "script": "check_update.sh"
+    },
     "list_recent_sessions": {
       "script": "list_recent_sessions.sh"
     },
@@ -94,6 +101,9 @@
     "args": [
       "acp"
     ],
+    "launchEnv": {
+      "DISABLE_SELF_UPDATE": "1"
+    },
     "capabilities": {
       "resume": true,
       "setModel": true,

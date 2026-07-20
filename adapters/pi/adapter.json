@@ -5,7 +5,11 @@
   "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
   "accent": "#06b6d4",
   "binary": "pi",
-  "version": "0.6.2",
+  "version": "0.6.3",
+  "updateCommand": [
+    "pi",
+    "update"
+  ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.pi/agent/skills/atrium/SKILL.md",
   "skillsDir": "~/.pi/agent/skills",
@@ -53,6 +57,9 @@
     "build_resume_command": {
       "script": "build_resume_command.sh"
     },
+    "check_update": {
+      "script": "check_update.sh"
+    },
     "list_recent_sessions": {
       "script": "list_recent_sessions.sh"
     },
@@ -96,6 +103,9 @@
       "--mode",
       "rpc"
     ],
+    "launchEnv": {
+      "PI_SKIP_VERSION_CHECK": "1"
+    },
     "capabilities": {
       "resume": false,
       "setModel": true,

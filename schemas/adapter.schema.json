@@ -49,6 +49,12 @@
       "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+",
       "description": "Semantic version of the adapter."
     },
+    "updateCommand": {
+      "type": "array",
+      "description": "Optional argv used to update the wrapped harness in a visible managed terminal.",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
     "author": {
       "type": "string",
       "description": "Adapter author name (optional)."
@@ -184,6 +190,16 @@
         },
         "args": {
           "type": "array",
+          "items": { "type": "string" }
+        },
+        "launchEnv": {
+          "type": "object",
+          "description": "Optional environment variables applied when launching the chat transport.",
+          "additionalProperties": { "type": "string" }
+        },
+        "extraArgs": {
+          "type": "array",
+          "description": "Optional arguments appended when launching the chat transport.",
           "items": { "type": "string" }
         },
         "capabilities": {

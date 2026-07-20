@@ -5,12 +5,12 @@ set -euo pipefail
 # agy uses `--conversation <id>` (not `--resume`); `--continue`/`-c` is reserved
 # for "latest conversation" without an explicit ID.
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["agy", "--conversation", "session-id", ...flags]}
+# Output: {"command": ["AGY_CLI_DISABLE_AUTO_UPDATE=true", "agy", "--conversation", "session-id", ...flags]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> <flags_json>}"
 FLAGS="${2:-"{}"}"
 ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-CMD="[\"agy\", \"--conversation\", \"${ESCAPED_SESSION_ID}\""
+CMD="[\"AGY_CLI_DISABLE_AUTO_UPDATE=true\", \"agy\", \"--conversation\", \"${ESCAPED_SESSION_ID}\""
 
 if command -v jq &>/dev/null; then
   SKIP="$(echo "$FLAGS" | jq -r '.dangerouslySkipPermissions // false' 2>/dev/null)" || SKIP="false"

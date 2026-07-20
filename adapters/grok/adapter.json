@@ -5,7 +5,11 @@
   "description": "xAI's terminal coding agent",
   "accent": "#e11d48",
   "binary": "grok",
-  "version": "0.5.2",
+  "version": "0.5.3",
+  "updateCommand": [
+    "grok",
+    "update"
+  ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.grok/skills/atrium/SKILL.md",
   "skillsDir": "~/.grok/skills",
@@ -56,6 +60,9 @@
     "build_resume_command": {
       "script": "build_resume_command.sh"
     },
+    "check_update": {
+      "script": "check_update.sh"
+    },
     "hooks": {
       "script": "hooks.sh"
     },
@@ -99,6 +106,9 @@
       "agent",
       "stdio"
     ],
+    "launchEnv": {
+      "GROK_DISABLE_AUTOUPDATER": "1"
+    },
     "capabilities": {
       "resume": true,
       "setModel": true,

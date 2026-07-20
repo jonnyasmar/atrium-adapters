@@ -5,7 +5,11 @@
   "description": "Open-source AI coding agent built for the terminal (opencode.ai)",
   "accent": "#a855f7",
   "binary": "opencode",
-  "version": "0.5.2",
+  "version": "0.5.3",
+  "updateCommand": [
+    "opencode",
+    "upgrade"
+  ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.config/opencode/agent/atrium/SKILL.md",
   "skillsDir": "~/.config/opencode/agent",
@@ -55,6 +59,9 @@
     "build_resume_command": {
       "script": "build_resume_command.sh"
     },
+    "check_update": {
+      "script": "check_update.sh"
+    },
     "hooks": {
       "script": "hooks.sh"
     },
@@ -94,6 +101,9 @@
     "args": [
       "acp"
     ],
+    "launchEnv": {
+      "OPENCODE_DISABLE_AUTOUPDATE": "1"
+    },
     "capabilities": {
       "resume": false,
       "setModel": true,

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "check_update output",
+  "type": "object",
+  "required": [
+    "updateAvailable"
+  ],
+  "properties": {
+    "installedVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "latestVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updateAvailable": {
+      "type": "boolean"
+    },
+    "error": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "error"
+        ]
+      },
+      "then": {
+        "properties": {
+          "updateAvailable": {
+            "const": false
+          }
+        }
+      },
+      "else": {
+        "required": [
+          "installedVersion",
+          "latestVersion"
+        ]
+      }
+    }
+  ],
+  "additionalProperties": false
+}

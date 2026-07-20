@@ -5,7 +5,11 @@
   "description": "Cursor's agent CLI",
   "accent": "#6366f1",
   "binary": "cursor-agent",
-  "version": "0.4.12",
+  "version": "0.4.13",
+  "updateCommand": [
+    "cursor-agent",
+    "update"
+  ],
   "skillsDir": "~/.cursor/skills",
   "binaryDiscovery": {
     "commands": [
@@ -83,6 +87,9 @@
     "kind": "acp",
     "args": [
       "acp"
+    ],
+    "extraArgs": [
+      "--disable-auto-update"
     ],
     "capabilities": {
       "resume": false,

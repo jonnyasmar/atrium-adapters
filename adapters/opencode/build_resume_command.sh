@@ -4,13 +4,13 @@ set -euo pipefail
 # build_resume_command.sh — Build the command to resume an OpenCode session.
 # OpenCode resume format: opencode --session <session_id>
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["opencode", "--session", "session-id", ...flags]}
+# Output: {"command": ["OPENCODE_DISABLE_AUTOUPDATE=1", "opencode", "--session", "session-id", ...flags]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"
 
 ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-CMD="[\"opencode\", \"--session\", \"${ESCAPED_SESSION_ID}\""
+CMD="[\"OPENCODE_DISABLE_AUTOUPDATE=1\", \"opencode\", \"--session\", \"${ESCAPED_SESSION_ID}\""
 
 if command -v jq &>/dev/null; then
   MODEL="$(echo "$FLAGS" | jq -r '.model // ""' 2>/dev/null)" || MODEL=""

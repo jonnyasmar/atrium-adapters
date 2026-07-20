@@ -8,7 +8,7 @@ set -euo pipefail
 # via the TS extension at ~/.pi/agent/extensions/atrium.ts.
 #
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["pi", "--session", "session-id", ...flags]}
+# Output: {"command": ["PI_SKIP_VERSION_CHECK=1", "pi", "--session", "session-id", ...flags]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"
@@ -18,7 +18,7 @@ if [[ "$SESSION_ID" =~ _([[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12})$
 fi
 
 ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-CMD="[\"pi\", \"--session\", \"${ESCAPED_SESSION_ID}\""
+CMD="[\"PI_SKIP_VERSION_CHECK=1\", \"pi\", \"--session\", \"${ESCAPED_SESSION_ID}\""
 
 if command -v jq &>/dev/null; then
   PROVIDER="$(echo "$FLAGS" | jq -r '.provider // ""' 2>/dev/null)" || PROVIDER=""

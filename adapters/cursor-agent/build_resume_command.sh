@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # build_resume_command.sh — Build the command to resume a Cursor Agent session.
-# Cursor Agent resume format: cursor-agent [--force] [--plan] --resume <chatId>
+# Cursor Agent resume format: cursor-agent --disable-auto-update [--force] [--plan] --resume <chatId>
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["cursor-agent", "--resume", "chat-id"]}
+# Output: {"command": ["cursor-agent", "--disable-auto-update", "--resume", "chat-id"]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"
@@ -29,7 +29,7 @@ fi
 # Escape session ID for JSON
 ESCAPED_SESSION_ID="$(echo "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
 
-CMD='["cursor-agent"'
+CMD='["cursor-agent", "--disable-auto-update"'
 [ "$YOLO" = "true" ] && CMD="${CMD}, \"--force\""
 [ "$PLAN" = "true" ] && CMD="${CMD}, \"--plan\""
 if [ -n "${MODEL:-}" ]; then

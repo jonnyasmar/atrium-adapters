@@ -7,10 +7,10 @@ set -euo pipefail
 # ~/.omp/agent/extensions/atrium.ts (installed by hooks.sh).
 #
 # Takes $1 = JSON flags from launcher options
-# Output: {"command": ["omp", ...flags]}
+# Output: {"command": ["DISABLE_SELF_UPDATE=1", "omp", ...flags]}
 
 FLAGS="${1:-"{}"}"
-CMD='["omp"'
+CMD='["DISABLE_SELF_UPDATE=1", "omp"'
 
 if command -v jq &>/dev/null; then
   PROVIDER="$(echo "$FLAGS" | jq -r '.provider // ""' 2>/dev/null)" || PROVIDER=""
