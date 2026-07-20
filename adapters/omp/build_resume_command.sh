@@ -8,7 +8,7 @@ set -euo pipefail
 # via the TS extension at ~/.omp/agent/extensions/atrium.ts.
 #
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["DISABLE_SELF_UPDATE=1", "omp", "--resume", "session-id", ...flags]}
+# Output: {"command": ["env", "DISABLE_SELF_UPDATE=1", "omp", "--resume", "session-id", ...flags]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"

@@ -8,7 +8,7 @@ set -euo pipefail
 # via the TS extension at ~/.pi/agent/extensions/atrium.ts.
 #
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["PI_SKIP_VERSION_CHECK=1", "pi", "--session", "session-id", ...flags]}
+# Output: {"command": ["env", "PI_SKIP_VERSION_CHECK=1", "pi", "--session", "session-id", ...flags]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"

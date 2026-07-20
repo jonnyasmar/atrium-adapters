@@ -3,10 +3,10 @@ set -euo pipefail
 
 # build_launch_command.sh — Build the command to launch Claude Code.
 # Takes $1 = JSON flags from launcher options
-# Output: {"command": ["DISABLE_AUTOUPDATER=1", "claude", ...flags]}
+# Output: {"command": ["env", "DISABLE_AUTOUPDATER=1", "claude", ...flags]}
 
 FLAGS="${1:-"{}"}"
-CMD='["DISABLE_AUTOUPDATER=1", "claude"'
+CMD='["env", "DISABLE_AUTOUPDATER=1", "claude"'
 
 if command -v jq &>/dev/null; then
   SKIP="$(echo "$FLAGS" | jq -r '.dangerouslySkipPermissions // false' 2>/dev/null)" || SKIP="false"

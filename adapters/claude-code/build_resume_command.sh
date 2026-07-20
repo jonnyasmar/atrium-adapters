@@ -3,7 +3,7 @@ set -euo pipefail
 
 # build_resume_command.sh — Build the command to resume a Claude Code session.
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["DISABLE_AUTOUPDATER=1", "claude", ...flags, "--resume", "session-id"]}
+# Output: {"command": ["env", "DISABLE_AUTOUPDATER=1", "claude", ...flags, "--resume", "session-id"]}
 
 SESSION_ID="${1:?Usage: build_resume_command.sh <session_id> [flags_json]}"
 FLAGS="${2:-"{}"}"
@@ -13,7 +13,7 @@ json_escape() {
   echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
-CMD='["DISABLE_AUTOUPDATER=1", "claude"'
+CMD='["env", "DISABLE_AUTOUPDATER=1", "claude"'
 
 if command -v jq &>/dev/null; then
   SKIP="$(echo "$FLAGS" | jq -r '.dangerouslySkipPermissions // .dangerous_skip_permissions // false' 2>/dev/null)" || SKIP=false

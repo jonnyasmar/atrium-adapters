@@ -6,10 +6,10 @@ set -euo pipefail
 # to cwd when omitted. Atrium always launches from the pane's cwd, so we
 # don't pass it explicitly — opencode infers it from process.cwd().
 # Takes $1 = JSON flags from launcher options
-# Output: {"command": ["OPENCODE_DISABLE_AUTOUPDATE=1", "opencode", ...flags]}
+# Output: {"command": ["env", "OPENCODE_DISABLE_AUTOUPDATE=1", "opencode", ...flags]}
 
 FLAGS="${1:-"{}"}"
-CMD='["OPENCODE_DISABLE_AUTOUPDATE=1", "opencode"'
+CMD='["env", "OPENCODE_DISABLE_AUTOUPDATE=1", "opencode"'
 
 if command -v jq &>/dev/null; then
   MODEL="$(echo "$FLAGS" | jq -r '.model // ""' 2>/dev/null)" || MODEL=""
