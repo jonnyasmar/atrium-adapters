@@ -26,13 +26,17 @@ if [ -n "$CONTEXT_FILE" ]; then
   printf '\n\n'
 fi
 
-# Static pane-rename nudge. Grok can't re-nudge per turn (passive hooks), so
-# this is a one-shot system-prompt instruction for the whole session. Mirrors
-# the wording in adapters/shared/pane-name-check.sh.
+# Static pane-rename gate. Terminal Grok sessions cannot receive the native
+# chat runtime's x.ai/interject reinforcement, so keep the same hard-gate
+# wording in the launch-time system rules as the live provider.
 cat <<'EOF'
-[atrium] If this pane still uses its default launcher name ("Grok"), rename it to a 10–20 char description of the work before responding:
+[atrium] Do not answer the user's first request yet.
+
+If this pane still uses a default launcher-assigned name, rename it now by running:
 
   $ATRIUM_CLI_PATH pane rename "$ATRIUM_PANE_ID" --name "<new name>"
 
-Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"), describe the work not your role, no status/timestamp/adapter name. If the user has already chosen a name, leave it alone.
+Do not acknowledge, explain, or defer this instruction. Continue only after the command succeeds.
+
+Use a 10–20 char work description. Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"); no status, timestamp, or adapter name. If the user explicitly chose the current title, leave it unchanged.
 EOF
