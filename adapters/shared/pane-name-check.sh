@@ -148,19 +148,34 @@ ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
 PANE_JSON="$("$ATRIUM_CLI" pane list --filter "id=$ATRIUM_PANE_ID" --json 2>/dev/null || true)"
 printf '%s' "$PANE_JSON" | jq -e '.[0]' >/dev/null 2>&1 || exit 0
 PANE_NAME="$(printf '%s' "$PANE_JSON" | jq -r '.[0].name // ""' 2>/dev/null || true)"
+PANE_CUSTOM_TITLE="$(printf '%s' "$PANE_JSON" | jq -r 'if (.[0] | has("customTitle")) then (.[0].customTitle | tostring) else "unknown" end' 2>/dev/null || true)"
 
-# Generic launcher names we nudge against. Keep aligned with displayName
-# fields in adapters/*/adapter.json. Empty string covers the case where
-# a pane has no name at all. The python* entries cover adapters whose
-# foreground process name is the interpreter, not the binary (Hermes is a
-# Python app launched via a `hermes` wrapper, so atrium's process-name
-# tracking labels the pane "python3.11" until the agent renames it).
-case "$PANE_NAME" in
-  "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Grok"|"Antigravity"|"OpenCode"|"Pi"|"Cursor"|"Cursor Agent"|"Hermes"|"Terminal"|"python"|"Python"|"python3"|"python3."*|"")
-    : # generic — fall through
+# Current atrium builds expose the persisted user-title provenance directly.
+# An automatic launch-profile/agent label may be any string, so its text alone
+# cannot distinguish it from a user rename. Older builds omit the field and
+# fall through to the legacy generic-name compatibility list below.
+case "$PANE_CUSTOM_TITLE" in
+  true)
+    exit 0
+    ;;
+  false)
+    : # auto-assigned — fall through to the nudge
     ;;
   *)
-    exit 0
+    # Generic launcher names we nudge against. Keep aligned with displayName
+    # fields in adapters/*/adapter.json. Empty string covers the case where
+    # a pane has no name at all. The python* entries cover adapters whose
+    # foreground process name is the interpreter, not the binary (Hermes is a
+    # Python app launched via a `hermes` wrapper, so atrium's process-name
+    # tracking labels the pane "python3.11" until the agent renames it).
+    case "$PANE_NAME" in
+      "Claude Code"|"Codex"|"Codex CLI"|"Gemini"|"Gemini CLI"|"Grok"|"Antigravity"|"OpenCode"|"Pi"|"Cursor"|"Cursor Agent"|"Hermes"|"Default"|"Terminal"|"python"|"Python"|"python3"|"python3."*|"")
+        : # generic — fall through
+        ;;
+      *)
+        exit 0
+        ;;
+    esac
     ;;
 esac
 
