@@ -5,7 +5,7 @@
   "description": "xAI's terminal coding agent",
   "accent": "#e11d48",
   "binary": "grok",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "updateCommand": [
     "grok",
     "update"
@@ -120,7 +120,7 @@
       "imageInput": false,
       "checkpointing": false,
       "subagentEvents": true,
-      "steering": false,
+      "steering": true,
       "backgroundTasks": true
     }
   }
