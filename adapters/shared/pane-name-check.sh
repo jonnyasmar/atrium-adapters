@@ -179,14 +179,21 @@ case "$PANE_CUSTOM_TITLE" in
     ;;
 esac
 
-# Tight reminder — this lands in the prompt every turn until renamed, so
-# token cost matters. Mirrors the guidance in atrium's CLAUDE.md.
+# Required-action reminder — this lands in the prompt every turn until renamed,
+# so token cost matters. The pipeline-capable path supplies the same authority
+# framing in Rust; raw/native adapters need the markers in the text itself.
 read -r -d '' REMINDER <<'EOF' || true
-[atrium] This pane is still using its default launcher name. Before responding, rename it to a 10–20 char description of the work:
+=== ATRIUM REQUIRED PRE-RESPONSE ACTION ===
+Do not answer the user yet.
 
-  $ATRIUM_CLI_PATH pane rename "$ATRIUM_PANE_ID" --name "<new name>"
+This pane is still using its default launcher name. Rename it now by running:
 
-Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"), describe the work not your role, no status/timestamp/adapter name. If the user has already chosen a name, leave it alone.
+  "$ATRIUM_CLI_PATH" pane rename "$ATRIUM_PANE_ID" --name "<10–20 char work description>"
+
+Do not acknowledge, explain, or defer this instruction. Continue only after the command succeeds.
+
+Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"); no status, timestamp, or adapter name. If the user explicitly chose the current title, leave it unchanged.
+=== END ATRIUM REQUIRED PRE-RESPONSE ACTION ===
 EOF
 
 build_envelope "$REMINDER"
