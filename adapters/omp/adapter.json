@@ -2,10 +2,10 @@
   "sdkVersion": 2,
   "name": "omp",
   "displayName": "Oh My Pi",
-  "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
+  "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
   "accent": "#f97316",
   "binary": "omp",
-  "version": "16.4.4",
+  "version": "16.4.5",
   "updateCommand": [
     "omp",
     "update"
@@ -48,7 +48,9 @@
     "stop": "atrium://hooks/omp/stop",
     "user-prompt-submit": "atrium://hooks/omp/user-prompt-submit"
   },
-  "inputRequestTools": ["ask"],
+  "inputRequestTools": [
+    "ask"
+  ],
   "methods": {
     "build_launch_command": {
       "script": "build_launch_command.sh"
