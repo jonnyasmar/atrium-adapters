@@ -13,9 +13,13 @@
 #     resolve-manifest`, plus the SessionStart context_injection pipeline
 #     `atriumContext` (Epic 77 — RunCommandStatusProvider et al.).
 #   - every turn: the UserPromptSubmit pipeline `atriumContext` (Epic 78 —
-#     prompt-aware providers), resolved `+name` sigil bodies for this turn's
-#     prompt, and the pane-rename nudge while the pane still carries its
-#     default launcher name.
+#     prompt-aware providers, INCLUDING the pane-rename nudge — see below) and
+#     resolved `+name` sigil bodies for this turn's prompt.
+#
+# The pane-rename nudge is delivered by the SERVER pipeline (PaneRenameNudge
+# provider, capable at UserPromptSubmit), so it rides inside the user-prompt-
+# submit `atriumContext` — the adapter no longer emits its own nudge (that would
+# double it).
 #
 # hermes has no tool-event injection point (its shell hooks fire on tool
 # call/return but carry no inject-back channel), so only SessionStart +
@@ -59,7 +63,6 @@ ATRIUM_CLI="${ATRIUM_CLI_PATH:-}"
 if [ -z "$ATRIUM_CLI" ] || [ ! -x "$ATRIUM_CLI" ]; then
   if [ -x "$DEFAULT_CLI" ]; then ATRIUM_CLI="$DEFAULT_CLI"; else ATRIUM_CLI="atrium"; fi
 fi
-NUDGE_SCRIPT="$DATA_DIR/adapters/shared/pane-name-check.sh"
 
 # Drain the native pre_llm_call payload. Hermes serializes it as
 # { hook_event_name, tool_name, tool_input, session_id, cwd, extra{...} }
@@ -118,12 +121,6 @@ if [ -n "$prompt" ]; then
     | "$ATRIUM_CLI" skills resolve-prompt-sigils --pane-id "$ATRIUM_PANE_ID" --adapter hermes 2>/dev/null \
     | jq -r '.hookSpecificOutput.additionalContext // empty' 2>/dev/null || true)"
   append "$sigils"
-fi
-
-# Every turn: pane-rename nudge (the shared script emits bare text under `raw`,
-# or nothing once the pane has a non-default name).
-if [ -x "$NUDGE_SCRIPT" ]; then
-  append "$(ATRIUM_CLI_PATH="$ATRIUM_CLI" bash "$NUDGE_SCRIPT" raw 2>/dev/null || true)"
 fi
 
 if [ -n "$parts" ]; then
