@@ -60,6 +60,22 @@
       "static": "launcher_options.json"
     }
   },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "identity"
+    },
+    "userPromptSubmit": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "UserPromptSubmit",
+      "includeSystemMessage": false
+    },
+    "preToolUse": {
+      "kind": "none"
+    },
+    "postToolUse": {
+      "kind": "none"
+    }
+  },
   "chatTransport": {
     "kind": "acp",
     "args": [
