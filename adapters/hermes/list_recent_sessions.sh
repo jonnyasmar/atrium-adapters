@@ -34,7 +34,7 @@ if [ -z "$RAW" ] || [ "$RAW" = "[]" ]; then
 fi
 
 if command -v jq >/dev/null 2>&1; then
-  echo "$RAW" | jq --arg cwd "$CWD" '
+  echo "$RAW" | jq --arg cwd "$CWD" --arg source_path "$DB" '
     [.[] | {
       id: (.id | tostring),
       name: (
@@ -47,7 +47,8 @@ if command -v jq >/dev/null 2>&1; then
         if (.last_active | type) == "number"
         then (.last_active | floor | todate)
         else null end
-      )
+      ),
+      sourcePath: $source_path
     }] | {sessions: .}'
 else
   echo "{\"sessions\": ${RAW}}"

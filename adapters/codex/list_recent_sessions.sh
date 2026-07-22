@@ -5,7 +5,7 @@ set -euo pipefail
 # First tries ~/.codex/sessions/ rollout JSONL files (Codex v0.118+),
 # then falls back to ~/.codex/state_5.sqlite (older versions).
 # Takes $1 = CWD
-# Output: {"sessions": [{id, name, cwd, lastActive}, ...]}
+# Output: {"sessions": [{id, name, cwd, lastActive, sourcePath}, ...]}
 
 CWD="${1:?Usage: list_recent_sessions.sh <cwd>}"
 SESSIONS_DIR="${HOME}/.codex/sessions"
@@ -43,7 +43,8 @@ for path in sorted(glob.glob(os.path.join(sessions_dir, '*/*/*/rollout-*.jsonl')
             'id': sid,
             'name': None,
             'cwd': cwd,
-            'lastActive': ts
+            'lastActive': ts,
+            'sourcePath': path
         })
     except (json.JSONDecodeError, IOError, KeyError):
         continue
@@ -110,7 +111,7 @@ if [ -z "$RAW" ] || [ "$RAW" = "[]" ]; then
 fi
 
 if command -v jq &>/dev/null; then
-  echo "$RAW" | jq --arg cwd "$CWD" '
+  echo "$RAW" | jq --arg cwd "$CWD" --arg source_path "$DB_PATH" '
     [.[] | {
       id: .id,
       name: (
@@ -121,8 +122,30 @@ if command -v jq &>/dev/null; then
         else null end
       ),
       cwd: (.cwd // $cwd),
-      lastActive: (.updated_at | tonumber | todate)
+      lastActive: (.updated_at | tonumber | todate),
+      sourcePath: $source_path
     }] | {sessions: .}'
+elif command -v perl &>/dev/null; then
+  CODEX_SESSION_CWD="$CWD" CODEX_SESSION_SOURCE="$DB_PATH" perl -MJSON::PP -MPOSIX=strftime -e '
+    local $/;
+    my $rows = decode_json(<STDIN>);
+    my @sessions;
+    for my $row (@$rows) {
+      my $name = $row->{title} // "";
+      $name = $row->{first_user_message} // "" if $name eq "";
+      $name =~ s/\s+/ /g;
+      $name =~ s/^ | $//g;
+      $name = substr($name, 0, 47) . "..." if length($name) > 50;
+      push @sessions, {
+        id => $row->{id},
+        name => $name eq "" ? undef : $name,
+        cwd => $row->{cwd} // $ENV{CODEX_SESSION_CWD},
+        lastActive => strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(0 + $row->{updated_at})),
+        sourcePath => $ENV{CODEX_SESSION_SOURCE},
+      };
+    }
+    print encode_json({sessions => \@sessions});
+  ' <<<"$RAW"
 else
   echo "{\"sessions\": ${RAW}}"
 fi

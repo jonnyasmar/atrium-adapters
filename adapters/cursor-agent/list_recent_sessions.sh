@@ -77,6 +77,7 @@ for entry in os.listdir(workspace_dir):
         "name": name,
         "cwd": cwd,
         "lastActive": last_active,
+        "sourcePath": db_path,
         "_mtime": mtime,
     })
 

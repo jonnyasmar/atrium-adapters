@@ -106,12 +106,17 @@ if os.path.isfile(transcript_path):
     except OSError:
         pass
 
-print(json.dumps({"sessions": [{
+source_path = transcript_path if os.path.isfile(transcript_path) else (pb_path if os.path.isfile(pb_path) else None)
+session = {
     "id": session_id,
     "name": name,
     "cwd": cwd,
     "lastActive": last_active,
-}]}))
+}
+if source_path:
+    session["sourcePath"] = source_path
+
+print(json.dumps({"sessions": [session]}))
 PYEOF
 
 exit 0

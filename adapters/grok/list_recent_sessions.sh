@@ -76,7 +76,13 @@ while (<STDIN>) {
   $cwd_val =~ s/\\/\\\\/g;
   $cwd_val =~ s/"/\\"/g;
 
-  push @items, "{\"id\":\"$id_val\",\"name\":$n,\"cwd\":\"$cwd_val\",\"lastActive\":\"$iso\"}";
+  my $source_path = $filepath;
+  $source_path =~ s{/summary\.json$}{/chat_history.jsonl};
+  $source_path = $filepath unless -f $source_path;
+  $source_path =~ s/\\/\\\\/g;
+  $source_path =~ s/"/\\"/g;
+
+  push @items, "{\"id\":\"$id_val\",\"name\":$n,\"cwd\":\"$cwd_val\",\"lastActive\":\"$iso\",\"sourcePath\":\"$source_path\"}";
 }
 print "{\"sessions\":[" . join(",", @items) . "]}\n";
 '

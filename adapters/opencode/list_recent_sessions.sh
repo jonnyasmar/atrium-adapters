@@ -110,6 +110,7 @@ for proj_dir in candidate_dirs:
             "name": title if title else None,
             "cwd": cwd,
             "lastActive": iso(updated),
+            "sourcePath": path,
         })
 
 sessions.sort(key=lambda s: s.get("lastActive") or "", reverse=True)

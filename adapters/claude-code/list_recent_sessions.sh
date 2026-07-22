@@ -150,7 +150,10 @@ while (<STDIN>) {
 
   my $iso = strftime("%Y-%m-%dT%H:%M:%SZ", gmtime($mtime));
   my $n = $name_val eq "" ? "null" : "\"$name_val\"";
-  push @items, "{\"id\":\"$sid\",\"name\":$n,\"cwd\":\"$cwd_val\",\"lastActive\":\"$iso\"}";
+  my $path_val = $filepath;
+  $path_val =~ s/\\/\\\\/g;
+  $path_val =~ s/"/\\"/g;
+  push @items, "{\"id\":\"$sid\",\"name\":$n,\"cwd\":\"$cwd_val\",\"lastActive\":\"$iso\",\"sourcePath\":\"$path_val\"}";
 }
 print "{\"sessions\":[" . join(",", @items) . "]}\n";
 '

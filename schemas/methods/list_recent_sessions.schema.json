@@ -31,6 +31,20 @@
           "lastActive": {
             "type": "string",
             "description": "ISO 8601 timestamp of last activity."
+          },
+          "sourcePath": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional absolute source transcript path for index freshness checks."
+          },
+          "sourceMtimeNanos": {
+            "type": "integer",
+            "description": "Optional source transcript mtime as Unix nanoseconds."
+          },
+          "sourceSize": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Optional source transcript size in bytes."
           }
         },
         "additionalProperties": false

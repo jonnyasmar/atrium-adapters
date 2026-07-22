@@ -115,6 +115,7 @@ for path in glob.glob(os.path.join(sessions_dir, "**", "*.jsonl"), recursive=Tru
         "name": first_user_message(path),
         "cwd": cwd,
         "lastActive": iso_from_mtime(path),
+        "sourcePath": path,
     })
 
 sessions.sort(key=lambda s: s.get("lastActive") or "", reverse=True)

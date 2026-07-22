@@ -5,7 +5,7 @@
   "description": "Open-source AI coding agent built for the terminal (opencode.ai)",
   "accent": "#a855f7",
   "binary": "opencode",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "updateCommand": [
     "opencode",
     "upgrade"
