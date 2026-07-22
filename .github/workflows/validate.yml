@@ -13,8 +13,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Install validation dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq sqlite3 liburi-perl
 
       - name: Validate manifests against JSON schema
         run: |
@@ -41,6 +41,9 @@ jobs:
             exit 1
           fi
           echo "All adapters passed validation."
+
+      - name: Validate recent-session source metadata
+        run: bash tests/list-recent-sessions-source-path.assert.sh
 
       # canonical-assets.json enumerates the atrium-owned files atrium pushes to
       # user installs beyond per-adapter skills (the home context file, bundled
