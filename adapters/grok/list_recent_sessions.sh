@@ -25,7 +25,15 @@ if [ ! -d "$PROJECT_DIR" ]; then
 fi
 
 # Find session dirs, sort by mtime of summary.json, take top 20.
-TOP="$(stat -f '%m %N' "$PROJECT_DIR"/*/summary.json 2>/dev/null | sort -rn | head -20)" || true
+TOP="$(
+  perl -e '
+    for my $path (@ARGV) {
+      next unless -f $path;
+      my $mtime = (stat($path))[9] // next;
+      print "$mtime $path\n";
+    }
+  ' "$PROJECT_DIR"/*/summary.json 2>/dev/null | sort -rn | head -20
+)" || true
 [ -z "$TOP" ] && { echo '{"sessions": []}'; exit 0; }
 
 echo "$TOP" | CWD="$CWD" perl -e '
