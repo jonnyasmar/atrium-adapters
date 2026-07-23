@@ -12,6 +12,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Release metadata intentionally pins the immutable content commit,
+          # which can predate the metadata-only commit under validation.
+          fetch-depth: 0
 
       - name: Install validation dependencies
         run: sudo apt-get update && sudo apt-get install -y jq sqlite3 liburi-perl
@@ -45,6 +49,17 @@ jobs:
       - name: Validate recent-session source metadata
         run: bash tests/list-recent-sessions-source-path.assert.sh
 
+      - name: Validate immutable release metadata
+        run: |
+          node scripts/test-runtime-tree-digest.mjs
+          node scripts/test-release-generation.mjs
+          node scripts/generate-release-metadata.mjs --check
+
+      - name: Validate previous-client skill manifest compatibility
+        run: |
+          jq -e '.version == 1 and (.references | all(type == "string"))' \
+            skills/atrium/skill-assets.json >/dev/null
+
       # canonical-assets.json enumerates the atrium-owned files atrium pushes to
       # user installs beyond per-adapter skills (the home context file, bundled
       # skills, future global assets). atrium reads it at launch + on a periodic
@@ -57,6 +72,8 @@ jobs:
           jq empty "$manifest" || { echo "::error::$manifest is not valid JSON"; exit 1; }
           failed=0
           count=$(jq '.assets | length' "$manifest")
+          jq -e '.source.generation | type == "number" and floor == . and . > 0' "$manifest" >/dev/null \
+            || { echo "::error::canonical-assets.json source.generation must be a positive integer"; exit 1; }
           for i in $(seq 0 $((count - 1))); do
             target=$(jq -r ".assets[$i].target" "$manifest")
             remote=$(jq -r ".assets[$i].remotePath" "$manifest")
@@ -69,13 +86,21 @@ jobs:
               atrium-home)
                 [ -n "$(jq -r ".assets[$i].destName // empty" "$manifest")" ] \
                   || { echo "::error::'$id' target atrium-home requires destName"; failed=1; } ;;
+              adapter-skill)
+                ;;
+              adapter-skill-reference)
+                [ -n "$(jq -r ".assets[$i].destName // empty" "$manifest")" ] \
+                  || { echo "::error::'$id' target adapter-skill-reference requires destName"; failed=1; } ;;
               bundled-skill)
                 [ -n "$(jq -r ".assets[$i].skillName // empty" "$manifest")" ] \
                   || { echo "::error::'$id' target bundled-skill requires skillName"; failed=1; } ;;
               *)
-                echo "::error::'$id' has unknown target '$target' (expected atrium-home | bundled-skill)"
+                echo "::error::'$id' has unknown target '$target'"
                 failed=1 ;;
             esac
+            digest=$(jq -r ".assets[$i].sha256 // empty" "$manifest")
+            [[ "$digest" =~ ^[0-9a-f]{64}$ ]] \
+              || { echo "::error::'$id' requires a lowercase sha256"; failed=1; }
           done
           if [ "$failed" -eq 1 ]; then exit 1; fi
           echo "canonical-assets.json: all $count assets valid."
