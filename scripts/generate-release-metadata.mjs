@@ -6,8 +6,19 @@ import { lstatSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { directoryDigest, runtimeFiles } from "./runtime-tree-digest.mjs";
-import { canonicalGenerationViolation } from "./release-generation.mjs";
+import {
+  canonicalJsonDigest,
+  directoryDigest,
+  methodsSchemaDigest,
+  runtimeFiles,
+} from "./runtime-tree-digest.mjs";
+import {
+  canonicalGenerationViolation,
+  compareSemver,
+  contentVersionCouplingViolation,
+  publishedTipGenerationViolation,
+  releaseWriteDecision,
+} from "./release-generation.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const registryPath = join(root, "registry.json");
@@ -48,23 +59,6 @@ function fileDigest(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
 
-function sortJson(value) {
-  if (Array.isArray(value)) return value.map(sortJson);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.keys(value)
-        .sort()
-        .map((key) => [key, sortJson(value[key])]),
-    );
-  }
-  return value;
-}
-
-function canonicalJsonDigest(path) {
-  const canonical = JSON.stringify(sortJson(JSON.parse(readFileSync(path, "utf8"))));
-  return createHash("sha256").update(canonical).digest("hex");
-}
-
 function fail(message) {
   console.error(`release metadata: ${message}`);
   process.exitCode = 1;
@@ -85,36 +79,15 @@ function parseSemver(value) {
   };
 }
 
-function compareSemver(left, right) {
-  const a = parseSemver(left);
-  const b = parseSemver(right);
-  if (!a || !b) return null;
-  for (let index = 0; index < 3; index += 1) {
-    if (a.core[index] !== b.core[index]) return a.core[index] < b.core[index] ? -1 : 1;
-  }
-  if (a.prerelease.length === 0 || b.prerelease.length === 0) {
-    return a.prerelease.length === b.prerelease.length ? 0 : a.prerelease.length === 0 ? 1 : -1;
-  }
-  for (let index = 0; index < Math.max(a.prerelease.length, b.prerelease.length); index += 1) {
-    const aPart = a.prerelease[index];
-    const bPart = b.prerelease[index];
-    if (aPart === undefined || bPart === undefined) return aPart === undefined ? -1 : 1;
-    if (aPart === bPart) continue;
-    const aNumeric = /^\d+$/.test(aPart);
-    const bNumeric = /^\d+$/.test(bPart);
-    if (aNumeric && bNumeric) return BigInt(aPart) < BigInt(bPart) ? -1 : 1;
-    if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
-    return aPart < bPart ? -1 : 1;
-  }
-  return 0;
-}
-
 function validateRegistry(document) {
   if (document.schemaVersion !== 3) fail("registry schemaVersion must be 3");
   if (document.source?.repository !== repository) fail("registry source repository is not trusted");
   if (!commitPattern.test(document.source?.commit ?? "")) fail("registry source commit is invalid");
   if (!sha256Pattern.test(document.source?.sharedSha256 ?? "")) fail("registry shared digest is invalid");
   if (!sha256Pattern.test(document.source?.schemaSha256 ?? "")) fail("registry schema digest is invalid");
+  if (!sha256Pattern.test(document.source?.methodsSchemaSha256 ?? "")) {
+    fail("registry methods schema digest is invalid");
+  }
   const names = new Set();
   for (const entry of document.adapters ?? []) {
     if (!registryNamePattern.test(entry.name ?? "") || entry.name === "shared") {
@@ -252,18 +225,57 @@ function assertRuntimeFilesArePinned(repoPath, directory) {
   }
 }
 
+function loadJsonAtRef(ref, repoPath) {
+  const body = gitOptional("show", `${ref}:${repoPath}`);
+  if (body == null) return null;
+  try {
+    return JSON.parse(body);
+  } catch (error) {
+    fail(`${repoPath} at ${ref} is invalid JSON: ${error}`);
+    return null;
+  }
+}
+
+function loadPublishedTipCanonical() {
+  for (const ref of ["origin/main", "main"]) {
+    const document = loadJsonAtRef(ref, "canonical-assets.json");
+    if (document != null) return { ref, document };
+  }
+  return null;
+}
+
+function loadPreviousRegistry() {
+  const parent = loadJsonAtRef(`${sourceCommit}^`, "registry.json");
+  if (parent != null) return parent;
+  for (const ref of ["origin/main", "main"]) {
+    const document = loadJsonAtRef(ref, "registry.json");
+    if (document != null) return document;
+  }
+  return null;
+}
+
 const sharedPath = join(root, "adapters/shared");
 const sharedMetadata = lstatSync(sharedPath);
 const sharedIsRealDirectory =
   sharedMetadata.isDirectory() && !sharedMetadata.isSymbolicLink();
 if (!sharedIsRealDirectory) fail("adapters/shared must be a real directory");
 
-const schemaPath = join(root, "schemas/adapter.schema.json");
+const schemasDir = join(root, "schemas");
+const schemaPath = join(schemasDir, "adapter.schema.json");
 const schemaMetadata = lstatSync(schemaPath);
 const schemaIsRegularFile = schemaMetadata.isFile() && !schemaMetadata.isSymbolicLink();
 if (!schemaIsRegularFile) fail("schemas/adapter.schema.json must be a regular file");
 
 const releasePaths = ["adapters/shared", "schemas/adapter.schema.json"];
+const methodsDir = join(schemasDir, "methods");
+try {
+  for (const name of runtimeFiles(methodsDir)) {
+    releasePaths.push(`schemas/methods/${name}`);
+  }
+} catch {
+  // methods/ may be absent in older trees; methods digest handles empty set
+}
+
 const computedAdapterDigests = new Map();
 for (const entry of registry.adapters) {
   const path = join(root, "adapters", entry.name);
@@ -295,7 +307,10 @@ const expectedSource = {
   repository,
   commit: sourceCommit,
   sharedSha256: sharedIsRealDirectory ? directoryDigest(sharedPath) : "",
+  // schemaSha256 is the canonical-JSON sha256 of adapter.schema.json alone
+  // (matches atrium verify_registry_schema_binding_at). methods/* pin separately.
   schemaSha256: schemaIsRegularFile ? canonicalJsonDigest(schemaPath) : "",
+  methodsSchemaSha256: methodsSchemaDigest(schemasDir),
 };
 
 const expectedRegistry = structuredClone(registry);
@@ -335,6 +350,34 @@ if (predecessorBody == null) {
   }
 }
 
+const publishedTip = loadPublishedTipCanonical();
+if (publishedTip != null) {
+  const tipViolation = publishedTipGenerationViolation(
+    publishedTip.document,
+    expectedCanonical,
+  );
+  if (tipViolation != null) {
+    fail(`${tipViolation} (tip ${publishedTip.ref})`);
+  }
+}
+
+const previousRegistry = loadPreviousRegistry();
+const previousByName = new Map(
+  (previousRegistry?.adapters ?? []).map((entry) => [entry.name, entry]),
+);
+for (const entry of registry.adapters) {
+  const previous = previousByName.get(entry.name);
+  const violation = contentVersionCouplingViolation({
+    adapterName: entry.name,
+    committedDigest: entry.contentSha256,
+    computedDigest: computedAdapterDigests.get(entry.name),
+    committedVersion: entry.version,
+    previousVersion: previous?.version ?? null,
+    previousDigest: previous?.contentSha256 ?? null,
+  });
+  if (violation != null) fail(violation);
+}
+
 validateRegistry(expectedRegistry);
 validateCanonical(expectedCanonical);
 
@@ -353,11 +396,14 @@ const documents = [
   [skillAssetsPath, skillAssets, expectedSkillAssets],
 ];
 
-if (write) {
+const decision = releaseWriteDecision(write, Boolean(process.exitCode));
+if (decision === "write") {
   for (const [path, , expected] of documents) {
     writeFileSync(path, `${JSON.stringify(expected, null, 2)}\n`);
   }
   console.log(`release metadata: wrote immutable metadata for ${sourceCommit}`);
+} else if (decision === "refuse") {
+  console.error("release metadata: refusing to write because validation failed");
 } else {
   for (const [path, actual, expected] of documents) {
     if (JSON.stringify(actual) !== JSON.stringify(expected)) {

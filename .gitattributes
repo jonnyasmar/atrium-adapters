@@ -1,0 +1,13 @@
+# Force LF for digest-input file types so contentSha256 / tree digests are
+# stable across platforms (CRLF checkouts must not drift runtime digests).
+# Matches the inputs hashed by scripts/runtime-tree-digest.mjs for adapters
+# and related release content.
+*.sh text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.md text eol=lf
+*.svg text eol=lf
