@@ -54,7 +54,14 @@ hook_count="$(grep -cE '^[[:space:]]*hooks[[:space:]]*=[[:space:]]*true[[:space:
 [ "$(grep -c '^shell_tool = ' "$CONFIG_TOML" || true)" -eq 1 ]
 grep -q '^web_search = true$' "$CONFIG_TOML"
 grep -q '^\[projects."/tmp/example"\]$' "$CONFIG_TOML"
-jq -e '.hooks.SessionStart and .hooks.SessionEnd' "$HOOKS_JSON" >/dev/null
+jq -e '.hooks.SessionStart and .hooks.SessionEnd and .hooks.SubagentStart and .hooks.SubagentStop' "$HOOKS_JSON" >/dev/null
+
+for label in session_end subagent_start subagent_stop; do
+  grep -q "hooks.json:${label}:0:0" "$CONFIG_TOML" || {
+    echo "expected hooks.state entry for ${label} after install" >&2
+    exit 1
+  }
+done
 
 printf '999999\n' > "$TEST_HOME/.codex/.atrium-hooks.lock"
 HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" "$HOOKS_SH" install >/dev/null

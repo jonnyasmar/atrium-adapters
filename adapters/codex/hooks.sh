@@ -35,6 +35,8 @@ CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
 CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
 
 # Event table: kebab-case event name, Codex settings key, matcher.
+# Matchers for SessionEnd / SubagentStart / SubagentStop are kept by
+# codex's matcher_pattern_for_event (only UserPromptSubmit + Stop drop).
 EVENTS=$'session-start\tSessionStart\tstartup|resume
 session-end\tSessionEnd\t*
 pre-tool-use\tPreToolUse\t.*
@@ -43,7 +45,9 @@ stop\tStop\t.*
 user-prompt-submit\tUserPromptSubmit\t.*
 permission-request\tPermissionRequest\t.*
 pre-compact\tPreCompact\t
-post-compact\tPostCompact\t'
+post-compact\tPostCompact\t
+subagent-start\tSubagentStart\t*
+subagent-stop\tSubagentStop\t*'
 
 # Build the hook command string for a given event. Resolved at hook-fire time
 # against the pane's injected env vars so stable/dev/beta can coexist. Trails
@@ -332,6 +336,8 @@ config_path = Path(sys.argv[2])
 
 # Map atrium's PascalCase event names to codex's snake_case state-key labels.
 # `hook_event_key_label` in codex-rs/hooks/src/lib.rs is the source of truth.
+# SessionEnd / SubagentStart / SubagentStop are first-class as of codex
+# 0.145+ (see codex-rs/hooks/src/events/{session_end,common}.rs).
 EVENT_LABELS = {
     'PreToolUse': 'pre_tool_use',
     'PermissionRequest': 'permission_request',
@@ -339,16 +345,21 @@ EVENT_LABELS = {
     'PreCompact': 'pre_compact',
     'PostCompact': 'post_compact',
     'SessionStart': 'session_start',
+    'SessionEnd': 'session_end',
     'UserPromptSubmit': 'user_prompt_submit',
+    'SubagentStart': 'subagent_start',
+    'SubagentStop': 'subagent_stop',
     'Stop': 'stop',
 }
 
 # Codex hashes the identity *after* normalizing the matcher via
 # `matcher_pattern_for_event` (codex-rs/hooks/src/events/common.rs), which
 # unconditionally drops the matcher for these two events — they don't have
-# tool/session matchers conceptually. If we leave the hooks.json matcher in
-# the identity for these events, codex's current_hash diverges from ours and
-# the hook gets flagged "Modified" instead of "Trusted".
+# tool/session matchers conceptually. SessionEnd / SubagentStart /
+# SubagentStop KEEP their matchers (reason / agent_type). If we leave the
+# hooks.json matcher in the identity for NO_MATCHER events, codex's
+# current_hash diverges from ours and the hook gets flagged "Modified"
+# instead of "Trusted".
 NO_MATCHER_EVENTS = {'user_prompt_submit', 'stop'}
 
 def compute_hash(label, matcher, command, timeout_sec, status_message):
@@ -375,8 +386,9 @@ state_entries = {}
 for event_pascal, groups in (data.get('hooks') or {}).items():
     label = EVENT_LABELS.get(event_pascal)
     if not label:
-        # Codex doesn't have a SessionEnd event; any keys we don't recognize
-        # would never be matched by codex anyway, so skip silently.
+        # Unknown PascalCase keys (typos / future events we haven't mapped
+        # yet) are skipped — codex won't match an unmapped label in
+        # hooks.state either, so pre-trusting them is wasted work.
         continue
     for gi, group in enumerate(groups or []):
         matcher = group.get('matcher')
@@ -589,7 +601,7 @@ do_status() {
     if [ "$start" = "true" ] && [ "$end" = "true" ]; then
       session="true"
     fi
-    activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop UserPromptSubmit PermissionRequest)"
+    activity="$(has_atrium_hooks_in PreToolUse PostToolUse Stop UserPromptSubmit PermissionRequest SubagentStart SubagentStop)"
   fi
 
   local installed="false"

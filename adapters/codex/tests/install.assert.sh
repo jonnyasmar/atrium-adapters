@@ -17,5 +17,15 @@ hook_count="$(grep -cE '^[[:space:]]*hooks[[:space:]]*=[[:space:]]*true[[:space:
   exit 1
 }
 
-jq -e '.hooks.SessionStart and .hooks.SessionEnd' "$HOOKS_JSON" >/dev/null
+jq -e '.hooks.SessionStart and .hooks.SessionEnd and .hooks.SubagentStart and .hooks.SubagentStop' "$HOOKS_JSON" >/dev/null
+
+# Auto-trust must fingerprint SessionEnd + both subagent events (codex
+# 0.145+ treats them as first-class; missing state entries force /hooks review).
+for label in session_end subagent_start subagent_stop; do
+  grep -q "hooks.json:${label}:0:0" "$CONFIG_TOML" || {
+    echo "install.assert: missing hooks.state entry for ${label}" >&2
+    exit 1
+  }
+done
+
 bash "$TEST_DIR/hooks-config/assert.sh"

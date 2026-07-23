@@ -5,7 +5,7 @@
   "description": "OpenAI's AI coding assistant",
   "accent": "#059669",
   "binary": "codex",
-  "version": "1.20.7",
+  "version": "1.21.0",
   "updateCommand": [
     "codex",
     "update"
@@ -48,7 +48,9 @@
     "user-prompt-submit": "atrium://hooks/codex/user-prompt-submit",
     "permission-request": "atrium://hooks/codex/permission-request",
     "pre-compact": "atrium://hooks/codex/pre-compact",
-    "post-compact": "atrium://hooks/codex/post-compact"
+    "post-compact": "atrium://hooks/codex/post-compact",
+    "subagent-start": "atrium://hooks/codex/subagent-start",
+    "subagent-stop": "atrium://hooks/codex/subagent-stop"
   },
   "methods": {
     "list_recent_sessions": {
