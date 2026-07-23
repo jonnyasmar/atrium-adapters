@@ -1,29 +1,72 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "assets": [
     {
       "id": "atrium-context",
       "remotePath": "adapters/shared/atrium-context.md",
       "target": "atrium-home",
-      "destName": "atrium-context.md"
+      "destName": "atrium-context.md",
+      "sha256": "54a81af697014337b059be964a89d3e6d8f56631bcb58a6f7cc044d4f6a4cbb4"
+    },
+    {
+      "id": "atrium-skill",
+      "remotePath": "skills/atrium/SKILL.md",
+      "target": "adapter-skill",
+      "sha256": "a4e6574d437c103f860ea58d35cb79b73a7cb56e3c8e1464095f7ae4d0290d17"
+    },
+    {
+      "id": "atrium-skill-notes-ui",
+      "remotePath": "skills/atrium/references/notes-interactive-ui.md",
+      "target": "adapter-skill-reference",
+      "destName": "notes-interactive-ui.md",
+      "sha256": "2976d4cf2be2dd6c8206a74d96b41d98a2ec9cb9f21f188acb179697c3b47f93"
+    },
+    {
+      "id": "atrium-skill-capture",
+      "remotePath": "skills/atrium/references/capture.md",
+      "target": "adapter-skill-reference",
+      "destName": "capture.md",
+      "sha256": "04ab085fd85c0c40af9c9b747b904fb84d7eda2d9d10748c254af1164234d4ed"
+    },
+    {
+      "id": "atrium-skill-teaching",
+      "remotePath": "skills/atrium/references/teaching-mode.md",
+      "target": "adapter-skill-reference",
+      "destName": "teaching-mode.md",
+      "sha256": "dd9518deea0e0f1ae5c5fdc0ae66d092aa5121fd13aba6801f3121259764a384"
+    },
+    {
+      "id": "atrium-skill-authoring",
+      "remotePath": "skills/atrium/references/authoring-skills.md",
+      "target": "adapter-skill-reference",
+      "destName": "authoring-skills.md",
+      "sha256": "40464d9f8e62a0d1da3d486abcbc8696a8f88e2fc8a19329fd5c8f492ceb2e23"
     },
     {
       "id": "atrium-create-brief",
       "remotePath": "skills/atrium-create-brief/SKILL.md",
       "target": "bundled-skill",
-      "skillName": "atrium-create-brief"
+      "skillName": "atrium-create-brief",
+      "sha256": "b1535abfba35df05e03a1f6e8cf0ac7be676ee404ba57ed03ae6af3e0a81d36c"
     },
     {
       "id": "atrium-create-update",
       "remotePath": "skills/atrium-create-update/SKILL.md",
       "target": "bundled-skill",
-      "skillName": "atrium-create-update"
+      "skillName": "atrium-create-update",
+      "sha256": "50aeb2e23636ac6b1813cb314cf508424d325e6b4e30508387ecc2a32fe3d510"
     },
     {
       "id": "atrium-create-recap",
       "remotePath": "skills/atrium-create-recap/SKILL.md",
       "target": "bundled-skill",
-      "skillName": "atrium-create-recap"
+      "skillName": "atrium-create-recap",
+      "sha256": "3eae4e602bc5bd5849365424e131ccdb05893fd1af8692e9a64b22049414073e"
     }
-  ]
+  ],
+  "source": {
+    "repository": "jonnyasmar/atrium-adapters",
+    "commit": "c66022509d9055249d6fd91c6fde89c028842027",
+    "generation": 1
+  }
 }

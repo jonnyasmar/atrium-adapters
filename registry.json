@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "adapters": [
     {
       "name": "claude-code",
@@ -34,7 +34,9 @@
           "cmd": "npm install -g @anthropic-ai/claude-code",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "c0f709b58b6d1ae68150bcfd9352e7bbda38b3a6d15b09058ce066801c4df29e",
+      "maxAppVersion": null
     },
     {
       "name": "codex",
@@ -73,7 +75,9 @@
           "cmd": "npm install -g @openai/codex",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "efb87538bb7f1655d874bb22ebda9bd6ff9e144dc7914da88d55d86fad283b40",
+      "maxAppVersion": null
     },
     {
       "name": "antigravity",
@@ -98,7 +102,9 @@
           "cmd": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "1a0940694319932553b274f3b2f0476d32494a85e817ca2bdd15ed79af9c20c7",
+      "maxAppVersion": null
     },
     {
       "name": "cursor-agent",
@@ -123,7 +129,9 @@
           "cmd": "curl https://cursor.com/install -fsS | bash",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "9d6c7b758f304e8f437a162144c72808b248b96908b861a2a7fad3a72ffa4909",
+      "maxAppVersion": null
     },
     {
       "name": "opencode",
@@ -152,7 +160,9 @@
           "cmd": "npm install -g opencode-ai",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "83dfd2d15d97b19d058406c5c139153f195e1f145b521fc13455905225bb9456",
+      "maxAppVersion": null
     },
     {
       "name": "pi",
@@ -181,7 +191,9 @@
           "cmd": "npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "7fed0ac3ad49461dab36c1c32327bbbb0b941c959e016c6824c630cd5c80b568",
+      "maxAppVersion": null
     },
     {
       "name": "grok",
@@ -210,7 +222,9 @@
           "cmd": "irm https://x.ai/cli/install.ps1 | iex",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "49e18a8cbf516717322a92a5ac20d027f04f6afad221825c3d076cd47399014d",
+      "maxAppVersion": null
     },
     {
       "name": "hermes",
@@ -235,12 +249,14 @@
           "cmd": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "e72c54c1a53ac1a2755b292c61a428f5009dad914b577fad6d50f3895cdc6b32",
+      "maxAppVersion": null
     },
     {
       "name": "omp",
       "displayName": "Oh My Pi",
-      "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
+      "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
       "accent": "#f97316",
       "binary": "omp",
       "sdkVersion": 2,
@@ -264,7 +280,17 @@
           "cmd": "npm install -g bun @oh-my-pi/pi-coding-agent",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "3483184d5015736bb58c5b6df32da7d6949cf33d2b12ba9f4e211b9b17b8686e",
+      "maxAppVersion": null
     }
-  ]
+  ],
+  "source": {
+    "repository": "jonnyasmar/atrium-adapters",
+    "commit": "c66022509d9055249d6fd91c6fde89c028842027",
+    "sharedSha256": "1195378c494ab4e3358d8b07c2374d24df02de9daf5c44fb5e6ba77725bc7c66",
+    "schemaSha256": "c4d7774442208a390fc9c2ebff0dceb3c0ee883bee6b7d6b45b9cbb84833dbe0",
+    "methodsSchemaSha256": "01e5b26e90d4c4c54143d162542a44a20f9c9331a686b7f56e3ee2519b181a46"
+  },
+  "tombstones": []
 }
