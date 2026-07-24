@@ -21,7 +21,7 @@
         },
         {
           "value": "opus",
-          "label": "Claude Opus 4.8",
+          "label": "Claude Opus 5",
           "efforts": ["low", "medium", "high", "xhigh", "max"]
         },
         {
