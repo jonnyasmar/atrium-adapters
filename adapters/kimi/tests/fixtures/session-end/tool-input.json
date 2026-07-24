@@ -1,0 +1,6 @@
+{
+  "hook_event_name": "SessionEnd",
+  "session_id": "kimi-fixture-session",
+  "cwd": "/tmp/kimi-project",
+  "reason": "exit"
+}

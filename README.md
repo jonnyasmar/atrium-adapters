@@ -425,6 +425,7 @@ without a relaunch, and **without any version bump**:
 | [codex](adapters/codex/) | OpenAI's AI coding assistant | `codex` | Official |
 | [antigravity](adapters/antigravity/) | Google's agent-first terminal CLI (successor to Gemini CLI) | `agy` | Official |
 | [grok](adapters/grok/) | xAI's terminal coding agent | `grok` | Official |
+| [kimi](adapters/kimi/) | Moonshot AI's terminal coding agent | `kimi` | Official |
 | [opencode](adapters/opencode/) | Open-source AI coding agent built for the terminal | `opencode` | Official |
 | [pi](adapters/pi/) | Minimal terminal coding agent by Mario Zechner | `pi` | Official |
 | [cursor-agent](adapters/cursor-agent/) | Cursor's agent CLI | `cursor-agent` | Official |

@@ -1,0 +1,7 @@
+{
+  "hook_event_name": "Stop",
+  "session_id": "kimi-fixture-session",
+  "cwd": "/tmp/kimi-project",
+  "stop_hook_active": false,
+  "transcript_path": "tests/fixtures/stop/wire.jsonl"
+}

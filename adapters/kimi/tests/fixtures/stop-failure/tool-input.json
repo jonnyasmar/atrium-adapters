@@ -1,0 +1,7 @@
+{
+  "hook_event_name": "StopFailure",
+  "session_id": "kimi-fixture-session",
+  "cwd": "/tmp/kimi-project",
+  "error_type": "model_error",
+  "error_message": "Provider unavailable"
+}

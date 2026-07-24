@@ -1,0 +1,11 @@
+{
+  "hook_event_name": "UserPromptSubmit",
+  "session_id": "kimi-fixture-session",
+  "cwd": "/tmp/kimi-project",
+  "prompt": [
+    {
+      "type": "text",
+      "text": "Please inspect the adapter."
+    }
+  ]
+}

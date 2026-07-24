@@ -1,0 +1,5 @@
+{
+  "hook_event_name": "PostCompact",
+  "session_id": "kimi-fixture-session",
+  "cwd": "/tmp/kimi-project"
+}

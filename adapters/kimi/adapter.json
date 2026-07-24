@@ -1,0 +1,117 @@
+{
+  "sdkVersion": 2,
+  "name": "kimi",
+  "displayName": "Kimi Code",
+  "description": "Moonshot AI's terminal coding agent",
+  "accent": "#4f6bff",
+  "binary": "kimi",
+  "version": "0.1.0",
+  "updateCommand": [
+    "kimi",
+    "upgrade"
+  ],
+  "icon": "icon.svg",
+  "skillInstallPath": "~/.kimi-code/skills/atrium/SKILL.md",
+  "skillsDir": "~/.kimi-code/skills",
+  "binaryDiscovery": {
+    "commands": [
+      "kimi"
+    ],
+    "wellKnownPaths": [
+      "~/.kimi-code/bin/kimi",
+      "/opt/homebrew/bin/kimi",
+      "/usr/local/bin/kimi",
+      "~/.local/bin/kimi"
+    ]
+  },
+  "install": {
+    "macos": {
+      "cmd": "curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "irm https://code.kimi.com/kimi-code/install.ps1 | iex",
+      "postInstallAuth": true
+    }
+  },
+  "hooks": {
+    "session-start": "atrium://hooks/kimi/session-start",
+    "session-end": "atrium://hooks/kimi/session-end",
+    "pre-tool-use": "atrium://hooks/kimi/pre-tool-use",
+    "post-tool-use": "atrium://hooks/kimi/post-tool-use",
+    "permission-request": "atrium://hooks/kimi/permission-request",
+    "permission-response": "atrium://hooks/kimi/permission-response",
+    "stop": "atrium://hooks/kimi/stop",
+    "stop-failure": "atrium://hooks/kimi/stop-failure",
+    "interrupt": "atrium://hooks/kimi/interrupt",
+    "user-prompt-submit": "atrium://hooks/kimi/user-prompt-submit",
+    "subagent-start": "atrium://hooks/kimi/subagent-start",
+    "subagent-stop": "atrium://hooks/kimi/subagent-stop",
+    "pre-compact": "atrium://hooks/kimi/pre-compact",
+    "post-compact": "atrium://hooks/kimi/post-compact",
+    "notification": "atrium://hooks/kimi/notification"
+  },
+  "inputRequestTools": [
+    "AskUserQuestion"
+  ],
+  "methods": {
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
+    "build_resume_command": {
+      "script": "build_resume_command.sh"
+    },
+    "check_update": {
+      "script": "check_update.sh"
+    },
+    "list_recent_sessions": {
+      "script": "list_recent_sessions.sh"
+    },
+    "hooks": {
+      "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
+    }
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "identity"
+    },
+    "userPromptSubmit": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "UserPromptSubmit",
+      "includeSystemMessage": false
+    },
+    "preToolUse": {
+      "kind": "none"
+    },
+    "postToolUse": {
+      "kind": "none"
+    }
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "acp"
+    ],
+    "capabilities": {
+      "resume": true,
+      "setModel": true,
+      "thinking": true,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": true,
+      "contextUsage": false,
+      "imageInput": true,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
+    }
+  }
+}

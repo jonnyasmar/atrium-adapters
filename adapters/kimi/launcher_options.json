@@ -1,0 +1,80 @@
+{
+  "options": [
+    {
+      "key": "yolo",
+      "label": "👮‍♂️",
+      "description": "--yolo",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "model",
+      "label": "model",
+      "description": "Override the configured Kimi model",
+      "type": "select",
+      "default": "",
+      "choices": [
+        {
+          "value": "kimi-code/k3",
+          "label": "K3",
+          "efforts": ["low", "high", "max"]
+        },
+        {
+          "value": "kimi-code/kimi-for-coding",
+          "label": "K2.7 Coding",
+          "efforts": ["low", "high", "max"]
+        },
+        {
+          "value": "kimi-code/kimi-for-coding-highspeed",
+          "label": "K2.7 Coding Highspeed",
+          "efforts": ["low", "high", "max"]
+        }
+      ]
+    },
+    {
+      "key": "effort",
+      "label": "effort",
+      "description": "Thinking effort",
+      "type": "select",
+      "default": "",
+      "choices": ["low", "high", "max"]
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ],
+  "suggestedFlags": [
+    {
+      "flag": "--agent",
+      "description": "Built-in agent"
+    },
+    {
+      "flag": "--agent-file",
+      "description": "Custom agent file"
+    },
+    {
+      "flag": "--add-dir",
+      "description": "Additional working directory"
+    },
+    {
+      "flag": "--skills-dir",
+      "description": "Additional skills directory"
+    },
+    {
+      "flag": "--continue",
+      "description": "Continue the last session"
+    },
+    {
+      "flag": "--session",
+      "description": "Session id"
+    },
+    {
+      "flag": "--output-format",
+      "description": "text or stream-json"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "session_id": "kimi-fixture-session",
+  "tool_name": "Write",
+  "tool_response": "Wrote 5 bytes.",
+  "_atrium": {
+    "writeKind": "write",
+    "filePaths": [
+      "/tmp/kimi-adapter.txt"
+    ],
+    "lineStart": null,
+    "lineEnd": null
+  }
+}

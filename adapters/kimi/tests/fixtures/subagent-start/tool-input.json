@@ -1,0 +1,7 @@
+{
+  "hook_event_name": "SubagentStart",
+  "session_id": "kimi-fixture-session",
+  "cwd": "/tmp/kimi-project",
+  "agent_name": "researcher",
+  "prompt": "Inspect the protocol."
+}

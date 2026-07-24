@@ -1,0 +1,6 @@
+{
+  "hook_event_name": "Notification",
+  "session_id": "kimi-fixture-session",
+  "cwd": "/tmp/kimi-project",
+  "message": "Kimi is waiting for input."
+}

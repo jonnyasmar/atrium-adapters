@@ -134,6 +134,37 @@
       "maxAppVersion": null
     },
     {
+      "name": "kimi",
+      "displayName": "Kimi Code",
+      "description": "Moonshot AI's terminal coding agent",
+      "accent": "#4f6bff",
+      "binary": "kimi",
+      "sdkVersion": 2,
+      "platforms": [
+        "macos"
+      ],
+      "official": true,
+      "version": "0.1.0",
+      "minAppVersion": "0.233.0",
+      "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><title>Kimi Code</title><rect x=\"3\" y=\"4.5\" width=\"18\" height=\"13\" rx=\"2.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><rect x=\"9.6\" y=\"8\" width=\"1.4\" height=\"2.6\" rx=\".45\" fill=\"currentColor\"/><rect x=\"15.6\" y=\"8\" width=\"1.4\" height=\"2.6\" rx=\".45\" fill=\"currentColor\"/></svg>",
+      "install": {
+        "macos": {
+          "cmd": "curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash",
+          "postInstallAuth": true
+        },
+        "linux": {
+          "cmd": "curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash",
+          "postInstallAuth": true
+        },
+        "windows": {
+          "cmd": "irm https://code.kimi.com/kimi-code/install.ps1 | iex",
+          "postInstallAuth": true
+        }
+      },
+      "contentSha256": "15cae23f98b4dab506f649a5efc9036769a762a7fa87a7e56c88762258b63fcc",
+      "maxAppVersion": null
+    },
+    {
       "name": "opencode",
       "displayName": "OpenCode",
       "description": "Open-source AI coding agent built for the terminal (opencode.ai)",
