@@ -147,9 +147,15 @@ build_all_hooks() {
   # hookSpecificOutput); other adapters declare the events they can't consume as
   # `none` and wire no injection there (the grok-revert lesson: no dead wiring).
   # Resolved via ${ATRIUM_DATA_DIR:-...} so stable / dev / beta installs coexist.
-  local inject_base inject_ss inject_ups inject_pt inject_post
+  local inject_base inject_ss_base inject_ss inject_ups inject_pt inject_post
   inject_base="$CURSOR_GUARD; $CHAT_SDK_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
-  inject_ss="$(jq -n --arg cmd "$inject_base session-start" \
+  # SessionStart carries no CHAT_SDK_GUARD, for the same reason as the
+  # resolve-manifest entries above (dead SDK callback). Beyond the provider
+  # content itself, this hop is what records the `sessionStart` injection-log
+  # entry the chat UI anchors its session-context marker to — guarded, chat
+  # panes get the context but no marker.
+  inject_ss_base="$CURSOR_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
+  inject_ss="$(jq -n --arg cmd "$inject_ss_base session-start" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
   inject_ups="$(jq -n --arg cmd "$inject_base user-prompt-submit" \

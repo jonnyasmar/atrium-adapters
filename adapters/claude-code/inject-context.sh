@@ -32,7 +32,12 @@ set -uo pipefail
 
 # Chat sidecar owns injection via SDK hooks — skip shell dual-fire.
 # Still emit the per-event no-op so strict JSON hook parsers stay happy.
-if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]; then
+#
+# session-start is exempt: the SDK's SessionStart callback never fires for
+# chat panes, so this is their only session-start injection path (and the
+# only thing that records the injection-log entry the chat UI's session
+# marker anchors to). Every other event keeps the skip.
+if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ] && [ "${1:-}" != "session-start" ]; then
   case "${1:-}" in
     user-prompt-submit | pre-tool-use | post-tool-use) printf '%s\n' '{}' ;;
   esac
