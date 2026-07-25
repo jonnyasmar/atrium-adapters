@@ -12,7 +12,7 @@
         "macos"
       ],
       "official": true,
-      "version": "1.19.11",
+      "version": "1.19.12",
       "minAppVersion": "0.228.0",
       "models": [
         "fable",
@@ -35,7 +35,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "fb1668162981a961daeb900c93518bcde03ff41fc75cc2b3d06e25a2fb3422eb",
+      "contentSha256": "bff5fa009e3e47ebdbaca893314d362674852a84479aecef9d3536b5b20a2bc3",
       "maxAppVersion": null
     },
     {
@@ -318,8 +318,8 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "28ba60923492c90174d6c95c559c75138c663582",
-    "sharedSha256": "1195378c494ab4e3358d8b07c2374d24df02de9daf5c44fb5e6ba77725bc7c66",
+    "commit": "891a80b7b177fd556148a259dbca67cb554069a2",
+    "sharedSha256": "3d33d2d12e1fcf1e5bfe96b3323d418d07d008f093734189e26718574b943401",
     "schemaSha256": "c4d7774442208a390fc9c2ebff0dceb3c0ee883bee6b7d6b45b9cbb84833dbe0",
     "methodsSchemaSha256": "01e5b26e90d4c4c54143d162542a44a20f9c9331a686b7f56e3ee2519b181a46"
   },
