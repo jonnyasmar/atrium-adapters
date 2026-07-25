@@ -98,10 +98,17 @@ build_all_hooks() {
   # Split into THREE dedicated SessionStart entries (--section context|agent|
   # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
   # hook per section gives each section its own 10K budget (max headroom).
+  #
+  # NO CHAT_SDK_GUARD here: the SDK's SessionStart hook callback never fires for
+  # claude-sdk chat panes (verified 2026-07-25 — no `hook emit session-start`,
+  # no manifest, no inject hop reaches the daemon), so guarding these would
+  # leave chat panes with no atrium-context at all. The shell hook is the sole
+  # working SessionStart context source there; every other event keeps the
+  # guard because its SDK callback does fire.
   local ctx_section ctx_cmd ctx_entry
   for ctx_section in context agent skills; do
-    ctx_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
-      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$CHAT_SDK_GUARD" "$ctx_section")"
+    ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
       '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
