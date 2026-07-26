@@ -22,7 +22,7 @@
         {
           "value": "opus",
           "label": "Claude Opus 5",
-          "efforts": ["low", "medium", "high", "xhigh", "max"]
+          "efforts": ["low", "medium", "high", "xhigh", "max", "ultracode"]
         },
         {
           "value": "sonnet",
