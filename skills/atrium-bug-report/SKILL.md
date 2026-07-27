@@ -92,6 +92,7 @@ Then convert `T` into each file's time base, because **these artifacts run on th
 | File | Clock | Example |
 |---|---|---|
 | `logs/runtime.<date>.log` | **UTC**, ISO8601 with `Z` | `2026-07-27T11:42:16.384031Z` |
+| `logs/app.<date>.log` | **UTC**, ISO8601 with `Z` | `2026-07-27T11:42:16.384031Z` |
 | `logs/daemon-signals.log` | **UTC**, ISO8601 with `+00:00` | `2026-07-27T11:41:14.299197+00:00` |
 | `logs/cef.log` | **local time**, `MMDD/HHMMSS.uuuuuu` | `0727/074228.268096` (= 11:42 UTC at UTC-4) |
 | `logs/webview-errors.ndjson` | ISO8601 `ts` field | per record |
@@ -115,6 +116,7 @@ UTC=11:4                             # UTC hour+tens-of-minutes of T
 LOC=0727/074                         # local MMDD/HH+tens for cef.log
 
 grep -aE "^${DAY}T${UTC}" "$L/runtime.$DAY.log"
+grep -aE "^${DAY}T${UTC}" "$L/app.$DAY.log" 2>/dev/null   # newer builds only
 grep -aE "^${DAY}T${UTC}" "$L/daemon-signals.log"
 grep -aE "\]${LOC}"        "$L/cef.log"
 grep -a  "\"ts\":\"${DAY}T${UTC}" "$L/webview-errors.ndjson" 2>/dev/null
@@ -344,6 +346,7 @@ Everything is under the resolved data dir unless noted. Presence varies — a fr
 | Artifact | What it is | Answers | Does *not* answer |
 |---|---|---|---|
 | `logs/runtime.<YYYY-MM-DD>.log` | Main process, daily rotation, `tracing` format, UTC | App lifecycle, boot hydration, persistence, PTY/websocket, adapter script calls, pane/room ops | Anything the daemon does alone; anything in the frontend |
+| `logs/app.<YYYY-MM-DD>.log` | The desktop shell process (`atrium-desktop`), daily rotation, same `tracing` format. **Newer builds only** — absent on older installs, which is not itself a bug | Shell-side startup, window/CEF hosting, updater and native chrome — the half that never reached `runtime.log` | The daemon; the frontend |
 | `logs/atriumd.stderr.log` | The background daemon, unleveled `eprintln!`, **no timestamps**, huge, `[HOOK]`-dominated | Restore/session lifecycle, fleet & activity state, scheduler, chat sidecars, FTS/vault indexing, reapers | *When* anything happened |
 | `logs/cef.log` | Chromium/CEF — **browser panes only**, local time | Browser pane navigation, renderer/GPU errors, media, codec issues | Anything outside a browser pane |
 | `logs/daemon-signals.log` | One line per daemon lifecycle signal, UTC, small — **read it whole** | Clean quits vs. forced kills; update handoffs | Why the daemon was slow to exit |
