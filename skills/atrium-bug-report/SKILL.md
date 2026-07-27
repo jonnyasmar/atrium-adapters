@@ -205,6 +205,11 @@ If something close exists: show it to the user and offer to **add a comment** wi
 
 The body is **self-contained and tight**. Target under ~8 KB so the no-`gh` fallback URL works.
 
+Two sections do disproportionate work, and both are easy to skip:
+
+- **`## Impact`** — a maintainer triages on consequence, not symptom. "Rooms come back empty" is a description; "every restart loses the session an agent was mid-way through, and it has happened on each of the last three updates" is a priority. Say who it hurts, how often, and what it blocks. If it bit the user once and cost them nothing, say that too — honest low impact is useful and keeps the tracker calibrated.
+- **`## What still works`** — the neighbouring behaviour you checked and found healthy. This narrows harder than the ruled-out list, because it draws the boundary of the break: if pane creation and splitting apply fine but room rename silently no-ops, the daemon↔UI path is sound and only room-level mutations are suspect. That one line can save a maintainer an afternoon. Check two or three adjacent operations deliberately — do not guess at them, and only list what you actually exercised. Nothing checked → drop the section.
+
 Build these sections **once** and use them for either posting path — they map one-to-one onto the field ids of the repo's `bug.yml` issue form:
 
 | Section | `bug.yml` field id |
@@ -212,9 +217,11 @@ Build these sections **once** and use them for either posting path — they map 
 | `## Environment` (composed) | `version`, `channel`, `os` — three separate fields in the form |
 | area label choice | `area` |
 | `## Summary` | `summary` |
+| `## Impact` | `impact` |
 | `## Steps / trigger` | `steps` |
 | `## Expected` | `expected` |
 | `## Observed` | `observed` |
+| `## What still works` | `still-works` |
 | `## Root cause` | `root-cause` |
 | `## Evidence` | `evidence` |
 | `## Ruled out` | `ruled-out` |
@@ -223,6 +230,9 @@ Build these sections **once** and use them for either posting path — they map 
 ```markdown
 ## Summary
 <2-4 sentences: what the user was doing, what happened, and — if you found one — the cause.>
+
+## Impact
+<Who it hurts, how often, and what it blocks. One or two lines.>
 
 ## Environment
 - atrium v<version> (<channel>), <os>
@@ -236,6 +246,9 @@ Build these sections **once** and use them for either posting path — they map 
 
 ## Observed
 <what actually happened, including anything the user saw that the logs do not show>
+
+## What still works
+<The neighbouring things you checked that behaved correctly. Omit the section if you checked nothing.>
 
 ## Root cause
 <Your conclusion and the reasoning chain — or the Undetermined form below.>
