@@ -16,6 +16,8 @@ Three rules that outrank everything else below:
 2. **A confidently wrong root cause in a public tracker is worse than none.** "Undetermined — here is what I ruled out" is a good issue.
 3. **Read-only while investigating.** Reading logs, `--json` list commands and `pane read` are free. Anything that mutates the workspace changes the state you are diagnosing. See *Read-only CLI* below for the boundary.
 
+**Demonstrations are not reports.** If you are walking this skill through rather than investigating something that actually happened — a demo, a dry run, "show me what this does" — open your output with a plain `**DEMO — illustrative, not a real investigation.**` and keep every value in it obviously synthetic. A demo stops at the draft: the posting path in Step 8 is closed to it, with or without approval. A demo and a real report look identical once written, which is exactly why the label has to be on the front of it.
+
 ---
 
 ## What you were given
@@ -29,7 +31,7 @@ dataDir: <absolute atrium data dir>
 instance: <data dir basename>
 version: <app version>
 channel: <stable|dev|unknown>
-os: <e.g. macOS 15.5>
+os: <os name and version>
 </atrium-bug-report>
 
 User's report:
@@ -89,15 +91,17 @@ Establish `T` — the moment of the failure:
 
 Then convert `T` into each file's time base, because **these artifacts run on three different clocks**:
 
-| File | Clock | Example |
+| File | Clock | Format, with a **synthetic** example |
 |---|---|---|
-| `logs/runtime.<date>.log` | **UTC**, ISO8601 with `Z` | `2026-07-27T11:42:16.384031Z` |
-| `logs/app.<date>.log` | **UTC**, ISO8601 with `Z` | `2026-07-27T11:42:16.384031Z` |
-| `logs/daemon-signals.log` | **UTC**, ISO8601 with `+00:00` | `2026-07-27T11:41:14.299197+00:00` |
-| `logs/cef.log` | **local time**, `MMDD/HHMMSS.uuuuuu` | `0727/074228.268096` (= 11:42 UTC at UTC-4) |
+| `logs/runtime.<date>.log` | **UTC**, ISO8601 with `Z` | `YYYY-MM-DDTHH:MM:SS.ffffffZ` — e.g. `2000-01-01T12:00:00.000000Z` |
+| `logs/app.<date>.log` | **UTC**, ISO8601 with `Z` | `YYYY-MM-DDTHH:MM:SS.ffffffZ` — e.g. `2000-01-01T12:00:00.000000Z` |
+| `logs/daemon-signals.log` | **UTC**, ISO8601 with `+00:00` | `YYYY-MM-DDTHH:MM:SS.ffffff+00:00` — e.g. `2000-01-01T12:00:00.000000+00:00` |
+| `logs/cef.log` | **local time**, `MMDD/HHMMSS.uuuuuu` | `MMDD/HHMMSS.ffffff` — e.g. `0101/080000.000000` (= the `12:00:00` UTC above, at UTC-4) |
 | `logs/webview-errors.ndjson` | ISO8601 `ts` field | per record |
-| `~/Library/Logs/DiagnosticReports/*.ips` | **local time with offset** | `2026-07-27 08:18:49.00 -0400` |
+| `~/Library/Logs/DiagnosticReports/*.ips` | **local time with offset** | `YYYY-MM-DD HH:MM:SS.ss ±HHMM` — e.g. `2000-01-01 08:00:00.00 -0400` |
 | `logs/atriumd.stderr.log` | **no timestamps at all** | see below |
+
+The example column is **synthetic** — a made-up clock chosen to be unmistakable. It teaches the shape and nothing else. **Nothing in this skill is data**: every timestamp, id, pid and log line below is an illustration, so none of them may be quoted as if you read it in a file.
 
 Getting this wrong by a timezone offset makes the CEF log look like it has nothing to say. Compute the offset once (`date +%z`) and write both forms down.
 
@@ -111,9 +115,9 @@ Grep every log for `T ± 60s`, then merge into a single ordered list. **Cross-fi
 
 ```bash
 D=<data dir>; L="$D/logs"
-DAY=2026-07-27                       # UTC date of T
-UTC=11:4                             # UTC hour+tens-of-minutes of T
-LOC=0727/074                         # local MMDD/HH+tens for cef.log
+DAY=<YYYY-MM-DD>                     # UTC date of T
+UTC=<HH:M>                           # UTC hour + tens-of-minutes of T
+LOC=<MMDD/HH+tens>                   # local time base, for cef.log
 
 grep -aE "^${DAY}T${UTC}" "$L/runtime.$DAY.log"
 grep -aE "^${DAY}T${UTC}" "$L/app.$DAY.log" 2>/dev/null   # newer builds only
@@ -256,10 +260,10 @@ Build these sections **once** and use them for either posting path — they map 
 - <hypothesis> — <the specific evidence that killed it>
 
 ---
-Local evidence file (not attached, on the reporter's machine): `~/.atrium/diagnostics/report-<ts>.md`
+Local evidence file (not attached, on the reporter's machine): `~/<instance>/diagnostics/report-<ts>.md`
 ```
 
-**Title:** `<one-line symptom> (v<version>)` — lead with what the user experienced, not your theory. Example: `Rooms restore empty after an update, restore chooser stays on screen (v0.251.0)`.
+**Title:** `<one-line symptom> (v<version>)` — lead with what the user experienced, not your theory. Illustrative shape only: `Terminal pane stops rendering after a room switch (v<version>)`.
 
 **Evidence budget: 20–40 log lines total.** Every quoted line must be one you would point at while explaining the bug. `<details>` blocks keep them from drowning the body. If a section would be empty, drop the heading.
 
@@ -404,7 +408,7 @@ EOF
 
 Interpreting it:
 
-- `EXC_CRASH` + `SIGABRT` + `"asi": {"libsystem_c.dylib": ["abort() called"]}` with frames containing `rust_begin_unwind` / `panic_with_hook` → **a Rust panic**. The frame *below* the panic machinery names the module that panicked — that is your root cause. Worked example: a faulting stack ending in `tao…app_delegate…did_finish_launching` is a panic during window creation at launch, i.e. the app never got a window up.
+- `EXC_CRASH` + `SIGABRT` + `"asi": {"libsystem_c.dylib": ["abort() called"]}` with frames containing `rust_begin_unwind` / `panic_with_hook` → **a Rust panic**. The frame *below* the panic machinery names the module that panicked — that is your root cause. Illustrative reading (not data from any machine): a faulting stack ending in `tao…app_delegate…did_finish_launching` would be a panic during window creation at launch, i.e. the app never got a window up.
 - `EXC_BAD_ACCESS` → a native segfault; in an `atrium Helper` report that is a CEF renderer crash.
 - `EXC_RESOURCE` → an OS resource limit (memory/CPU), not a logic bug.
 - A report whose `procPath` is under `/Users/USER/*/atrium-desktop` with `parentProc: node` is a **dev build**, not the shipped app — do not file it as a release bug without saying so.
@@ -436,6 +440,8 @@ Run `"$CLI" <command> --help` for exact flags rather than guessing.
 These look alarming and are routine. **Do not report one as a root cause** unless the symptom specifically matches the narrow case named in the last column.
 
 Marked **[confirmed]** where observed at volume on a live install; **[inferred]** where the reading is deduced from the message and surrounding context rather than verified.
+
+The lines in these tables — and in **Symptom → hypothesis** below — are **match patterns, not evidence**. `<id>`, `<path>` and `N` are placeholders, and the real line carries a timestamp, a level and a module path that none of these rows show. Grep for the pattern, then quote the line the file actually gives you.
 
 ### `runtime.<date>.log`
 
