@@ -6,7 +6,7 @@
       "remotePath": "adapters/shared/atrium-context.md",
       "target": "atrium-home",
       "destName": "atrium-context.md",
-      "sha256": "104c402df667f236b8059a5490abe319d5ed7863c40563fb77639a4e2aaaa5b8"
+      "sha256": "3a4263c745e24d80e829612d9dacfa21159153a102d56050bcb507f9ea81ecc2"
     },
     {
       "id": "atrium-skill",
@@ -73,7 +73,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "92ee2711b8bf017d2a93ec94c9843b68aebd2c57",
-    "generation": 10
+    "commit": "adb988e7f2aa1f20a62ed9d6fa42492c05ae73b0",
+    "generation": 11
   }
 }
