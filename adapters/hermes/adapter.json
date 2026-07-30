@@ -88,7 +88,7 @@
       "permissionCallback": true,
       "commandDiscovery": true,
       "planMode": false,
-      "contextUsage": false,
+      "contextUsage": true,
       "imageInput": false,
       "checkpointing": false,
       "subagentEvents": false,
