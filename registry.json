@@ -197,7 +197,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "83dfd2d15d97b19d058406c5c139153f195e1f145b521fc13455905225bb9456",
+      "contentSha256": "e0e8b0ca2725a128dd1282cccd0850f945a7a561bf7b78f4c74c694054a9a0b9",
       "maxAppVersion": null
     },
     {
@@ -229,7 +229,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "7fed0ac3ad49461dab36c1c32327bbbb0b941c959e016c6824c630cd5c80b568",
+      "contentSha256": "906214fcc2a87cf3209a0aa59d89b4aef32258066a4431a4118ecd06bdeaa9c8",
       "maxAppVersion": null
     },
     {
@@ -261,7 +261,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "7c8df4c545e84321316f1051f460f5ad1e66e9a80e301fc47f9b6fd9396ecb50",
+      "contentSha256": "863cc1f5ddc1c008f04abe16af9539518cf664013b314a40a43b66debb724015",
       "maxAppVersion": null
     },
     {
@@ -289,13 +289,13 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "e72c54c1a53ac1a2755b292c61a428f5009dad914b577fad6d50f3895cdc6b32",
+      "contentSha256": "884afa1622543c726d359d0ad994465b29a2efbeb88157b07805305581750a3d",
       "maxAppVersion": null
     },
     {
       "name": "omp",
       "displayName": "Oh My Pi",
-      "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
+      "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
       "accent": "#f97316",
       "binary": "omp",
       "sdkVersion": 2,
@@ -321,13 +321,13 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "3483184d5015736bb58c5b6df32da7d6949cf33d2b12ba9f4e211b9b17b8686e",
+      "contentSha256": "89dfa1591db941f308c6536eaea9eb4f6f20e1f94ecd798aca6282aa81795626",
       "maxAppVersion": null
     }
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "adb988e7f2aa1f20a62ed9d6fa42492c05ae73b0",
+    "commit": "dcf65f6f2293386300a4c0c136df8d7b82a646b4",
     "sharedSha256": "b3701b5812d91b0ccfad8ab694c9664c2b6c8ea1bda24a0bc669160100236bbf",
     "schemaSha256": "c4d7774442208a390fc9c2ebff0dceb3c0ee883bee6b7d6b45b9cbb84833dbe0",
     "methodsSchemaSha256": "01e5b26e90d4c4c54143d162542a44a20f9c9331a686b7f56e3ee2519b181a46"
