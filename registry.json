@@ -327,7 +327,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "dcf65f6f2293386300a4c0c136df8d7b82a646b4",
+    "commit": "3c1cd5b267d131150cedf7249dfd3dff8379b5bb",
     "sharedSha256": "b3701b5812d91b0ccfad8ab694c9664c2b6c8ea1bda24a0bc669160100236bbf",
     "schemaSha256": "c4d7774442208a390fc9c2ebff0dceb3c0ee883bee6b7d6b45b9cbb84833dbe0",
     "methodsSchemaSha256": "01e5b26e90d4c4c54143d162542a44a20f9c9331a686b7f56e3ee2519b181a46"
