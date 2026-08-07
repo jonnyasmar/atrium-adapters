@@ -70,10 +70,13 @@ If a prefix matches more than one ID, the CLI lists candidates and fails loudly 
 
 **"Room" not "tab" in user-facing text.** The backend still says `tab` internally; the user sees "room" everywhere. Narrate with "room".
 
-**Agent-to-agent messaging is framed and asynchronous.** `agent message <pane-id> "<text>"` wraps your text with sender identity and a reply command before injecting it into the recipient's stdin. Two consequences:
+**Agent-to-agent messaging is framed and asynchronous.** `agent message <pane-id> "<text>"` wraps your text with sender identity and a reply command before injecting it into the recipient's stdin. Three consequences:
 
 1. **Don't introduce yourself or paste reply instructions** — atrium does both. Just write the content.
 2. **Don't poll `pane read` for the reply.** When the other agent replies via `agent message`, atrium injects the framed reply into your stdin as a fresh turn. Send, end your turn, and wait — like messaging a human collaborator, not screen-scraping their terminal.
+3. **Pass `--no-reply` when you don't need one.** The default footer asks the recipient to reply, and they generally will — so a status update or a heads-up costs both of you a round trip you never wanted. `--no-reply` keeps your identity on the message but asks them not to message back; they still read it, act on it, and take their turn as normal, and the footer keeps your address for the case where it genuinely blocks them.
+
+   The test is not what kind of message it is — it's **do you need something back from them before you can proceed?** No → `--no-reply`. That covers status, steers, hints, corrections, heads-ups, and handoffs where they own the next step. Yes → default. Questions, requests, and anything you're about to wait on keep the reply hint.
 
 **Browser snapshot → ref → action loop.** Before you click/fill/type/select on a browser pane, run `browser snapshot <pane-id>` for an accessibility tree where each interactable has a short ref (`e1`, `e2`, …). Pass refs to `browser click`/`fill`/etc. Re-snapshot after the DOM changes — refs aren't stable across navigations.
 
@@ -99,7 +102,11 @@ Nothing about driving a pane requires focus, so there's never an incidental reas
   --url "https://example.com" --split "$ATRIUM_PANE_ID"
 
 # Message another agent — then end your turn and wait for the reply.
-"$ATRIUM_CLI_PATH" agent message <agent-id-prefix> "Picking up ATR-12, taking the frontend half."
+"$ATRIUM_CLI_PATH" agent message <agent-id-prefix> "Can you take the backend half of ATR-12?"
+
+# One-way: you need nothing back, so don't make them reply.
+"$ATRIUM_CLI_PATH" agent message <agent-id-prefix> --no-reply \
+  "Heads up: I'm refactoring rowMediaMeasurement.ts, don't edit it for now."
 ```
 
 ## Task workflow
