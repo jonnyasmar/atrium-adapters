@@ -22,6 +22,13 @@
       "sha256": "2976d4cf2be2dd6c8206a74d96b41d98a2ec9cb9f21f188acb179697c3b47f93"
     },
     {
+      "id": "atrium-skill-chat-canvas-fence",
+      "remotePath": "skills/atrium/references/chat-canvas-fence.md",
+      "target": "adapter-skill-reference",
+      "destName": "chat-canvas-fence.md",
+      "sha256": "5b903861702bf4ad9b31a0df7d0b3f756a527368c8000bce57809853f167e7df"
+    },
+    {
       "id": "atrium-skill-capture",
       "remotePath": "skills/atrium/references/capture.md",
       "target": "adapter-skill-reference",

@@ -203,6 +203,12 @@ Notes are file-backed, and atrium reconciles direct file writes in real-time —
 
 **When authoring a canvas or HTML note, or editing a note body file directly, read `references/notes-interactive-ui.md`** (sibling to this file). It covers the canvas spec format and component catalog, custom actions (`send_to_agent`, `atrium_command`), the HTML postMessage protocol, framing-template syntax, live streaming via `canvas-patch`, the direct-file-edit path and its traps, and a worked PR-triage example. Don't load it for everyday CLI note work.
 
+## Inline interactive canvases in chat
+
+A note isn't the only way to hand the user a UI. In an agent chat pane you can render an interactive canvas **inline in your own reply** — emit a fenced code block tagged `canvas` whose body is a canvas spec, and the transcript renders it live as you type it. No CLI call, no note file, no extra pane. It's the cheapest way to ask for a structured answer mid-turn (pick one of three, approve this plan, tweak these numbers before I apply them). The tradeoff: the state is ephemeral and dies with the session, so anything the user needs tomorrow is still a canvas note.
+
+**Before emitting a `canvas` fence, read `references/chat-canvas-fence.md`.** It covers the fence grammar and reserved flags, a worked example, how to order a spec so it builds well while streaming, how actions route back to your pane, and — the decision worth getting right — when to reach for a fence vs. a canvas note vs. plain markdown. The spec format and component catalog are shared with canvas notes, so `references/notes-interactive-ui.md` remains the reference for both.
+
 ## QA Capture bundles (CAP-#)
 
 When the user references a CAP-# (assigns a capture task, drops `CAP-381`, asks you to "look at this recording"), drive inspection through `atrium capture` — `show` for paths + counts, `screenshot --at <sec> [--crop] [--max-edge]` for still frames, `chunk` for motion slices, `list` / `delete`. **Don't shell out to ffmpeg / sips / magick** — atrium ships native AVFoundation equivalents.
