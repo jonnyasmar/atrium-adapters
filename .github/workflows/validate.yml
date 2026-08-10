@@ -2,7 +2,9 @@ name: Validate Adapters
 
 on:
   push:
-    branches: [main]
+    # main serves registry.json directly, so validate the exact SHA on a branch
+    # before branch protection permits that SHA to land on main.
+    branches: ["**"]
   pull_request:
     branches: [main]
 

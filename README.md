@@ -381,6 +381,17 @@ Clone this repo and run `./validate-adapter.sh adapters/claude-code/` for a refe
 
 > **Keep versions in sync.** The `version` in `registry.json` must match `adapters/<name>/adapter.json`. atrium's update notice compares a user's installed `adapter.json` version against the `registry.json` version, and the bundled auto-update only re-copies an adapter when its version increases. Any change to an adapter's scripts or manifest must bump **both** files, or the change won't reach users.
 
+### Maintainer publication
+
+`main/registry.json` is the live production registry. Prepare content and its
+generated release metadata on a branch, push that branch, and wait for its
+`Validate Adapters` check to pass before advancing `main` to the same commit.
+Branch protection requires that pre-publication check on the exact commit.
+
+After rebasing, regenerate release metadata against the rebased content commit.
+The generator rejects a source commit that is no longer an ancestor of `HEAD`,
+preventing a local reflog from masking a commit GitHub cannot serve.
+
 **Guidelines:** Self-contained, no deps beyond `jq` + POSIX. Bash, tested on macOS and Ubuntu. 3s timeout (50ms for `list_recent_sessions`). Atomic writes for config files. Never store credentials.
 
 ---

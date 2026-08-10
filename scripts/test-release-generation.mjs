@@ -5,6 +5,7 @@ import {
   contentVersionCouplingViolation,
   publishedTipGenerationViolation,
   releaseWriteDecision,
+  sourceCommitAncestryViolation,
 } from "./release-generation.mjs";
 
 const commitOne = "1".repeat(40);
@@ -48,6 +49,15 @@ function expectCouplingRejected(input, label) {
     throw new Error(`${label}: content/version coupling was unexpectedly accepted`);
   }
 }
+
+// --- source commit ancestry ---
+if (sourceCommitAncestryViolation(commitOne, commitTwo, true) != null) {
+  throw new Error("source ancestry: ancestor was unexpectedly rejected");
+}
+if (sourceCommitAncestryViolation(commitOne, commitTwo, false) == null) {
+  throw new Error("source ancestry: rebased-away source was unexpectedly accepted");
+}
+console.log("release generation: source-ancestry rejection passed");
 
 // --- predecessor monotonicity (existing) ---
 expectAccepted(

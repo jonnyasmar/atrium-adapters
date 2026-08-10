@@ -18,6 +18,7 @@ import {
   contentVersionCouplingViolation,
   publishedTipGenerationViolation,
   releaseWriteDecision,
+  sourceCommitAncestryViolation,
 } from "./release-generation.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -54,6 +55,16 @@ function gitOptional(...gitArgs) {
     return null;
   }
 }
+
+const headCommit = git("rev-parse", "HEAD");
+const sourceCommitIsAncestor =
+  gitOptional("merge-base", "--is-ancestor", sourceCommit, headCommit) != null;
+const ancestryViolation = sourceCommitAncestryViolation(
+  sourceCommit,
+  headCommit,
+  sourceCommitIsAncestor,
+);
+if (ancestryViolation != null) fail(ancestryViolation);
 
 function fileDigest(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");

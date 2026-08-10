@@ -34,6 +34,11 @@ export function compareSemver(left, right) {
   return 0;
 }
 
+export function sourceCommitAncestryViolation(sourceCommit, headCommit, isAncestor) {
+  if (isAncestor) return null;
+  return `source commit ${sourceCommit} is not an ancestor of HEAD ${headCommit}; regenerate release metadata after rebasing`;
+}
+
 export function canonicalGenerationViolation(previous, current, sourceCommit) {
   if (previous == null || typeof previous !== "object") {
     return "canonical predecessor manifest is unavailable";
