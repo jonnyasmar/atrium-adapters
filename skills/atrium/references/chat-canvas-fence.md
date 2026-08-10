@@ -85,18 +85,35 @@ The user gets a card, picks a radio, optionally types a note, hits the button �
 |---|---|---|---|
 | Where it appears | in the transcript, where you wrote it | its own notepad pane | in the transcript |
 | Setup | none — type the fence | `note new --type canvas --open` | none |
-| Survives app restart | the spec re-renders; **the user's input is gone** | yes, spec and state both | yes — it's transcript text |
+| Survives app restart | yes — spec and the user's input both | yes — spec and state both | yes — it's transcript text |
 | Changing it later | emit a new one further down | `note canvas-patch <id>`, any turn | — |
 | Input back to you | `send_to_agent` → this pane | `send_to_agent` → any pane | none |
+| Survives closing the pane | no | yes | no |
+| Readable by another agent | no | yes — it's a file | no |
 | Costs the user | nothing | a pane and a file | nothing |
 
 **Reach for the fence** when the interaction belongs to *this turn*: a three-way choice you need answered before you continue, a config you want tweaked before you apply it, a plan you want approved, a small dashboard that assembles while you think out loud. Its whole value is that it costs the user nothing — no pane appears, no file lands in their notes, and it scrolls away with the rest of the conversation when it's spent.
 
-**Reach for a canvas note** when the artifact outlives the question: the user needs it open in a pane beside their work, they'll want it tomorrow, you'll mutate it across several turns with `canvas-patch`, another agent has to point at it, or the form is long enough that losing it to a restart would be rude.
+**Reach for a canvas note** when the artifact needs to outlive the conversation or leave it: the user wants it open in a pane beside their work, you'll mutate it across several turns with `canvas-patch`, another agent has to read it, or it belongs in their notes as a thing they keep. Durability alone is no longer the reason — a fence keeps what the user typed too — so the question is whether the artifact needs its own home.
 
 **Reach for plain markdown** for anything the user only reads. A table is a table. If nothing binds to state and nothing sends anything back, a canvas is a heavier surface with no payoff — write the markdown.
 
-The failure mode in each direction: a fence where a note belonged loses the user's work on the next restart; a note where a fence belonged litters their workspace with panes and files they have to clean up.
+The failure mode in each direction: a fence where a note belonged leaves the artifact stranded in a transcript nobody scrolls back to, and gone when the pane closes; a note where a fence belonged litters their workspace with panes and files they have to clean up.
+
+### Worked examples
+
+| Situation | Reach for | Why |
+|---|---|---|
+| "Three suites are failing — which do I chase first?" | **fence** | You need the answer before your next move; it's spent once you have it |
+| "Here's the migration config I'm about to apply — adjust anything?" | **fence** | Approval gate on this turn's action |
+| "Which of these 12 files should I include?" | **fence** | Long, but still a this-turn decision — use a `Select` or checkboxes, not a wide rail |
+| Release checklist the user works through over an afternoon | **note** | Wants it beside their editor, and it outlives this conversation |
+| Status board you update every turn as a job progresses | **note** | Mutated across turns — that's `canvas-patch`, which a fence has no equivalent for |
+| A form a second agent needs to read the answers from | **note** | A fence's state is not a file; nothing else can read it |
+| Onboarding journal the user returns to tomorrow | **note** | Should survive closing the pane |
+| "Here's the diff summary" / a comparison table | **markdown** | Nothing binds, nothing submits |
+| Progress you're narrating as you work | **markdown** | Prose is lighter and doesn't imply an interaction |
+| A "form" with one yes/no question | **markdown** | Just ask. A canvas for a question you could type is ceremony |
 
 ## Write it so it streams well
 
@@ -119,15 +136,17 @@ A canvas in a transcript renders at whatever width the pane happens to be, and t
 - **Two columns of `Grid` is a lot in a transcript.** A chat pane is often half the width of a notepad pane. Prefer a single `Stack` unless the two halves are genuinely independent.
 - Long free text belongs in a `Textarea`, which wraps, rather than a row of chips or badges, which don't.
 
-## State is ephemeral
+## What happens to the user's input
 
-Everything the user types into an inline canvas lives in memory, keyed to the message that produced it.
+It is kept. Whatever they type into an inline canvas is saved against the message that produced it, so they can fill a form at their own pace instead of racing to submit it.
 
-- It survives scrolling away and back.
-- It is **lost on app restart**, and it is never written to disk. The canvas itself returns — your message text is journaled — but it returns empty.
-- There is no `state.json`, no history, no file to read back — nothing to hand another agent.
+- Survives scrolling away and back, and switching rooms.
+- Survives quitting and reopening the app — the canvas comes back with their answers in it.
+- **Does not** survive closing the pane. The transcript is the artifact's home; close it and the answers go with it.
+- Only the most recent canvases in a pane are kept, so a very long session eventually drops the oldest.
+- Still not a file: there's no `state.json`, no history, and nothing another agent can read. If the answers need to leave this conversation, that's a canvas note.
 
-**Never tell the user their input is saved.** If it has to outlive the session, that's a canvas note.
+You can tell the user their input is safe. Don't tell them it's permanent — closing the pane clears it.
 
 ## Actions
 
@@ -163,7 +182,7 @@ A spec whose JSON never parses is a different failure: you get an error in the a
 
 ## What NOT to do
 
-- **Don't use a fence for anything the user needs later.** It dies with the transcript — use a note.
+- **Don't use a fence for an artifact that needs its own home.** The answers are kept, but they live in this transcript and go when the pane closes — if the user should be able to open it tomorrow, or another agent has to read it, use a note.
 - **Don't emit patch ops in a canvas fence.** The body is a whole spec. `canvas-patch` is the notes path.
 - **Don't try to send one to another agent.** `agent message` bodies are framed, not rendered.
 - **Don't re-emit a whole canvas each turn to update it.** A fence belongs to the message that produced it; a "new version" is a second artifact further down the transcript. Iterating on one live surface is what a note plus `canvas-patch` is for.
