@@ -110,6 +110,15 @@ The transcript closes your unterminated fence and repairs the half-written JSON 
 
 Once the JSON parses cleanly the strict parser takes over — the same one notes use. A dangling child reference in a *finished* spec is your bug and surfaces as a missing element; it is not repaired for you.
 
+## Pick controls that survive a narrow column
+
+A canvas in a transcript renders at whatever width the pane happens to be, and the user can drag that width at any time. You don't know it and can't query it, so choose components that degrade rather than ones that assume room.
+
+- **`ToggleGroup` is for 2–4 short options.** A segmented control puts every option on one rail, so it is the most width-hungry thing in the catalog. More options, or labels longer than a word or two, want a `Select` — one control, constant width, no matter how many choices.
+- **Same for `Tabs`:** a handful of short labels. Long tab names in a side-by-side `Grid` column is the case that bites.
+- **Two columns of `Grid` is a lot in a transcript.** A chat pane is often half the width of a notepad pane. Prefer a single `Stack` unless the two halves are genuinely independent.
+- Long free text belongs in a `Textarea`, which wraps, rather than a row of chips or badges, which don't.
+
 ## State is ephemeral
 
 Everything the user types into an inline canvas lives in memory, keyed to the message that produced it.
