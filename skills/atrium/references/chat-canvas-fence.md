@@ -1,6 +1,6 @@
 # Inline canvas fences in chat
 
-Read this when you want the user to *do* something — pick, confirm, fill in, adjust — without leaving the conversation. You emit a fenced code block tagged `canvas` in an ordinary reply, and the chat transcript renders it in place as a live, interactive canvas that builds as you type it.
+Read this when you want the user to *do* something — pick, confirm, fill in, adjust — or to *see* something plain text can't shape well, without either of you leaving the conversation. You emit a fenced code block tagged `canvas` in an ordinary reply, and the chat transcript renders it in place as a live, interactive canvas that builds as you type it.
 
 It is **not** a tool call and **not** a note. No CLI invocation, no file on disk, no extra pane. It is text you write, rendered where you wrote it.
 
@@ -92,11 +92,17 @@ The user gets a card, picks a radio, optionally types a note, hits the button �
 | Readable by another agent | no | yes — it's a file | no |
 | Costs the user | nothing | a pane and a file | nothing |
 
-**Reach for the fence** when the interaction belongs to *this turn*: a three-way choice you need answered before you continue, a config you want tweaked before you apply it, a plan you want approved, a small dashboard that assembles while you think out loud. Its whole value is that it costs the user nothing — no pane appears, no file lands in their notes, and it scrolls away with the rest of the conversation when it's spent.
+**Reach for the fence** for either of two reasons.
+
+*To get something back:* the interaction belongs to this turn — a three-way choice you need answered before you continue, a config you want tweaked before you apply it, a plan you want approved.
+
+*To show something:* the information has a shape markdown can't carry. Markdown is one column of text, so it has no chart, it can't put two things side by side, and it reveals every section at once. A canvas can. Reach for it when the reader would **lose** something otherwise — the trend they'd have to reconstruct from a column of numbers, the two screenshots they'd have to scroll between to compare, the six sections they'd have to wade through to reach the one that matters. If the only gain is that it looks nicer, that's not a reason.
+
+Either way its value is that it costs the user nothing — no pane appears, no file lands in their notes, and it scrolls away with the rest of the conversation when it's spent.
 
 **Reach for a canvas note** when the artifact needs to outlive the conversation or leave it: the user wants it open in a pane beside their work, you'll mutate it across several turns with `canvas-patch`, another agent has to read it, or it belongs in their notes as a thing they keep. Durability alone is no longer the reason — a fence keeps what the user typed too — so the question is whether the artifact needs its own home.
 
-**Reach for plain markdown** for anything the user only reads. A table is a table. If nothing binds to state and nothing sends anything back, a canvas is a heavier surface with no payoff — write the markdown.
+**Reach for plain markdown** when markdown can already carry the shape — prose, a plain table, a code block, a single image. Read-only is *not* the test: a chart is read-only and still belongs in a canvas. The test is whether anything is lost in the translation. A `Card` full of `Text` is markdown with extra steps.
 
 The failure mode in each direction: a fence where a note belonged leaves the artifact stranded in a transcript nobody scrolls back to, and gone when the pane closes; a note where a fence belonged litters their workspace with panes and files they have to clean up.
 
@@ -111,8 +117,13 @@ The failure mode in each direction: a fence where a note belonged leaves the art
 | Status board you update every turn as a job progresses | **note** | Mutated across turns — that's `canvas-patch`, which a fence has no equivalent for |
 | A form a second agent needs to read the answers from | **note** | A fence's state is not a file; nothing else can read it |
 | Onboarding journal the user returns to tomorrow | **note** | Should survive closing the pane |
-| "Here's the diff summary" / a comparison table | **markdown** | Nothing binds, nothing submits |
+| Test pass-rate over the last 20 runs | **fence** | A trend is a chart; markdown would make them reconstruct it from numbers |
+| Before/after screenshots of a UI change | **fence** | Side by side is the whole point, and markdown is one column |
+| Bundle-size breakdown: 4 metrics + a table of the movers | **fence** | Magnitude at a glance, and `Metric` deltas markdown can't express |
+| A long audit: 6 findings, they'll care about one | **fence** | Collapsibles let them reach it; markdown dumps all six |
+| "Here's the diff summary" / a plain comparison table | **markdown** | A table is a table — markdown carries it losslessly |
 | Progress you're narrating as you work | **markdown** | Prose is lighter and doesn't imply an interaction |
+| One screenshot with a caption | **markdown** | Nothing to compare; a canvas adds a frame and no meaning |
 | A "form" with one yes/no question | **markdown** | Just ask. A canvas for a question you could type is ceremony |
 
 ## Write it so it streams well
@@ -187,7 +198,7 @@ A spec whose JSON never parses is a different failure: you get an error in the a
 - **Don't try to send one to another agent.** `agent message` bodies are framed, not rendered.
 - **Don't re-emit a whole canvas each turn to update it.** A fence belongs to the message that produced it; a "new version" is a second artifact further down the transcript. Iterating on one live surface is what a note plus `canvas-patch` is for.
 - **Don't restate the canvas in prose.** The artifact is the message. One sentence of setup, then let them use it.
-- **Don't reach for it for static content.** A `Card` full of `Text` is markdown with extra steps.
+- **Don't reach for it to decorate.** Static content isn't disqualifying — a chart or a side-by-side is static and belongs here — but wrapping prose in a `Card` is markdown with extra steps. Ask what the reader would lose if you wrote it as markdown; if the answer is "nothing, it'd just look plainer", write the markdown.
 
 ## Propagation note
 
