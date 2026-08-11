@@ -3,22 +3,31 @@
     {
       "key": "model",
       "label": "model",
-      "description": "Override the default model (e.g. claude-sonnet-4)",
+      "description": "Model id as provider/model (e.g. anthropic/claude-opus-5); supports an optional :thinking suffix (e.g. anthropic/claude-opus-5:high)",
       "type": "text",
       "default": "",
       "choices": [
-        "opus",
-        "sonnet",
-        "haiku",
-        "gpt-5.5",
-        "gemini-3-pro",
-        "grok-build"
+        "anthropic/claude-opus-5",
+        "anthropic/claude-sonnet-5",
+        "anthropic/claude-haiku-4-5",
+        "openai/gpt-5.6-sol",
+        "openai/gpt-5.6-terra",
+        "openai/gpt-5.5",
+        "openai/gpt-5.4-mini",
+        "google/gemini-3.1-pro-preview",
+        "google/gemini-3.6-flash",
+        "xai/grok-4.5",
+        "deepseek/deepseek-v4-pro",
+        "deepseek/deepseek-v4-flash",
+        "zai/glm-5.2",
+        "moonshotai/kimi-k3",
+        "nvidia/nemotron-3-super-120b-a12b"
       ]
     },
     {
       "key": "provider",
       "label": "provider",
-      "description": "Override the LLM provider (anthropic, openai, gemini, ...)",
+      "description": "Override the LLM provider (anthropic, openai, google, ...). Not needed when the model choice already includes a provider.",
       "type": "text",
       "default": ""
     },
@@ -31,7 +40,13 @@
     }
   ],
   "suggestedFlags": [
-    { "flag": "--provider", "description": "Model provider" },
-    { "flag": "--cwd", "description": "Working directory" }
+    {
+      "flag": "--provider",
+      "description": "Model provider"
+    },
+    {
+      "flag": "--cwd",
+      "description": "Working directory"
+    }
   ]
 }

@@ -5,7 +5,7 @@
   "description": "Nous Research's tool-calling AI agent",
   "accent": "#e0a32e",
   "binary": "hermes",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "updateCommand": [
     "hermes",
     "update"
@@ -83,7 +83,7 @@
     ],
     "capabilities": {
       "resume": true,
-      "setModel": false,
+      "setModel": true,
       "thinking": true,
       "permissionCallback": true,
       "commandDiscovery": true,
