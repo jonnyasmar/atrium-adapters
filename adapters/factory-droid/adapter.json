@@ -5,7 +5,7 @@
   "description": "Factory Droid - AI coding agent powered by Factory AI",
   "accent": "#1d4ed8",
   "binary": "droid",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "updateCommand": [
     "droid",
     "update"
@@ -90,8 +90,14 @@
     }
   },
   "methods": {
+    "build_launch_command": {
+      "script": "build_launch_command.sh"
+    },
     "hooks": {
       "script": "hooks.sh"
+    },
+    "launcher_options": {
+      "static": "launcher_options.json"
     }
   }
 }

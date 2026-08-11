@@ -149,7 +149,7 @@
         "linux"
       ],
       "official": false,
-      "version": "1.0.1",
+      "version": "1.0.2",
       "minAppVersion": "0.156.0",
       "iconSvg": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><title>Factory Droid</title><rect x=\"5\" y=\"3.2\" width=\"3\" height=\"17.6\" rx=\"0.8\"/><rect x=\"5\" y=\"3.2\" width=\"13.6\" height=\"3\" rx=\"0.8\"/><rect x=\"5\" y=\"10.4\" width=\"9.6\" height=\"3\" rx=\"0.8\"/></svg>",
       "install": {
@@ -166,7 +166,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "752c2200777a681c611a461247dee57ee7a7ce528432fcd2ffb89b612541702d",
+      "contentSha256": "01eea6ceb0759352067380c6516f94cedbd75a9034bdf9d6a6fd411f9059eed5",
       "maxAppVersion": null
     },
     {
@@ -327,7 +327,7 @@
     {
       "name": "omp",
       "displayName": "Oh My Pi",
-      "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
+      "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
       "accent": "#f97316",
       "binary": "omp",
       "sdkVersion": 2,
