@@ -5,11 +5,13 @@
   "description": "Cursor's agent CLI",
   "accent": "#6366f1",
   "binary": "cursor-agent",
-  "version": "0.4.14",
+  "version": "0.5.0",
   "updateCommand": [
     "cursor-agent",
     "update"
   ],
+  "icon": "icon.svg",
+  "skillInstallPath": "~/.cursor/skills/atrium/SKILL.md",
   "skillsDir": "~/.cursor/skills",
   "binaryDiscovery": {
     "commands": [
@@ -30,6 +32,10 @@
     },
     "linux": {
       "cmd": "curl https://cursor.com/install -fsS | bash",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "irm https://cursor.com/install.ps1 | iex",
       "postInstallAuth": true
     }
   },
@@ -52,6 +58,9 @@
     },
     "list_recent_sessions": {
       "script": "list_recent_sessions.sh"
+    },
+    "check_update": {
+      "script": "check_update.sh"
     },
     "hooks": {
       "script": "hooks.sh"
@@ -92,14 +101,14 @@
       "--disable-auto-update"
     ],
     "capabilities": {
-      "resume": false,
+      "resume": true,
       "setModel": true,
       "thinking": true,
       "permissionCallback": true,
       "commandDiscovery": true,
-      "planMode": false,
+      "planMode": true,
       "contextUsage": false,
-      "imageInput": false,
+      "imageInput": true,
       "checkpointing": false,
       "subagentEvents": true,
       "steering": false,

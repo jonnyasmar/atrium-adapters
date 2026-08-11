@@ -3,7 +3,14 @@
     {
       "key": "yolo",
       "label": "👮‍♂️",
-      "description": "--force",
+      "description": "--force (YOLO / run everything)",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "autoReview",
+      "label": "auto",
+      "description": "--auto-review (Smart Auto)",
       "type": "toggle",
       "default": false
     },
@@ -15,38 +22,71 @@
       "default": false
     },
     {
+      "key": "approveMcps",
+      "label": "mcps",
+      "description": "--approve-mcps",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "trust",
+      "label": "trust",
+      "description": "--trust workspace",
+      "type": "toggle",
+      "default": false
+    },
+    {
+      "key": "sandbox",
+      "label": "sandbox",
+      "description": "--sandbox enabled|disabled",
+      "type": "select",
+      "default": "",
+      "choices": [
+        { "value": "", "label": "Default" },
+        { "value": "enabled", "label": "Enabled" },
+        { "value": "disabled", "label": "Disabled" }
+      ]
+    },
+    {
       "key": "model",
       "label": "model",
-      "description": "Model id",
+      "description": "Model id (from cursor-agent models)",
       "type": "select",
       "default": "",
       "choices": [
         { "value": "auto", "label": "Auto" },
         { "value": "composer-2.5", "label": "Composer 2.5" },
         { "value": "composer-2.5-fast", "label": "Composer 2.5 Fast" },
-        { "value": "claude-opus-4-8-max", "label": "Opus 4.8 (Max)" },
-        { "value": "claude-opus-4-8-xhigh", "label": "Opus 4.8 (xHigh)" },
-        { "value": "claude-opus-4-8-high", "label": "Opus 4.8 (High)" },
-        { "value": "claude-opus-4-8-medium", "label": "Opus 4.8 (Medium)" },
-        { "value": "claude-opus-4-8-low", "label": "Opus 4.8 (Low)" },
+        { "value": "claude-fable-5-thinking-high", "label": "Fable 5 Thinking" },
+        { "value": "claude-fable-5-high", "label": "Fable 5" },
+        { "value": "claude-opus-5-thinking-high", "label": "Opus 5 Thinking" },
+        { "value": "claude-opus-5-high", "label": "Opus 5" },
+        { "value": "claude-sonnet-5-thinking-high", "label": "Sonnet 5 Thinking" },
+        { "value": "claude-sonnet-5-high", "label": "Sonnet 5" },
         { "value": "claude-opus-4-8-thinking-high", "label": "Opus 4.8 Thinking" },
+        { "value": "claude-opus-4-8-high", "label": "Opus 4.8" },
+        { "value": "claude-opus-4-8-max", "label": "Opus 4.8 Max" },
         { "value": "claude-4.6-sonnet-medium", "label": "Sonnet 4.6" },
         { "value": "claude-4.6-sonnet-medium-thinking", "label": "Sonnet 4.6 Thinking" },
-        { "value": "claude-opus-4-7-high", "label": "Opus 4.7 (High)" },
+        { "value": "claude-opus-4-7-high", "label": "Opus 4.7" },
         { "value": "claude-4.5-sonnet", "label": "Sonnet 4.5" },
-        { "value": "gpt-5.5-high", "label": "GPT-5.5 (High)" },
-        { "value": "gpt-5.5-medium", "label": "GPT-5.5 (Medium)" },
-        { "value": "gpt-5.5-low", "label": "GPT-5.5 (Low)" },
-        { "value": "gpt-5.4-high", "label": "GPT-5.4 (High)" },
-        { "value": "gpt-5.3-codex-high", "label": "GPT-5.3 Codex (High)" },
-        { "value": "gpt-5.2-codex", "label": "GPT-5.2 Codex" },
-        { "value": "gpt-5.1-codex-max", "label": "GPT-5.1 Codex Max" },
+        { "value": "gpt-5.6-sol-high", "label": "GPT-5.6 Sol High" },
+        { "value": "gpt-5.6-sol-xhigh", "label": "GPT-5.6 Sol xHigh" },
+        { "value": "gpt-5.6-luna-high", "label": "GPT-5.6 Luna High" },
+        { "value": "gpt-5.6-terra-high", "label": "GPT-5.6 Terra High" },
+        { "value": "gpt-5.5-high", "label": "GPT-5.5 High" },
+        { "value": "gpt-5.5-medium", "label": "GPT-5.5 Medium" },
+        { "value": "gpt-5.4-high", "label": "GPT-5.4 High" },
+        { "value": "gpt-5.3-codex-high", "label": "Codex 5.3 High" },
+        { "value": "gpt-5.3-codex-xhigh", "label": "Codex 5.3 xHigh" },
+        { "value": "cursor-grok-4.5-high", "label": "Grok 4.5 High" },
+        { "value": "cursor-grok-4.5-medium", "label": "Grok 4.5 Medium" },
+        { "value": "kimi-k3-high", "label": "Kimi K3 High" },
+        { "value": "kimi-k2.7-code", "label": "Kimi K2.7 Code" },
         { "value": "gemini-3.1-pro", "label": "Gemini 3.1 Pro" },
+        { "value": "gemini-3.6-flash-high", "label": "Gemini 3.6 Flash" },
         { "value": "gemini-3.5-flash", "label": "Gemini 3.5 Flash" },
-        { "value": "gemini-3-flash", "label": "Gemini 3 Flash" },
-        { "value": "grok-4.3", "label": "Grok 4.3" },
-        { "value": "grok-build-0.1", "label": "Grok Build 0.1" },
-        { "value": "kimi-k2.5", "label": "Kimi K2.5" }
+        { "value": "glm-5.2-high", "label": "GLM 5.2 High" }
       ]
     },
     {
@@ -58,7 +98,14 @@
     }
   ],
   "suggestedFlags": [
+    { "flag": "--force", "description": "YOLO — force-allow commands (alias: --yolo)" },
+    { "flag": "--yolo", "description": "Alias for --force" },
+    { "flag": "--auto-review", "description": "Smart Auto — classifier auto-runs safe tools" },
     { "flag": "--mode", "description": "Execution mode", "values": ["plan", "ask"] },
+    { "flag": "--plan", "description": "Start in plan mode (shorthand for --mode=plan)" },
+    { "flag": "--sandbox", "description": "Sandbox mode", "values": ["enabled", "disabled"] },
+    { "flag": "--approve-mcps", "description": "Auto-approve all MCP servers" },
+    { "flag": "--trust", "description": "Trust the workspace without prompting" },
     { "flag": "--print", "description": "Print responses (for scripts)" },
     {
       "flag": "--output-format",
@@ -70,10 +117,10 @@
     { "flag": "--workspace", "description": "Workspace directory" },
     { "flag": "--worktree", "description": "Start in an isolated git worktree" },
     { "flag": "--worktree-base", "description": "Branch to base the worktree on" },
-    { "flag": "--trust", "description": "Trust the workspace without prompting" },
-    { "flag": "--approve-mcps", "description": "Auto-approve all MCP servers" },
     { "flag": "--api-key", "description": "API key for authentication" },
     { "flag": "--header", "description": "Custom header on agent requests" },
-    { "flag": "--stream-partial-output", "description": "Stream partial text deltas" }
+    { "flag": "--stream-partial-output", "description": "Stream partial text deltas" },
+    { "flag": "--model", "description": "Model id (or parameterized form with [effort=…])" },
+    { "flag": "--list-models", "description": "List available models and exit" }
   ]
 }

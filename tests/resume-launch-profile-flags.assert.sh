@@ -40,7 +40,7 @@ assert_command \
 assert_command \
   "cursor-agent" \
   '{"yolo":true,"plan":true,"model":"cursor-model","extraArgs":"--foo bar"}' \
-  '["cursor-agent","--force","--plan","--model","cursor-model","--foo","bar","--resume","sess-123"]'
+  '["cursor-agent","--disable-auto-update","--force","--plan","--model","cursor-model","--foo","bar","--resume","sess-123"]'
 
 assert_command \
   "antigravity" \
