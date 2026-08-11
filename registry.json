@@ -261,7 +261,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "906214fcc2a87cf3209a0aa59d89b4aef32258066a4431a4118ecd06bdeaa9c8",
+      "contentSha256": "7a6797bb3856f58206a80be0abd95efc72e5e5f536386c341d7ed8e31d6a2c4d",
       "maxAppVersion": null
     },
     {
@@ -321,13 +321,13 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "884afa1622543c726d359d0ad994465b29a2efbeb88157b07805305581750a3d",
+      "contentSha256": "35cb2e65f7695f71c5b573f5e7977046012514dd0a5a867208f5f498163e4c26",
       "maxAppVersion": null
     },
     {
       "name": "omp",
       "displayName": "Oh My Pi",
-      "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
+      "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
       "accent": "#f97316",
       "binary": "omp",
       "sdkVersion": 2,
@@ -359,7 +359,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "0467cecae7bba6be3082316da36111ade42668f2",
+    "commit": "0f0ee82669aaa8e0f105bc0e3c437f76ae626097",
     "sharedSha256": "3881d0d58b95d5161cea37e08047167a37523a1bf523314a1b1809a16263fd6b",
     "schemaSha256": "c4d7774442208a390fc9c2ebff0dceb3c0ee883bee6b7d6b45b9cbb84833dbe0",
     "methodsSchemaSha256": "01e5b26e90d4c4c54143d162542a44a20f9c9331a686b7f56e3ee2519b181a46"
