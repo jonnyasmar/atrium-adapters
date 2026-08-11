@@ -1,0 +1,97 @@
+{
+  "sdkVersion": 2,
+  "name": "factory-droid",
+  "displayName": "Factory Droid",
+  "description": "Factory Droid - AI coding agent powered by Factory AI",
+  "accent": "#1d4ed8",
+  "binary": "droid",
+  "version": "1.0.1",
+  "updateCommand": [
+    "droid",
+    "update"
+  ],
+  "icon": "icon.svg",
+  "skillInstallPath": "~/.factory/skills/atrium/SKILL.md",
+  "skillsDir": "~/.factory/skills",
+  "binaryDiscovery": {
+    "commands": [
+      "droid"
+    ],
+    "wellKnownPaths": [
+      "~/.local/bin/droid",
+      "/usr/local/bin/droid",
+      "/opt/homebrew/bin/droid"
+    ]
+  },
+  "install": {
+    "macos": {
+      "cmd": "curl -fsSL https://app.factory.ai/cli | sh",
+      "postInstallAuth": true
+    },
+    "linux": {
+      "cmd": "curl -fsSL https://app.factory.ai/cli | sh",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "irm https://app.factory.ai/cli/windows | iex",
+      "postInstallAuth": true
+    }
+  },
+  "hooks": {
+    "session-start": "atrium://hooks/factory-droid/session-start",
+    "session-end": "atrium://hooks/factory-droid/session-end",
+    "pre-tool-use": "atrium://hooks/factory-droid/pre-tool-use",
+    "post-tool-use": "atrium://hooks/factory-droid/post-tool-use",
+    "stop": "atrium://hooks/factory-droid/stop",
+    "user-prompt-submit": "atrium://hooks/factory-droid/user-prompt-submit",
+    "notification": "atrium://hooks/factory-droid/notification",
+    "subagent-stop": "atrium://hooks/factory-droid/subagent-stop"
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": [
+      "exec",
+      "--output-format",
+      "acp"
+    ],
+    "launchEnv": {
+      "DROID_DISABLE_AUTO_UPDATE": "true",
+      "FACTORY_DROID_AUTO_UPDATE_ENABLED": "false"
+    },
+    "capabilities": {
+      "resume": false,
+      "setModel": true,
+      "thinking": true,
+      "permissionCallback": false,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": false,
+      "imageInput": true,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
+    }
+  },
+  "hookEnvelopes": {
+    "sessionStartManifest": {
+      "kind": "identity"
+    },
+    "userPromptSubmit": {
+      "kind": "hookSpecificOutput",
+      "hookEventName": "UserPromptSubmit",
+      "includeSystemMessage": false
+    },
+    "preToolUse": {
+      "kind": "none"
+    },
+    "postToolUse": {
+      "kind": "none"
+    }
+  },
+  "methods": {
+    "hooks": {
+      "script": "hooks.sh"
+    }
+  }
+}

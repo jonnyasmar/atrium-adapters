@@ -138,6 +138,38 @@
       "maxAppVersion": null
     },
     {
+      "name": "factory-droid",
+      "displayName": "Factory Droid",
+      "description": "AI coding agent by Factory AI",
+      "accent": "#1d4ed8",
+      "binary": "droid",
+      "sdkVersion": 2,
+      "platforms": [
+        "macos",
+        "linux"
+      ],
+      "official": false,
+      "version": "1.0.1",
+      "minAppVersion": "0.156.0",
+      "iconSvg": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><title>Factory Droid</title><rect x=\"5\" y=\"3.2\" width=\"3\" height=\"17.6\" rx=\"0.8\"/><rect x=\"5\" y=\"3.2\" width=\"13.6\" height=\"3\" rx=\"0.8\"/><rect x=\"5\" y=\"10.4\" width=\"9.6\" height=\"3\" rx=\"0.8\"/></svg>",
+      "install": {
+        "macos": {
+          "cmd": "curl -fsSL https://app.factory.ai/cli | sh",
+          "postInstallAuth": true
+        },
+        "linux": {
+          "cmd": "curl -fsSL https://app.factory.ai/cli | sh",
+          "postInstallAuth": true
+        },
+        "windows": {
+          "cmd": "irm https://app.factory.ai/cli/windows | iex",
+          "postInstallAuth": true
+        }
+      },
+      "contentSha256": "752c2200777a681c611a461247dee57ee7a7ce528432fcd2ffb89b612541702d",
+      "maxAppVersion": null
+    },
+    {
       "name": "kimi",
       "displayName": "Kimi Code",
       "description": "Moonshot AI's terminal coding agent",
@@ -295,7 +327,7 @@
     {
       "name": "omp",
       "displayName": "Oh My Pi",
-      "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
+      "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
       "accent": "#f97316",
       "binary": "omp",
       "sdkVersion": 2,
