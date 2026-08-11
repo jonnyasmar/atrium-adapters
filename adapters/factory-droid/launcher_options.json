@@ -1,0 +1,227 @@
+{
+  "options": [
+    {
+      "key": "model",
+      "label": "Model",
+      "description": "Session model \u2014 sent to the agent via ACP session/set_model after the chat pane opens",
+      "type": "select",
+      "default": "auto",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Auto (default)"
+        },
+        {
+          "value": "claude-opus-5",
+          "label": "Opus 5"
+        },
+        {
+          "value": "claude-opus-5-fast",
+          "label": "Opus 5 Fast Mode"
+        },
+        {
+          "value": "claude-opus-4-8",
+          "label": "Opus 4.8"
+        },
+        {
+          "value": "claude-opus-4-8-fast",
+          "label": "Opus 4.8 Fast Mode"
+        },
+        {
+          "value": "claude-opus-4-7",
+          "label": "Opus 4.7"
+        },
+        {
+          "value": "claude-opus-4-6",
+          "label": "Opus 4.6"
+        },
+        {
+          "value": "claude-opus-4-5-20251101",
+          "label": "Opus 4.5"
+        },
+        {
+          "value": "claude-sonnet-5",
+          "label": "Sonnet 5"
+        },
+        {
+          "value": "claude-sonnet-4-6",
+          "label": "Sonnet 4.6"
+        },
+        {
+          "value": "claude-sonnet-4-5-20250929",
+          "label": "Sonnet 4.5"
+        },
+        {
+          "value": "claude-haiku-4-5-20251001",
+          "label": "Haiku 4.5"
+        },
+        {
+          "value": "claude-fable-5",
+          "label": "Fable 5"
+        },
+        {
+          "value": "gpt-5.6-sol",
+          "label": "GPT-5.6 Sol"
+        },
+        {
+          "value": "gpt-5.6-terra",
+          "label": "GPT-5.6 Terra"
+        },
+        {
+          "value": "gpt-5.6-luna",
+          "label": "GPT-5.6 Luna"
+        },
+        {
+          "value": "gpt-5.5",
+          "label": "GPT-5.5"
+        },
+        {
+          "value": "gpt-5.5-fast",
+          "label": "GPT-5.5 Fast Mode"
+        },
+        {
+          "value": "gpt-5.5-pro",
+          "label": "GPT-5.5 Pro"
+        },
+        {
+          "value": "gpt-5.4",
+          "label": "GPT-5.4"
+        },
+        {
+          "value": "gpt-5.4-fast",
+          "label": "GPT-5.4 Fast Mode"
+        },
+        {
+          "value": "gpt-5.4-mini",
+          "label": "GPT-5.4 Mini"
+        },
+        {
+          "value": "gpt-5.3-codex",
+          "label": "GPT-5.3-Codex"
+        },
+        {
+          "value": "gpt-5.3-codex-fast",
+          "label": "GPT-5.3-Codex Fast Mode"
+        },
+        {
+          "value": "gpt-5.2",
+          "label": "GPT-5.2"
+        },
+        {
+          "value": "gemini-3.1-pro-preview",
+          "label": "Gemini 3.1 Pro"
+        },
+        {
+          "value": "gemini-3.6-flash",
+          "label": "Gemini 3.6 Flash"
+        },
+        {
+          "value": "gemini-3.5-flash",
+          "label": "Gemini 3.5 Flash"
+        },
+        {
+          "value": "gemini-3-flash-preview",
+          "label": "Gemini 3 Flash"
+        },
+        {
+          "value": "grok-4.5",
+          "label": "Grok 4.5"
+        },
+        {
+          "value": "kimi-k3",
+          "label": "Kimi K3 (Droid Core)"
+        },
+        {
+          "value": "kimi-k2.7-code",
+          "label": "Kimi K2.7 Code (Droid Core)"
+        },
+        {
+          "value": "kimi-k2.6",
+          "label": "Kimi K2.6 (Droid Core)"
+        },
+        {
+          "value": "glm-5.2",
+          "label": "GLM-5.2 (Droid Core)"
+        },
+        {
+          "value": "glm-5.2-fast",
+          "label": "GLM-5.2 Fast (Droid Core)"
+        },
+        {
+          "value": "deepseek-v4-flash-0731",
+          "label": "DeepSeek V4 Flash 0731 (Droid Core)"
+        },
+        {
+          "value": "deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro (Droid Core)"
+        },
+        {
+          "value": "minimax-m3",
+          "label": "MiniMax M3 (Droid Core)"
+        },
+        {
+          "value": "minimax-m2.7",
+          "label": "MiniMax M2.7 (Droid Core)"
+        },
+        {
+          "value": "minimax-m2.5",
+          "label": "MiniMax M2.5 (Droid Core)"
+        },
+        {
+          "value": "nemotron-3-ultra",
+          "label": "Nemotron 3 Ultra (Droid Core)"
+        },
+        {
+          "value": "inkling",
+          "label": "Inkling (Droid Core)"
+        },
+        {
+          "value": "custom:MTPLX-0",
+          "label": "MTPLX"
+        },
+        {
+          "value": "custom:DS4-Flash-(4003)-0",
+          "label": "DS4 (4003)"
+        }
+      ]
+    },
+    {
+      "key": "effort",
+      "label": "reasoning",
+      "description": "Reasoning effort (--reasoning-effort)",
+      "type": "select",
+      "default": "",
+      "choices": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    {
+      "key": "extraArgs",
+      "label": "args",
+      "description": "Additional CLI arguments",
+      "type": "text",
+      "default": ""
+    }
+  ],
+  "suggestedFlags": [
+    {
+      "flag": "-m",
+      "description": "Model ID to use (default: claude-opus-5)"
+    },
+    {
+      "flag": "-r",
+      "description": "Reasoning effort (defaults per model)",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    {
+      "flag": "--cwd",
+      "description": "Working directory"
+    }
+  ]
+}
