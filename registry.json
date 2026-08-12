@@ -140,7 +140,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "d343b72d4e629aa0fdbf64321c5e817929275f8f8d9dd9514cec5d83a6775ff7"
+      "contentSha256": "c659ece68a0c957ed7420f9b991c50310c6eb23c86d9af562ee43c8b829ee9ef"
     },
     {
       "name": "kimi",
@@ -267,7 +267,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "bc72f10392979980e4d9de2c3fe767c2ade0d97dad000af89179785a51f12383"
+      "contentSha256": "93ef0982a04764908abe5436bb8f3533072443b6064aa94558ac683a60ccdd82"
     },
     {
       "name": "hermes",
@@ -332,7 +332,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "5ad593971e083d89c07e466eeb40dac255904f31",
+    "commit": "f305fb9def42607495d17208f0928b0eff8b6722",
     "sharedSha256": "3881d0d58b95d5161cea37e08047167a37523a1bf523314a1b1809a16263fd6b",
     "schemaSha256": "c4d7774442208a390fc9c2ebff0dceb3c0ee883bee6b7d6b45b9cbb84833dbe0",
     "methodsSchemaSha256": "01e5b26e90d4c4c54143d162542a44a20f9c9331a686b7f56e3ee2519b181a46"
