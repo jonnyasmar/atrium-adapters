@@ -15,7 +15,7 @@ jq -e '
   and .methods.check_update.script == "check_update.sh"
   and .icon == "icon.svg"
   and .skillInstallPath == "~/.cursor/skills/atrium/SKILL.md"
-  and .version == "0.5.0"
+  and .version == "0.5.1"
 ' "$ADAPTER_DIR/adapter.json" >/dev/null
 
 [[ -f "$ADAPTER_DIR/icon.svg" ]] || {
@@ -77,6 +77,7 @@ jq -e '
     and (map(select(.key == "model" and .type == "select" and (.choices | length >= 20))) | length == 1)
     and ([.[] | select(.key == "model") | .choices[].value] | index("claude-opus-5-high") != null)
     and ([.[] | select(.key == "model") | .choices[].value] | index("grok-4.3") == null)
+    and ([.[] | select(.key == "model") | .choices[].value] | index("cursor-grok-4.6-high") != null)
     and ([.[] | select(.key == "model") | .choices[].value] | index("cursor-grok-4.5-high") != null)
 ' "$ADAPTER_DIR/launcher_options.json" >/dev/null
 
