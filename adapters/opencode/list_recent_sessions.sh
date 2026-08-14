@@ -102,6 +102,8 @@ for proj_dir in candidate_dirs:
         sid = data.get("id") or os.path.splitext(os.path.basename(path))[0]
         if not sid:
             continue
+        if data.get("parentID") or data.get("parentId") or data.get("parent_id"):
+            continue
         title = data.get("title") or data.get("name")
         time_block = data.get("time") or {}
         updated = time_block.get("updated") or data.get("updated") or time_block.get("created") or data.get("created")
