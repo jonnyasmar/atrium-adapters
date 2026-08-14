@@ -10,70 +10,65 @@ set -euo pipefail
 
 CWD="${1:?Usage: list_recent_sessions.sh <cwd>}"
 
-# URL-encode the cwd path the way grok does: slashes become %2F.
-ENCODED="$(printf '%s' "$CWD" | perl -MURI::Escape -e 'print uri_escape(<STDIN>, "^A-Za-z0-9");' 2>/dev/null)"
-if [ -z "$ENCODED" ]; then
-  # Fallback if URI::Escape unavailable: minimal manual encoding (slash → %2F).
-  ENCODED="${CWD//\//%2F}"
-fi
+CWD="$CWD" perl -e '
+sub iso_from_epoch {
+  my ($second, $minute, $hour, $day, $month, $year) = gmtime($_[0]);
+  return sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ", $year + 1900, $month + 1, $day, $hour, $minute, $second);
+}
 
-PROJECT_DIR="${HOME}/.grok/sessions/${ENCODED}"
+my $cwd = $ENV{CWD} // "/";
+my $encoded = join "", map {
+  my $char = chr($_);
+  $char =~ /[A-Za-z0-9]/ ? $char : sprintf("%%%02X", $_)
+} unpack("C*", $cwd);
+my $project_dir = ($ENV{HOME} // "") . "/.grok/sessions/$encoded";
+opendir my $dir, $project_dir or do {
+  print "{\"sessions\": []}\n";
+  exit 0;
+};
 
-if [ ! -d "$PROJECT_DIR" ]; then
-  echo '{"sessions": []}'
-  exit 0
-fi
+my @sessions;
+for my $entry (readdir $dir) {
+  next if $entry eq "." || $entry eq "..";
+  my $filepath = "$project_dir/$entry/summary.json";
+  next unless -f $filepath;
+  open my $fh, "<", $filepath or next;
+  local $/;
+  my $blob = <$fh>;
+  close $fh;
 
-# Find session dirs, sort by mtime of summary.json, take top 20.
-TOP="$(
-  perl -e '
-    for my $path (@ARGV) {
-      next unless -f $path;
-      if (open my $fh, "<", $path) {
-        local $/;
-        my $blob = <$fh>;
-        close $fh;
-        my ($kind) = $blob =~ /"session_kind"\s*:\s*"([^"]+)"/;
-        my ($parent_id) = $blob =~ /"parent_session_id"\s*:\s*"([^"]+)"/;
-        next if (defined($kind) && ($kind eq "subagent" || $kind eq "subagent_resume"))
-          || (defined($parent_id) && $parent_id ne "");
-      }
-      my $mtime = (stat($path))[9] // next;
-      print "$mtime $path\n";
-    }
-  ' "$PROJECT_DIR"/*/summary.json 2>/dev/null | sort -rn | head -20
-)" || true
-[ -z "$TOP" ] && { echo '{"sessions": []}'; exit 0; }
+  my ($kind) = $blob =~ /"session_kind"\s*:\s*"([^"]+)"/;
+  my ($parent_id) = $blob =~ /"parent_session_id"\s*:\s*"([^"]+)"/;
+  next if (defined($kind) && ($kind eq "subagent" || $kind eq "subagent_resume"))
+    || (defined($parent_id) && $parent_id ne "");
+  my $mtime = (stat($filepath))[9] // next;
+  push @sessions, { filepath => $filepath, blob => $blob, mtime => $mtime };
+}
+closedir $dir;
+@sessions = sort { $b->{mtime} <=> $a->{mtime} } @sessions;
+splice @sessions, 20 if @sessions > 20;
 
-echo "$TOP" | CWD="$CWD" perl -e '
-use POSIX qw(strftime);
 my @items;
-while (<STDIN>) {
-  chomp;
-  my ($mtime, $filepath) = split / /, $_, 2;
-  next unless $filepath && -f $filepath;
+for my $session (@sessions) {
+  my $filepath = $session->{filepath};
+  my $blob = $session->{blob};
+  my $mtime = $session->{mtime};
 
   # session id from the parent dir name
   my ($sid) = $filepath =~ m{/([^/]+)/summary\.json$};
   $sid //= "unknown";
 
   my ($id_val, $cwd_val, $title, $last_active) = ("", "", "", "");
-
-  if (open my $fh, "<", $filepath) {
-    local $/;
-    my $blob = <$fh>;
-    close $fh;
-    # crude field extraction — avoids depending on jq inside perl
-    ($id_val) = $blob =~ /"id"\s*:\s*"([^"]+)"/;
-    ($cwd_val) = $blob =~ /"cwd"\s*:\s*"([^"]+)"/;
-    ($title) = $blob =~ /"generated_title"\s*:\s*"([^"]+)"/;
-    ($title) = $blob =~ /"session_summary"\s*:\s*"([^"]+)"/ unless $title;
-    ($last_active) = $blob =~ /"last_active_at"\s*:\s*"([^"]+)"/;
-    $last_active ||= ($blob =~ /"updated_at"\s*:\s*"([^"]+)"/)[0] // "";
-  }
+  # Crude field extraction avoids a JSON module startup penalty.
+  ($id_val) = $blob =~ /"id"\s*:\s*"([^"]+)"/;
+  ($cwd_val) = $blob =~ /"cwd"\s*:\s*"([^"]+)"/;
+  ($title) = $blob =~ /"generated_title"\s*:\s*"([^"]+)"/;
+  ($title) = $blob =~ /"session_summary"\s*:\s*"([^"]+)"/ unless $title;
+  ($last_active) = $blob =~ /"last_active_at"\s*:\s*"([^"]+)"/;
+  $last_active ||= ($blob =~ /"updated_at"\s*:\s*"([^"]+)"/)[0] // "";
 
   $id_val ||= $sid;
-  $cwd_val ||= $ENV{CWD} // "/";
+  $cwd_val ||= $cwd;
 
   my $name_val = $title;
   if ($name_val ne "") {
@@ -86,7 +81,7 @@ while (<STDIN>) {
   }
 
   # Prefer ISO from summary; fall back to mtime if missing.
-  my $iso = $last_active ne "" ? $last_active : strftime("%Y-%m-%dT%H:%M:%SZ", gmtime($mtime));
+  my $iso = $last_active ne "" ? $last_active : iso_from_epoch($mtime);
   my $n = $name_val eq "" ? "null" : "\"$name_val\"";
 
   # Escape cwd for JSON
