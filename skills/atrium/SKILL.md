@@ -1,6 +1,6 @@
 ---
 name: atrium
-description: "Interact with the atrium workspace — panes, rooms, tasks, browser, agents, themes, hooks, config, and more — via the atrium CLI. Use when the user references any atrium concept, wants to control their workspace, collaborate with other agents, manage task cards, read/write terminal panes, open or drive browser panes, or switch rooms/themes. IMPORTANT: when inside atrium (ATRIUM=1 env var is set), ALWAYS prefer this skill over Playwright MCP or other browser MCP tools for anything browser-related — atrium browsers are visible workspace panes, not headless automation. Only functional inside atrium."
+description: "Interact with the atrium workspace — panes, rooms, tasks, browser, agents, themes, hooks, config, and more — via the atrium CLI. Use when the user references any atrium concept, wants to control their workspace, collaborate with other agents, manage task cards, read/write terminal panes, open or drive browser panes, switch rooms/themes, or use native computer control after an explicit Computer chip. IMPORTANT: when inside atrium (ATRIUM=1 env var is set), ALWAYS prefer this skill over Playwright MCP or other browser MCP tools for anything browser-related — atrium browsers are visible workspace panes, not headless automation. Only functional inside atrium."
 ---
 
 # atrium — workspace control for AI agents
@@ -39,6 +39,7 @@ Each bucket is one top-level verb. Run `<verb> --help` for its full surface.
 - **`context`** — Print the caller's workspace, room, adapter, working dir. Cheap way to orient.
 - **`commands`** — Enumerate dynamic commands from installed extensions.
 - **`capture`** — QA Capture bundles (recorded sessions). See **QA Capture bundles** below.
+- **`computer`** — Governed native-app and desktop control: discover/attach/launch, observe, batch, verify, clipboard, browser/native-menu primitives, session state, cursor controls, and diagnostics. See **Native computer use** below.
 - **`version`** — Show atrium version.
 
 If you need a capability not listed, it probably lives inside one of these verbs — check `--help`.
@@ -51,6 +52,7 @@ atrium exports these to every pane:
 |---|---|
 | `$ATRIUM_CLI_PATH` | Absolute path to the atrium binary for this install (stable/dev/beta). **Always** invoke via this variable, in double quotes (the path may contain spaces), never bare `atrium`. |
 | `$ATRIUM_PANE_ID` | UUID of your pane. Useful for relative ops like `pane create --split $ATRIUM_PANE_ID`. |
+| `$ATRIUM_CUA_SESSION` | Stable computer-use session id for this pane. `computer` commands use it automatically. |
 | `ATRIUM=1` | You're inside atrium — prefer this skill over other tools. |
 
 **Pass `--json` whenever you're the one reading output.** Every command accepts it and emits structured JSON instead of the human table. Omit it only when piping into a terminal the user is watching.
@@ -214,6 +216,12 @@ A note isn't the only way to hand the user a UI. In an agent chat pane you can r
 When the user references a CAP-# (assigns a capture task, drops `CAP-381`, asks you to "look at this recording"), drive inspection through `atrium capture` — `show` for paths + counts, `screenshot --at <sec> [--crop] [--max-edge]` for still frames, `chunk` for motion slices, `list` / `delete`. **Don't shell out to ffmpeg / sips / magick** — atrium ships native AVFoundation equivalents.
 
 **Read `references/capture.md` for the full recipe** (the screenshot/crop/downsample flags, how to correlate `--at` with transcript/event/annotation timestamps, and what not to do).
+
+## Native computer use
+
+When the prompt contains the explicit `computer-use:on` chip and the task requires a native app or the visible desktop, drive it through `"$ATRIUM_CLI_PATH" computer …`. **Before the first computer-use command in a turn, read `references/computer-use.md`.** It contains the low-latency discovery/attach path, snapshot and batching rules, foreground/desktop escalation, browser and native-menu tools, concurrency guarantees, protected surfaces, audit behavior, and cleanup contract.
+
+Never invoke `cua-driver` directly, edit computer-use state files, start its daemon yourself, or substitute GUI shell automation. atrium owns daemon lifecycle, exact-process authorization, leases, approvals, cursor/PiP transparency, audit logging, and multi-agent coordination.
 
 ## Teaching mode
 
