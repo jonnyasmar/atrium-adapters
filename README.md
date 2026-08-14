@@ -214,7 +214,10 @@ The `args` field is reserved; set it to `null`.
 
 ### list_recent_sessions
 
-Lists recent sessions for a working directory, sorted by `lastActive` descending.
+Lists directly resumable, top-level sessions for a working directory, sorted by
+actual `lastActive` descending. Subagent and other parented child-session
+artifacts must not be returned; those belong under their parent session's task
+or transcript UI, not in an interactive resume picker.
 
 **Args:** `$1` = working directory (absolute path) | **Exit:** Always 0 (empty array if none)
 

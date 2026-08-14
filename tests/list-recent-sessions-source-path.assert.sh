@@ -45,6 +45,31 @@ assert_source_path() {
   fi
 }
 
+assert_session_ids() {
+  local label="$1"
+  local expected="$2"
+  shift 2
+
+  local output actual
+  if ! output="$("$@")"; then
+    printf '[FAIL] %s enumerator exited unsuccessfully\n' "$label"
+    FAILURES=$((FAILURES + 1))
+    return
+  fi
+
+  if ! actual="$(jq -cer '[.sessions[].id]' <<<"$output")"; then
+    printf '[FAIL] %s emitted invalid session JSON: %s\n' "$label" "$output"
+    FAILURES=$((FAILURES + 1))
+  elif [[ "$actual" != "$expected" ]]; then
+    printf '[FAIL] %s session ids mismatch\n' "$label"
+    printf '  expected: %s\n' "$expected"
+    printf '  actual:   %s\n' "$actual"
+    FAILURES=$((FAILURES + 1))
+  else
+    printf '[PASS] %s emits only directly resumable sessions\n' "$label"
+  fi
+}
+
 CLAUDE_PROJECT="-${WORKSPACE#/}"
 CLAUDE_PROJECT="${CLAUDE_PROJECT//\//-}"
 CLAUDE_PROJECT="${CLAUDE_PROJECT//./-}"
@@ -66,14 +91,40 @@ assert_source_path \
   "$CODEX_SOURCE" \
   env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/codex/list_recent_sessions.sh" "$WORKSPACE"
 
+CODEX_CREATED_LATER="${FIXTURE_HOME}/.codex/sessions/2026/07/22/rollout-created-later.jsonl"
+CODEX_CHILD="${FIXTURE_HOME}/.codex/sessions/2026/07/24/rollout-child.jsonl"
+CODEX_NESTED_CHILD="${FIXTURE_HOME}/.codex/sessions/2026/07/24/rollout-nested-child.jsonl"
+mkdir -p "$(dirname "$CODEX_CREATED_LATER")" "$(dirname "$CODEX_CHILD")"
+printf '{"type":"session_meta","timestamp":"2026-07-22T12:00:00Z","payload":{"id":"codex-created-later","cwd":"%s","timestamp":"2026-07-22T12:00:00Z"}}\n' \
+  "$WORKSPACE" >"$CODEX_CREATED_LATER"
+printf '{"type":"session_meta","timestamp":"2026-07-24T12:00:00Z","payload":{"id":"codex-child","cwd":"%s","timestamp":"2026-07-24T12:00:00Z","forked_from_id":"codex-session","parent_thread_id":"codex-session","thread_source":"subagent","source":{"subagent":{"thread_spawn":{"parent_thread_id":"codex-session"}}}}}\n' \
+  "$WORKSPACE" >"$CODEX_CHILD"
+printf '{"type":"session_meta","timestamp":"2026-07-24T13:00:00Z","payload":{"id":"codex-nested-child","cwd":"%s","source":{"subagent":{}}}}\n' \
+  "$WORKSPACE" >"$CODEX_NESTED_CHILD"
+touch -t 202607230000 "$CODEX_SOURCE"
+touch -t 202607220000 "$CODEX_CREATED_LATER"
+touch -t 202607240000 "$CODEX_CHILD"
+touch -t 202607240100 "$CODEX_NESTED_CHILD"
+assert_session_ids \
+  "codex rollout top-level filter and activity ordering" \
+  '["codex-session","codex-created-later"]' \
+  env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/codex/list_recent_sessions.sh" "$WORKSPACE"
+
 CODEX_DB_HOME="${FIXTURE_HOME}/codex-db-home"
 CODEX_DB="${CODEX_DB_HOME}/.codex/state_5.sqlite"
+CODEX_DB_ROLLOUT="${CODEX_DB_HOME}/.codex/rollout-db-session.jsonl"
 mkdir -p "$(dirname "$CODEX_DB")"
+printf '{"type":"session_meta","payload":{"id":"codex-db-session","cwd":"%s"}}\n' \
+  "$WORKSPACE" >"$CODEX_DB_ROLLOUT"
 sqlite3 "$CODEX_DB" \
-  "CREATE TABLE threads(id TEXT, cwd TEXT, title TEXT, updated_at INTEGER, first_user_message TEXT, archived INTEGER); INSERT INTO threads VALUES('codex-db-session', '${WORKSPACE}', 'fixture', 1784635200, '', 0);"
+  "CREATE TABLE threads(id TEXT, cwd TEXT, title TEXT, updated_at INTEGER, first_user_message TEXT, archived INTEGER, thread_source TEXT, rollout_path TEXT, recency_at_ms INTEGER); INSERT INTO threads VALUES('codex-db-session', '${WORKSPACE}', 'fixture', 1784635200, '', 0, 'user', '${CODEX_DB_ROLLOUT}', 1784635200000); INSERT INTO threads VALUES('codex-db-child', '${WORKSPACE}', 'child fixture', 1784635300, '', 0, 'subagent', '${CODEX_DB_ROLLOUT}', 1784635300000);"
 assert_source_path \
   "codex sqlite" \
-  "$CODEX_DB" \
+  "$CODEX_DB_ROLLOUT" \
+  env HOME="$CODEX_DB_HOME" bash "$ROOT/adapters/codex/list_recent_sessions.sh" "$WORKSPACE"
+assert_session_ids \
+  "codex sqlite top-level filter" \
+  '["codex-db-session"]' \
   env HOME="$CODEX_DB_HOME" bash "$ROOT/adapters/codex/list_recent_sessions.sh" "$WORKSPACE"
 
 NO_JQ_BIN="${FIXTURE_HOME}/no-jq-bin"
@@ -84,6 +135,11 @@ done
 assert_source_path \
   "codex sqlite without jq" \
   "$CODEX_DB" \
+  env HOME="$CODEX_DB_HOME" PATH="$NO_JQ_BIN" \
+  bash "$ROOT/adapters/codex/list_recent_sessions.sh" "$WORKSPACE"
+assert_session_ids \
+  "codex sqlite top-level filter without jq" \
+  '["codex-db-session"]' \
   env HOME="$CODEX_DB_HOME" PATH="$NO_JQ_BIN" \
   bash "$ROOT/adapters/codex/list_recent_sessions.sh" "$WORKSPACE"
 
@@ -120,6 +176,14 @@ assert_source_path \
   "$OPENCODE_SOURCE" \
   env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/opencode/list_recent_sessions.sh" "$WORKSPACE"
 
+OPENCODE_CHILD="${OPENCODE_PROJECT}/storage/session/info/opencode-child.json"
+printf '{"id":"opencode-child","parentID":"opencode-session","title":"child fixture","time":{"updated":1784635300000}}\n' \
+  >"$OPENCODE_CHILD"
+assert_session_ids \
+  "opencode top-level filter" \
+  '["opencode-session"]' \
+  env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/opencode/list_recent_sessions.sh" "$WORKSPACE"
+
 PI_DIR="${FIXTURE_HOME}/pi-sessions"
 PI_SOURCE="${PI_DIR}/pi-session.jsonl"
 mkdir -p "$PI_DIR"
@@ -141,6 +205,24 @@ printf '{"role":"user","content":"hello"}\n' >"$GROK_SOURCE"
 assert_source_path \
   "grok" \
   "$GROK_SOURCE" \
+  env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/grok/list_recent_sessions.sh" "$WORKSPACE"
+
+for i in $(seq 1 20); do
+  GROK_CHILD_SESSION="${FIXTURE_HOME}/.grok/sessions/${GROK_ENCODED}/grok-child-${i}"
+  mkdir -p "$GROK_CHILD_SESSION"
+  if [[ "$i" -eq 20 ]]; then
+    printf '{"id":"grok-child-%s","cwd":"%s","generated_title":"child fixture","updated_at":"2026-07-22T12:00:00Z","session_kind":"subagent_resume","parent_session_id":"grok-session"}\n' \
+      "$i" "$WORKSPACE" >"${GROK_CHILD_SESSION}/summary.json"
+  else
+    printf '{"id":"grok-child-%s","cwd":"%s","generated_title":"child fixture","updated_at":"2026-07-22T12:00:00Z","session_kind":"subagent"}\n' \
+      "$i" "$WORKSPACE" >"${GROK_CHILD_SESSION}/summary.json"
+  fi
+  touch -t "20260722$((1000 + i))" "${GROK_CHILD_SESSION}/summary.json"
+done
+touch -t 202607210000 "${GROK_SESSION}/summary.json"
+assert_session_ids \
+  "grok top-level filter before limit" \
+  '["grok-session"]' \
   env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/grok/list_recent_sessions.sh" "$WORKSPACE"
 
 HERMES_HOME_DIR="${FIXTURE_HOME}/hermes-home"

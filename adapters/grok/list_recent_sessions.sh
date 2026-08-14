@@ -29,6 +29,15 @@ TOP="$(
   perl -e '
     for my $path (@ARGV) {
       next unless -f $path;
+      if (open my $fh, "<", $path) {
+        local $/;
+        my $blob = <$fh>;
+        close $fh;
+        my ($kind) = $blob =~ /"session_kind"\s*:\s*"([^"]+)"/;
+        my ($parent_id) = $blob =~ /"parent_session_id"\s*:\s*"([^"]+)"/;
+        next if (defined($kind) && ($kind eq "subagent" || $kind eq "subagent_resume"))
+          || (defined($parent_id) && $parent_id ne "");
+      }
       my $mtime = (stat($path))[9] // next;
       print "$mtime $path\n";
     }
