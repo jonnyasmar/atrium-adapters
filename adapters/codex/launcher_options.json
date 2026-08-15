@@ -16,28 +16,42 @@
       "choices": [
         {
           "value": "gpt-5.6-sol",
+          "label": "GPT-5.6 Sol",
           "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
         },
         {
           "value": "gpt-5.6-terra",
+          "label": "GPT-5.6 Terra",
           "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
         },
         {
           "value": "gpt-5.6-luna",
+          "label": "GPT-5.6 Luna",
           "efforts": ["low", "medium", "high", "xhigh", "max"]
         },
-        { "value": "gpt-5.5", "efforts": ["low", "medium", "high", "xhigh"] },
-        { "value": "gpt-5.4", "efforts": ["low", "medium", "high", "xhigh"] },
+        {
+          "value": "gpt-5.5",
+          "label": "GPT-5.5",
+          "efforts": ["low", "medium", "high", "xhigh"]
+        },
+        {
+          "value": "gpt-5.4",
+          "label": "GPT-5.4",
+          "efforts": ["low", "medium", "high", "xhigh"]
+        },
         {
           "value": "gpt-5.4-mini",
+          "label": "GPT-5.4 Mini",
           "efforts": ["low", "medium", "high", "xhigh"]
         },
         {
           "value": "gpt-5.3-codex-spark",
+          "label": "Codex 5.3 Spark",
           "efforts": ["low", "medium", "high", "xhigh"]
         },
         {
           "value": "codex-auto-review",
+          "label": "Codex Auto Review",
           "efforts": ["low", "medium", "high", "xhigh"]
         }
       ]
