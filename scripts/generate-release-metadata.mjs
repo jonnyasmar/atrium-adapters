@@ -18,6 +18,7 @@ import {
   contentVersionCouplingViolation,
   publishedTipGenerationViolation,
   releaseWriteDecision,
+  skillReferenceParityViolation,
   sourceCommitAncestryViolation,
 } from "./release-generation.mjs";
 
@@ -400,6 +401,11 @@ const expectedSkillAssets = {
     return name;
   }),
 };
+const referenceParityViolation = skillReferenceParityViolation(
+  expectedSkillAssets.references,
+  expectedCanonical.assets,
+);
+if (referenceParityViolation != null) fail(referenceParityViolation);
 
 const documents = [
   [registryPath, registry, expectedRegistry],
