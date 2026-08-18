@@ -5,6 +5,7 @@ import {
   contentVersionCouplingViolation,
   publishedTipGenerationViolation,
   releaseWriteDecision,
+  skillReferenceParityViolation,
   sourceCommitAncestryViolation,
 } from "./release-generation.mjs";
 
@@ -58,6 +59,41 @@ if (sourceCommitAncestryViolation(commitOne, commitTwo, false) == null) {
   throw new Error("source ancestry: rebased-away source was unexpectedly accepted");
 }
 console.log("release generation: source-ancestry rejection passed");
+
+// --- skill reference parity ---
+const publishedReferences = [
+  { target: "adapter-skill-reference", destName: "capture.md" },
+  { target: "adapter-skill-reference", destName: "computer-use.md" },
+  { target: "bundled-skill", skillName: "unrelated" },
+];
+if (
+  skillReferenceParityViolation(
+    ["capture.md", "computer-use.md"],
+    publishedReferences,
+  ) != null
+) {
+  throw new Error(
+    "skill reference parity: matching manifests were unexpectedly rejected",
+  );
+}
+if (
+  skillReferenceParityViolation(
+    ["capture.md", "computer-use.md"],
+    publishedReferences.slice(0, 1),
+  ) == null
+) {
+  throw new Error(
+    "skill reference parity: missing canonical reference was unexpectedly accepted",
+  );
+}
+if (
+  skillReferenceParityViolation(["capture.md"], publishedReferences) == null
+) {
+  throw new Error(
+    "skill reference parity: undeclared canonical reference was unexpectedly accepted",
+  );
+}
+console.log("release generation: skill-reference parity passed");
 
 // --- predecessor monotonicity (existing) ---
 expectAccepted(

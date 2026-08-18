@@ -39,6 +39,30 @@ export function sourceCommitAncestryViolation(sourceCommit, headCommit, isAncest
   return `source commit ${sourceCommit} is not an ancestor of HEAD ${headCommit}; regenerate release metadata after rebasing`;
 }
 
+export function skillReferenceParityViolation(
+  skillReferences,
+  canonicalAssets,
+) {
+  const declared = new Set(skillReferences ?? []);
+  const published = new Set(
+    (canonicalAssets ?? [])
+      .filter((asset) => asset.target === "adapter-skill-reference")
+      .map((asset) => asset.destName),
+  );
+  const missing = [...declared].filter((name) => !published.has(name)).sort();
+  const undeclared = [...published]
+    .filter((name) => !declared.has(name))
+    .sort();
+  if (missing.length === 0 && undeclared.length === 0) return null;
+
+  const details = [];
+  if (missing.length > 0)
+    details.push(`missing from canonical-assets.json: ${missing.join(", ")}`);
+  if (undeclared.length > 0)
+    details.push(`missing from skill-assets.json: ${undeclared.join(", ")}`);
+  return `atrium skill reference manifests disagree (${details.join("; ")})`;
+}
+
 export function canonicalGenerationViolation(previous, current, sourceCommit) {
   if (previous == null || typeof previous !== "object") {
     return "canonical predecessor manifest is unavailable";
