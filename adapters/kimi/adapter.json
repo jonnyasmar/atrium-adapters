@@ -5,10 +5,11 @@
   "description": "Moonshot AI's terminal coding agent",
   "accent": "#4f6bff",
   "binary": "kimi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "updateCommand": [
-    "kimi",
-    "upgrade"
+    "bash",
+    "-c",
+    "set -o pipefail; curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash"
   ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.kimi-code/skills/atrium/SKILL.md",
