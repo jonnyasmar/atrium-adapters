@@ -277,7 +277,7 @@ Exit 2 for unknown subcommands. See [Hook Integration](#hook-integration) for im
 
 ### launcher_options
 
-A static JSON file (not a script) defining toggle options in the launcher bar.
+A static JSON file (not a script) defining toggle options in the launcher bar. atrium reads and caches it at adapter load — a `script` method is accepted by the manifest schema but is not executed, so the launcher would show no options.
 
 ```json
 {
@@ -292,6 +292,8 @@ A static JSON file (not a script) defining toggle options in the launcher bar.
 ```
 
 Option `key` values map directly to the flags JSON passed to `build_launch_command` and `build_resume_command`.
+
+`select` choices may be a bare string or `{value, label, efforts?}`. `efforts` is the per-model subset of the adapter's effort enum (Claude/Codex/Grok/Kimi); omit it to use the full effort list.
 
 ---
 

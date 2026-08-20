@@ -49,23 +49,17 @@ assert_command \
 
 # Grok launches via grok-with-atrium-rules.sh (rules injected inside the
 # wrapper — never as multi-line argv, which breaks atrium's unquoted
-# cmd.join(" ") PTY typing). Assert wrapper + flag preservation.
+# cmd.join(" ") PTY typing). Assert wrapper + catalog flag preservation.
 {
   adapter="grok"
-  flags='{"alwaysApprove":true,"model":"grok-build","effort":"max","extraArgs":"--cwd /tmp"}'
+  flags='{"alwaysApprove":true,"model":"grok-4.6","effort":"xhigh","extraArgs":"--cwd /tmp"}'
   script="${ROOT}/adapters/${adapter}/build_resume_command.sh"
-  wrapper="${ROOT}/adapters/${adapter}/grok-with-atrium-rules.sh"
+  wrapper="$(cd "$(dirname "${ROOT}/adapters/${adapter}/grok-with-atrium-rules.sh")" && pwd)/grok-with-atrium-rules.sh"
   actual="$(bash "$script" "$SESSION_ID" "$flags")"
   cmd="$(echo "$actual" | jq -c '.command')"
-  expected="$(jq -nc \
-    --arg w "$(cd "$(dirname "$wrapper")" && pwd)/grok-with-atrium-rules.sh" \
-    '[$w,"--always-approve","--model","grok-build","--reasoning-effort","max","--cwd","/tmp","-r","sess-123"]')"
-  # Normalize wrapper path from actual (script resolves via its own SCRIPT_DIR).
-  actual_norm="$(echo "$actual" | jq -c --arg w "$(cd "$(dirname "$wrapper")" && pwd)/grok-with-atrium-rules.sh" '
-    .command[0] = $w | .command
-  ')"
-  if [[ "$actual_norm" == "$expected" ]] \
-    && [[ "$(echo "$actual" | jq -r '.command[0]')" == *"/grok-with-atrium-rules.sh" ]] \
+  expected="$(jq -nc --arg w "$wrapper" \
+    '["env","GROK_DISABLE_AUTOUPDATER=1",$w,"--always-approve","--model","grok-4.6","--reasoning-effort","xhigh","--cwd","/tmp","-r","sess-123"]')"
+  if [[ "$cmd" == "$expected" ]] \
     && ! echo "$actual" | jq -e '.command | index("--rules")' >/dev/null; then
     printf '[PASS] %s resume preserves launch-profile flags via rules wrapper\n' "$adapter"
   else

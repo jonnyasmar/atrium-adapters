@@ -14,10 +14,16 @@
       "type": "select",
       "default": "",
       "choices": [
-        { "value": "grok-4.6", "label": "Grok 4.6" },
-        { "value": "grok-4.5", "label": "Grok 4.5" },
-        { "value": "grok-composer-2.5-fast", "label": "Grok Composer 2.5 Fast" },
-        { "value": "grok-build", "label": "Grok Build" }
+        {
+          "value": "grok-4.6",
+          "label": "Grok 4.6",
+          "efforts": ["low", "medium", "high", "xhigh"]
+        },
+        {
+          "value": "grok-4.5",
+          "label": "Grok 4.5",
+          "efforts": ["low", "medium", "high"]
+        }
       ]
     },
     {
@@ -26,7 +32,7 @@
       "description": "Reasoning effort",
       "type": "select",
       "default": "high",
-      "choices": ["low", "medium", "high", "xhigh", "max"]
+      "choices": ["low", "medium", "high", "xhigh"]
     },
     {
       "key": "extraArgs",
