@@ -43,13 +43,18 @@
                   "required": ["value"],
                   "properties": {
                     "value": { "type": "string", "minLength": 1 },
-                    "label": { "type": "string", "minLength": 1 }
+                    "label": { "type": "string", "minLength": 1 },
+                    "efforts": {
+                      "type": "array",
+                      "items": { "type": "string", "minLength": 1 },
+                      "description": "For model choices: the subset of the adapter's effort enum this model supports (e.g. Grok 4.6 includes xhigh; 4.5 does not). Absent = the full adapter effort list applies."
+                    }
                   },
                   "additionalProperties": false
                 }
               ]
             },
-            "description": "Canonical set for 'select'; non-exhaustive suggestion hints for 'text'. A choice is a bare string or a {value,label} object (adapter-owned display label)."
+            "description": "Canonical set for 'select'; non-exhaustive suggestion hints for 'text'. A choice is a bare string or a {value,label[,efforts]} object (adapter-owned display label and optional per-model effort subset)."
           }
         },
         "additionalProperties": false
