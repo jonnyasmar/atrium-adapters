@@ -5,7 +5,7 @@
   "description": "Moonshot AI's terminal coding agent",
   "accent": "#4f6bff",
   "binary": "kimi",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "updateCommand": [
     "bash",
     "-c",
