@@ -186,7 +186,7 @@
         "linux"
       ],
       "official": true,
-      "version": "0.5.7",
+      "version": "0.5.8",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" fill=\"currentColor\"><title>opencode</title><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M384 416H128V96H384V416ZM320 160H192V352H320V160Z\"/><path opacity=\"0.6\" d=\"M320 224V352H192V224H320Z\"/></svg>",
       "install": {
@@ -203,7 +203,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "8f5432592187dada9196e507b299eeadacfb8618791068175c18bbf62f020bee",
+      "contentSha256": "304796ec42618270cf259f87ce476cd7453600eaa3c80e441ebc772940457f16",
       "maxAppVersion": null
     },
     {
@@ -333,7 +333,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "7ec181c490fec94bbff0afb894ede28d6a5d347f",
+    "commit": "987bb0c9460d5c3c9218b6a9de5e318d0e705ac8",
     "sharedSha256": "166892b51a707a513ccd480bc7cfe6835f8fcc2f919836859e885e2ec1b133f1",
     "schemaSha256": "c4d7774442208a390fc9c2ebff0dceb3c0ee883bee6b7d6b45b9cbb84833dbe0",
     "methodsSchemaSha256": "7162e372fd25b584a9fae035bdc8e05c32e517aa3342de4b71acc84a27751b87"
