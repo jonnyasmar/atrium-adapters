@@ -1,6 +1,13 @@
 {
   "options": [
     {
+      "key": "autoApprove",
+      "label": "auto",
+      "description": "--auto — auto-approve permission requests not explicitly denied",
+      "type": "toggle",
+      "default": false
+    },
+    {
       "key": "model",
       "label": "model",
       "description": "Override the default model (provider/model, e.g. openai/gpt-5.4)",
