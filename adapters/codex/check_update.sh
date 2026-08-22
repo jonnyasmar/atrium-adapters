@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../shared/package-manager.sh"
+
 json_error() {
   local message="$1"
   if command -v jq >/dev/null 2>&1; then
@@ -30,13 +33,20 @@ version_is_newer() {
 }
 
 command -v jq >/dev/null 2>&1 || json_error "jq not found"
-command -v curl >/dev/null 2>&1 || json_error "curl not found"
-command -v codex >/dev/null 2>&1 || json_error "codex not found"
+CODEX_BIN="$(command -v codex 2>/dev/null || true)"
+[[ -n "$CODEX_BIN" ]] || json_error "codex not found"
 
-installed_output="$(codex --version 2>&1)" || json_error "failed to determine installed Codex version"
+installed_output="$("$CODEX_BIN" --version 2>&1)" || json_error "failed to determine installed Codex version"
 installed_version="$(extract_version "$installed_output")" || true
 [[ -n "$installed_version" ]] || json_error "failed to parse installed Codex version"
 
+if atrium_binary_is_homebrew_managed "$CODEX_BIN"; then
+  jq -nc --arg installed "$installed_version" \
+    '{installedVersion: $installed, latestVersion: $installed, updateAvailable: false}'
+  exit 0
+fi
+
+command -v curl >/dev/null 2>&1 || json_error "curl not found"
 registry_json="$(curl -fsS --connect-timeout 2 --max-time 5 'https://registry.npmjs.org/-/package/@openai%2Fcodex/dist-tags' 2>/dev/null)" || json_error "failed to fetch latest Codex version"
 latest_version="$(printf '%s' "$registry_json" | jq -er '.latest | select(type == "string" and length > 0)' 2>/dev/null)" || json_error "failed to parse latest Codex version"
 [[ "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || json_error "failed to parse latest Codex version"
