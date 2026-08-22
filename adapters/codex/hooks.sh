@@ -86,12 +86,15 @@ build_hook_command() {
 # codex-specific context-inject entry whose stdout becomes session context.
 build_all_hooks() {
   local hooks='{}'
-  local event key matcher cmd entry
+  local event key matcher cmd entry timeout
   while IFS=$'\t' read -r event key matcher; do
     [ -n "${event:-}" ] || continue
     cmd="$(build_hook_command "$event")"
-    entry="$(jq -n --arg matcher "$matcher" --arg cmd "$cmd" \
-      '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+    timeout=5
+    # Codex caps SessionEnd at three seconds before computing currentHash.
+    [ "$event" = "session-end" ] && timeout=3
+    entry="$(jq -n --arg matcher "$matcher" --arg cmd "$cmd" --argjson timeout "$timeout" \
+      '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: $timeout}]}]')"
     hooks="$(jq --arg key "$key" --argjson entry "$entry" \
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"

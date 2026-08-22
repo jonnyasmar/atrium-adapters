@@ -3,7 +3,9 @@ set -euo pipefail
 
 ADAPTER_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOKS_SH="$ADAPTER_DIR/hooks.sh"
+REAL_CODEX_BIN="$(command -v codex || true)"
 TEST_HOME="$(mktemp -d /tmp/atrium-codex-hooks.XXXXXX)"
+TEST_HOME="$(cd "$TEST_HOME" && pwd -P)"
 trap 'rm -rf "$TEST_HOME"' EXIT
 
 mkdir -p "$TEST_HOME/.codex" "$TEST_HOME/bin"
@@ -55,6 +57,7 @@ hook_count="$(grep -cE '^[[:space:]]*hooks[[:space:]]*=[[:space:]]*true[[:space:
 grep -q '^web_search = true$' "$CONFIG_TOML"
 grep -q '^\[projects."/tmp/example"\]$' "$CONFIG_TOML"
 jq -e '.hooks.SessionStart and .hooks.SessionEnd and .hooks.SubagentStart and .hooks.SubagentStop' "$HOOKS_JSON" >/dev/null
+jq -e '[.hooks.SessionEnd[]?.hooks[]?.timeout] | length > 0 and all(. == 3)' "$HOOKS_JSON" >/dev/null
 
 for label in session_end subagent_start subagent_stop; do
   grep -q "hooks.json:${label}:0:0" "$CONFIG_TOML" || {
@@ -62,6 +65,35 @@ for label in session_end subagent_start subagent_stop; do
     exit 1
   }
 done
+
+if [ -n "$REAL_CODEX_BIN" ]; then
+  rpc_output="$({
+    printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"atrium-adapter-test","version":"0.1.0"},"capabilities":{"experimentalApi":true,"requestAttestation":false,"mcpServerOpenaiFormElicitation":true,"optOutNotificationMethods":null}}}'
+    jq -nc --arg cwd "$TEST_HOME" \
+      '{jsonrpc:"2.0",id:2,method:"hooks/list",params:{cwds:[$cwd]}}'
+    sleep 0.5
+  } | HOME="$TEST_HOME" CODEX_HOME="$TEST_HOME/.codex" \
+    "$REAL_CODEX_BIN" app-server --listen stdio:// 2>/dev/null)"
+  hook_result="$(jq -c 'select(.id == 2) | .result' <<< "$rpc_output")"
+  [ -n "$hook_result" ] || {
+    echo "real Codex app-server did not return hooks/list" >&2
+    exit 1
+  }
+  jq -e '
+    [.data[]?.hooks[]? | select(.sourcePath | endswith("/hooks.json"))] as $hooks
+    | ($hooks | length) > 0
+      and ($hooks | all(.trustStatus == "trusted"))
+  ' <<< "$hook_result" >/dev/null || {
+    jq -r '
+      [.data[]?.hooks[]?
+        | select(.sourcePath | endswith("/hooks.json"))
+        | select(.trustStatus != "trusted")
+        | "\(.eventName): \(.trustStatus)"]
+      | "real Codex rejected auto-trust: \(join(", "))"
+    ' <<< "$hook_result" >&2
+    exit 1
+  }
+fi
 
 printf '999999\n' > "$TEST_HOME/.codex/.atrium-hooks.lock"
 HOME="$TEST_HOME" PATH="$TEST_HOME/bin:$PATH" "$HOOKS_SH" install >/dev/null

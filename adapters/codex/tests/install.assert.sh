@@ -18,6 +18,7 @@ hook_count="$(grep -cE '^[[:space:]]*hooks[[:space:]]*=[[:space:]]*true[[:space:
 }
 
 jq -e '.hooks.SessionStart and .hooks.SessionEnd and .hooks.SubagentStart and .hooks.SubagentStop' "$HOOKS_JSON" >/dev/null
+jq -e '[.hooks.SessionEnd[]?.hooks[]?.timeout] | length > 0 and all(. == 3)' "$HOOKS_JSON" >/dev/null
 
 # Auto-trust must fingerprint SessionEnd + both subagent events (codex
 # 0.145+ treats them as first-class; missing state entries force /hooks review).
