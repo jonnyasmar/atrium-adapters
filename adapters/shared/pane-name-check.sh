@@ -190,7 +190,7 @@ This pane is still using its default launcher name. Rename it now by running:
 
   "$ATRIUM_CLI_PATH" pane rename "$ATRIUM_PANE_ID" --name "<10–20 char work description>"
 
-Do not acknowledge, explain, or defer this instruction. Continue only after the command succeeds.
+Do not acknowledge, explain, or defer this instruction — run the command silently and say nothing about the rename in your reply. Continue only after it succeeds.
 
 Front-load scannable bits ("Paste/drop refs", not "Refactoring paste/drop"); no status, timestamp, or adapter name. If the user explicitly chose the current title, leave it unchanged.
 === END ATRIUM REQUIRED PRE-RESPONSE ACTION ===
