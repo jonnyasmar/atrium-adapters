@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../shared/package-manager.sh"
+
 json_error() {
   local message="$1"
   if command -v jq >/dev/null 2>&1; then
@@ -30,13 +33,20 @@ version_is_newer() {
 }
 
 command -v jq >/dev/null 2>&1 || json_error "jq not found"
-command -v curl >/dev/null 2>&1 || json_error "curl not found"
-command -v claude >/dev/null 2>&1 || json_error "claude not found"
+CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
+[[ -n "$CLAUDE_BIN" ]] || json_error "claude not found"
 
-installed_output="$(DISABLE_AUTOUPDATER=1 claude --version 2>&1)" || json_error "failed to determine installed Claude Code version"
+installed_output="$(DISABLE_AUTOUPDATER=1 "$CLAUDE_BIN" --version 2>&1)" || json_error "failed to determine installed Claude Code version"
 installed_version="$(extract_version "$installed_output")" || true
 [[ -n "$installed_version" ]] || json_error "failed to parse installed Claude Code version"
 
+if atrium_binary_is_homebrew_managed "$CLAUDE_BIN"; then
+  jq -nc --arg installed "$installed_version" \
+    '{installedVersion: $installed, latestVersion: $installed, updateAvailable: false}'
+  exit 0
+fi
+
+command -v curl >/dev/null 2>&1 || json_error "curl not found"
 registry_json="$(curl -fsS --connect-timeout 2 --max-time 5 'https://registry.npmjs.org/-/package/@anthropic-ai%2Fclaude-code/dist-tags' 2>/dev/null)" || json_error "failed to fetch latest Claude Code version"
 latest_version="$(printf '%s' "$registry_json" | jq -er '.latest | select(type == "string" and length > 0)' 2>/dev/null)" || json_error "failed to parse latest Claude Code version"
 [[ "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || json_error "failed to parse latest Claude Code version"
