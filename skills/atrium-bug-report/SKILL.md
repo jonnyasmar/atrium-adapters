@@ -78,7 +78,14 @@ CLI="${ATRIUM_CLI_PATH:-$D/bin/atrium}"     # dev instances name it bin/atrium-d
 "$CLI" version --json
 ```
 
-`version --json` returns `{"app": "connected"|..., "channel": "...", "cli": "..."}`. **`app` is itself evidence.** If the user says the window is on screen but `app` is not `connected`, the UI is up while the IPC socket is dead — that is not a failed command, that is the bug. Record it and move on; do not retry in a loop. Give any app-dependent command a short timeout (`timeout 10 "$CLI" …`) so a wedged runtime does not wedge you.
+`version --json` returns `{"app": …, "attachment": …, "attachmentSource": …, "channel": "...", "cli": "..."}`. **`app` is itself evidence**, and it says exactly one thing: whether an app WINDOW is attached to the daemon you dialled.
+
+- `"connected"` — a window on that daemon's own machine is attached.
+- `"daemon-only"` — the daemon answered and measured its attached shells: no window on that machine. Normal on a headless box. `attachment.remoteShellLinks` counts app windows linked in from other locations, so a non-zero count means someone's app has that box open without owning a window on it — the app-window gates still refuse there.
+- `"unknown"` — a daemon answered but is too old to report attached shells (`attachmentSource: "legacy-fallback"`, `attachment: null`). It is not evidence either way.
+- `null` — nothing answered at all. This is the only value that says the IPC socket is dead: if the user says the window is on screen and `app` is `null`, the UI is up while the socket is gone — that is not a failed command, that is the bug.
+
+Record what you got and move on; do not retry in a loop. Give any app-dependent command a short timeout (`timeout 10 "$CLI" …`) so a wedged runtime does not wedge you.
 
 ---
 
@@ -429,7 +436,7 @@ Use `--json` on everything you parse. Prefix with `timeout 10` when the app may 
 
 | Command | Gives you |
 |---|---|
-| `"$CLI" version --json` | cli version, channel, and whether the app is `connected` |
+| `"$CLI" version --json` | cli version, channel, and whether an app window is attached to the daemon you dialled (`connected` / `daemon-only` / `unknown` / `null`) |
 | `"$CLI" context --json` | your workspace / room / pane / adapter |
 | `"$CLI" pane list --json` | every pane: id, type, adapter, workspace, room — the live shape of the workspace |
 | `"$CLI" room list --json` | rooms, wings, pane counts |
