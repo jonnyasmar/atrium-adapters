@@ -13,7 +13,8 @@
     "wellKnownPaths": [
       "/opt/homebrew/bin/goose",
       "/usr/local/bin/goose",
-      "~/.local/bin/goose"
+      "~/.local/bin/goose",
+      "~/.local/bin/goose.exe"
     ]
   },
   "install": {
@@ -23,6 +24,10 @@
     },
     "linux": {
       "cmd": "curl -fsSL https://github.com/aaif-goose/goose/releases/download/stable/download_cli.sh | CONFIGURE=false bash",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "$env:CONFIGURE='false'; irm https://raw.githubusercontent.com/block/goose/main/download_cli.ps1 | iex",
       "postInstallAuth": true
     }
   },

@@ -19,7 +19,8 @@
     "wellKnownPaths": [
       "~/.local/bin/muse",
       "/usr/local/bin/muse",
-      "/opt/homebrew/bin/muse"
+      "/opt/homebrew/bin/muse",
+      "~/AppData/Local/Programs/muse/muse.cmd"
     ]
   },
   "install": {
@@ -29,6 +30,10 @@
     },
     "linux": {
       "cmd": "curl -fsSL https://dev.meta.ai/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://dev.meta.ai/install.ps1 | iex\"",
       "postInstallAuth": true
     }
   },

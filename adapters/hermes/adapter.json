@@ -20,7 +20,8 @@
       "~/.local/bin/hermes",
       "/usr/local/bin/hermes",
       "/opt/homebrew/bin/hermes",
-      "~/.hermes/hermes-agent/venv/bin/hermes"
+      "~/.hermes/hermes-agent/venv/bin/hermes",
+      "~/AppData/Local/hermes/hermes-agent/venv/Scripts/hermes.exe"
     ]
   },
   "install": {
@@ -30,6 +31,10 @@
     },
     "linux": {
       "cmd": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://hermes-agent.nousresearch.com/install.ps1 | iex\"",
       "postInstallAuth": true
     }
   },
