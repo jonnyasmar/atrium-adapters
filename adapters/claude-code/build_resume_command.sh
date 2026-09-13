@@ -24,27 +24,16 @@ else
   fi
 fi
 
-# Windows: the launch argv is typed into a PowerShell pane, where `env` is not
-# a command. Same arm as build_launch_command.sh — see the comment there.
-IS_WINDOWS="false"
-case "$(uname -s)" in
-  MINGW*|MSYS*|CYGWIN*) IS_WINDOWS="true" ;;
-esac
-
+BROWSER_PATH="${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/claude-code/open_browser.sh"
+CMD="[\"env\", \"DISABLE_AUTOUPDATER=1\", \"BROWSER=$(json_escape "$BROWSER_PATH")\""
 IS_ROOT="false"
-if [ "$IS_WINDOWS" = "true" ]; then
-  CMD='["claude"'
-else
-  BROWSER_PATH="${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/claude-code/open_browser.sh"
-  CMD="[\"env\", \"DISABLE_AUTOUPDATER=1\", \"BROWSER=$(json_escape "$BROWSER_PATH")\""
-  if [ "$SKIP" = "true" ] && [ "$(id -u)" = "0" ]; then
-    IS_ROOT="true"
-    # Claude refuses every native bypass entry point under uid 0. Keep the
-    # selected YOLO behavior through our PermissionRequest hook instead.
-    CMD="${CMD}, \"ATRIUM_CLAUDE_ROOT_BYPASS_PERMISSIONS=1\""
-  fi
-  CMD="${CMD}, \"claude\""
+if [ "$SKIP" = "true" ] && [ "$(id -u)" = "0" ]; then
+  IS_ROOT="true"
+  # Claude refuses every native bypass entry point under uid 0. Keep the
+  # selected YOLO behavior through our PermissionRequest hook instead.
+  CMD="${CMD}, \"ATRIUM_CLAUDE_ROOT_BYPASS_PERMISSIONS=1\""
 fi
+CMD="${CMD}, \"claude\""
 
 if [ "$SKIP" = "true" ]; then
   if [ "$IS_ROOT" = "true" ]; then
