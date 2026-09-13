@@ -36,7 +36,7 @@
       "postInstallAuth": true
     },
     "windows": {
-      "cmd": "irm https://code.kimi.com/kimi-code/install.ps1 | iex",
+      "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://code.kimi.com/kimi-code/install.ps1 | iex\"",
       "postInstallAuth": true
     }
   },

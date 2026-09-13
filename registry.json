@@ -175,7 +175,7 @@
           "postInstallAuth": true
         },
         "windows": {
-          "cmd": "irm https://code.kimi.com/kimi-code/install.ps1 | iex",
+          "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://code.kimi.com/kimi-code/install.ps1 | iex\"",
           "postInstallAuth": true
         }
       },
@@ -274,7 +274,7 @@
           "postInstallAuth": true
         },
         "windows": {
-          "cmd": "irm https://x.ai/cli/install.ps1 | iex",
+          "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://x.ai/cli/install.ps1 | iex\"",
           "postInstallAuth": true
         }
       },
@@ -406,7 +406,7 @@
           "postInstallAuth": true
         },
         "windows": {
-          "cmd": "$env:CONFIGURE='false'; irm https://raw.githubusercontent.com/block/goose/main/download_cli.ps1 | iex",
+          "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command '$env:CONFIGURE=\"false\"; irm https://raw.githubusercontent.com/block/goose/main/download_cli.ps1 | iex'",
           "postInstallAuth": true
         }
       },

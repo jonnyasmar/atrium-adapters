@@ -35,7 +35,7 @@
       "postInstallAuth": true
     },
     "windows": {
-      "cmd": "irm https://x.ai/cli/install.ps1 | iex",
+      "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://x.ai/cli/install.ps1 | iex\"",
       "postInstallAuth": true
     }
   },
