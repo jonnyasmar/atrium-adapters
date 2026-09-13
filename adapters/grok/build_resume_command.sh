@@ -12,6 +12,22 @@ FLAGS="${2:-"{}"}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WRAPPER="${SCRIPT_DIR}/grok-with-atrium-rules.sh"
 
+# Windows: bare binary only — same reasoning and same recorded divergence as
+# build_launch_command.sh (no env prefix, no .sh wrapper as argv[0]).
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*)
+    if command -v jq >/dev/null 2>&1; then
+      printf '%s' "$FLAGS" | jq empty 2>/dev/null || FLAGS='{}'
+      jq -nc --arg session "$SESSION_ID" --argjson flags "$FLAGS" \
+        '{command: (["grok"] + (if $flags.alwaysApprove == true then ["--always-approve"] else [] end) + (if (($flags.model // "") | length) > 0 then ["--model", $flags.model] else [] end) + (if (($flags.effort // "") | length) > 0 then ["--reasoning-effort", $flags.effort] else [] end) + (if (($flags.extraArgs // "") | length) > 0 then ($flags.extraArgs | split(" ") | map(select(length > 0))) else [] end) + ["-r", $session])}'
+    else
+      ESCAPED_SESSION_ID="$(printf '%s' "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+      echo "{\"command\": [\"grok\", \"-r\", \"${ESCAPED_SESSION_ID}\"]}"
+    fi
+    exit 0
+    ;;
+esac
+
 if [ ! -f "$WRAPPER" ]; then
   if command -v jq &>/dev/null; then
     jq -nc --arg s "$SESSION_ID" '{command: ["env", "GROK_DISABLE_AUTOUPDATER=1", "grok", "-r", $s]}'

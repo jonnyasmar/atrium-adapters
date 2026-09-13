@@ -21,7 +21,8 @@
       "~/.grok/bin/grok",
       "/usr/local/bin/grok",
       "/opt/homebrew/bin/grok",
-      "~/.local/bin/grok"
+      "~/.local/bin/grok",
+      "~/.grok/bin/grok.exe"
     ]
   },
   "install": {

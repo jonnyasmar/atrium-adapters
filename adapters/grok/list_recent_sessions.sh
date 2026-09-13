@@ -62,6 +62,13 @@ for my $session (@sessions) {
   # Crude field extraction avoids a JSON module startup penalty.
   ($id_val) = $blob =~ /"id"\s*:\s*"([^"]+)"/;
   ($cwd_val) = $blob =~ /"cwd"\s*:\s*"([^"]+)"/;
+  # The blob is raw JSON, so this capture is ALREADY JSON-escaped, and the
+  # escape further down would double it. A POSIX cwd carries no backslash, so
+  # the doubling was invisible on macOS. A Windows cwd came out as
+  # C:\\\\Users\\\\j\\\\x, which decodes to two literal separators per level.
+  # Undo the blob escaping here so the single escape below is right on both.
+  # NOTE: single-quoted shell string below - no apostrophes in these comments.
+  $cwd_val =~ s/\\\\/\\/g if defined $cwd_val;
   ($title) = $blob =~ /"generated_title"\s*:\s*"([^"]+)"/;
   ($title) = $blob =~ /"session_summary"\s*:\s*"([^"]+)"/ unless $title;
   ($last_active) = $blob =~ /"last_active_at"\s*:\s*"([^"]+)"/;
