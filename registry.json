@@ -92,7 +92,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "0.6.4",
@@ -105,6 +106,10 @@
         },
         "linux": {
           "cmd": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+          "postInstallAuth": true
+        },
+        "windows": {
+          "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://antigravity.google/cli/install.ps1 | iex\"",
           "postInstallAuth": true
         }
       },
@@ -153,7 +158,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "0.1.5",
@@ -185,7 +191,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "0.5.15",
@@ -217,7 +224,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "0.6.8",
@@ -249,7 +257,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "0.5.15",
@@ -281,7 +290,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "0.3.0",
@@ -295,6 +305,10 @@
         "linux": {
           "cmd": "curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash",
           "postInstallAuth": true
+        },
+        "windows": {
+          "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://hermes-agent.nousresearch.com/install.ps1 | iex\"",
+          "postInstallAuth": true
         }
       },
       "contentSha256": "c03347b33dc6269353379bd555ec3bac48dcf9f7d5a41700822186f419898422",
@@ -303,13 +317,14 @@
     {
       "name": "omp",
       "displayName": "Oh My Pi",
-      "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
+      "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
       "accent": "#f97316",
       "binary": "omp",
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "16.4.10",
@@ -341,7 +356,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": true,
       "version": "1.0.3",
@@ -354,6 +370,10 @@
         },
         "linux": {
           "cmd": "curl -fsSL https://dev.meta.ai/install.sh | bash",
+          "postInstallAuth": true
+        },
+        "windows": {
+          "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://dev.meta.ai/install.ps1 | iex\"",
           "postInstallAuth": true
         }
       },
@@ -369,7 +389,8 @@
       "sdkVersion": 2,
       "platforms": [
         "macos",
-        "linux"
+        "linux",
+        "windows"
       ],
       "official": false,
       "version": "1.0.4",
@@ -382,6 +403,10 @@
         },
         "linux": {
           "cmd": "curl -fsSL https://github.com/aaif-goose/goose/releases/download/stable/download_cli.sh | CONFIGURE=false bash",
+          "postInstallAuth": true
+        },
+        "windows": {
+          "cmd": "$env:CONFIGURE='false'; irm https://raw.githubusercontent.com/block/goose/main/download_cli.ps1 | iex",
           "postInstallAuth": true
         }
       },
