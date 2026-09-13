@@ -46,7 +46,7 @@ conversations_dir = os.path.join(agy_dir, "conversations")
 brain_dir = os.path.join(agy_dir, "brain")
 
 try:
-    with open(cache_file) as f:
+    with open(cache_file, encoding='utf-8', errors='replace') as f:
         cache = json.load(f)
 except (OSError, json.JSONDecodeError):
     print(json.dumps({"sessions": []}))
@@ -85,7 +85,7 @@ if os.path.isfile(pb_path):
 name = None
 if os.path.isfile(transcript_path):
     try:
-        with open(transcript_path) as f:
+        with open(transcript_path, encoding='utf-8', errors='replace') as f:
             for _ in range(20):
                 line = f.readline()
                 if not line:

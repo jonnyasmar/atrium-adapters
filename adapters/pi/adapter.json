@@ -23,7 +23,8 @@
       "/usr/local/bin/pi",
       "~/.local/bin/pi",
       "~/.npm/bin/pi",
-      "~/.bun/bin/pi"
+      "~/.bun/bin/pi",
+      "~/AppData/Roaming/npm/pi.cmd"
     ]
   },
   "install": {

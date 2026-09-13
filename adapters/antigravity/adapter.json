@@ -16,7 +16,10 @@
     "kind": "acp",
     "managedRuntime": "antigravity-acp",
     "binaryDiscovery": {
-      "commands": ["agy_acp_server.par", "agy_acp_server"],
+      "commands": [
+        "agy_acp_server.par",
+        "agy_acp_server"
+      ],
       "wellKnownPaths": [
         "~/.local/share/atrium/runtimes/antigravity-acp/current/agy_acp_server.par",
         "~/.antigravity/acp/agy_acp_server.par"
@@ -47,7 +50,8 @@
       "/opt/homebrew/bin/agy",
       "/usr/local/bin/agy",
       "~/.local/bin/agy",
-      "~/.npm/bin/agy"
+      "~/.npm/bin/agy",
+      "~/AppData/Local/agy/bin/agy.exe"
     ]
   },
   "install": {
@@ -57,6 +61,10 @@
     },
     "linux": {
       "cmd": "curl -fsSL https://antigravity.google/cli/install.sh | bash",
+      "postInstallAuth": true
+    },
+    "windows": {
+      "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm https://antigravity.google/cli/install.ps1 | iex\"",
       "postInstallAuth": true
     }
   },

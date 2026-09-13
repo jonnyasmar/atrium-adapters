@@ -59,7 +59,7 @@ for entry in os.listdir(projects_dir):
         if not os.path.isfile(meta_path):
             continue
         try:
-            with open(meta_path) as f:
+            with open(meta_path, encoding='utf-8', errors='replace') as f:
                 meta = json.load(f)
             if meta.get("path") == cwd or meta.get("cwd") == cwd or meta.get("root") == cwd:
                 matched = True
@@ -95,7 +95,7 @@ for proj_dir in candidate_dirs:
         continue
     for path in glob.glob(os.path.join(info_dir, "*.json")):
         try:
-            with open(path) as f:
+            with open(path, encoding='utf-8', errors='replace') as f:
                 data = json.load(f)
         except (OSError, json.JSONDecodeError):
             continue

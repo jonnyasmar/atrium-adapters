@@ -23,7 +23,9 @@
       "/opt/homebrew/bin/omp",
       "/usr/local/bin/omp",
       "~/.local/bin/omp",
-      "~/.npm/bin/omp"
+      "~/.npm/bin/omp",
+      "~/AppData/Local/omp/omp.exe",
+      "~/AppData/Roaming/npm/omp.cmd"
     ]
   },
   "install": {

@@ -24,7 +24,8 @@
       "/usr/local/bin/opencode",
       "~/.npm/bin/opencode",
       "~/.local/bin/opencode",
-      "~/.bun/bin/opencode"
+      "~/.bun/bin/opencode",
+      "~/AppData/Roaming/npm/opencode.cmd"
     ]
   },
   "install": {

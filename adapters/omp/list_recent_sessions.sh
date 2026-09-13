@@ -43,7 +43,7 @@ def parse_head(path, max_lines=6):
     sid = ""
     file_cwd = ""
     try:
-        with open(path) as f:
+        with open(path, encoding='utf-8', errors='replace') as f:
             for _ in range(max_lines):
                 line = f.readline()
                 if not line:
@@ -71,7 +71,7 @@ def parse_head(path, max_lines=6):
 
 def first_user_message(path, max_lines=120):
     try:
-        with open(path) as f:
+        with open(path, encoding='utf-8', errors='replace') as f:
             for _ in range(max_lines):
                 line = f.readline()
                 if not line:

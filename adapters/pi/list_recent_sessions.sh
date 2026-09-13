@@ -43,7 +43,7 @@ def iso_from_mtime(path):
 
 def first_user_message(path, max_lines=80):
     try:
-        with open(path) as f:
+        with open(path, encoding='utf-8', errors='replace') as f:
             for _ in range(max_lines):
                 line = f.readline()
                 if not line:
@@ -84,7 +84,7 @@ seen_ids = set()
 # back to mtime when the file has no cwd marker.
 for path in glob.glob(os.path.join(sessions_dir, "**", "*.jsonl"), recursive=True):
     try:
-        with open(path) as f:
+        with open(path, encoding='utf-8', errors='replace') as f:
             first = f.readline().strip()
     except OSError:
         continue
