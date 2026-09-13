@@ -5,7 +5,25 @@ SESSION_ID="${1:?Usage: build_resume_command.sh <session-id> [flags-json]}"
 FLAGS="${2:-"{}"}"
 ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-jq -cn --arg session "$SESSION_ID" --argjson flags "$FLAGS" \
+# Windows: atrium types this argv into the pane shell, which is PowerShell by
+# default. Two pieces of the Unix argv cannot survive there: the
+# "env VAR=v" prefix (env is not a PowerShell command) and trust-workspace.sh
+# as argv[0] (PowerShell cannot exec a .sh, and a bare `bash` word resolves to
+# the WSL launcher in System32 rather than Git Bash).
+# Both are gated off below via $isWin so the Unix filter is untouched.
+# RECORDED DIVERGENCE on Windows:
+#   - trust: true does not pre-accept the workspace, so kimi shows its trust
+#     prompt (which defaults to Exit) instead of starting unattended;
+#   - effort is delivered only through KIMI_MODEL_THINKING_EFFORT and kimi has
+#     no equivalent flag, so a selected effort is not applied.
+# Both default to off/empty in launcher_options.json, so the DEFAULT launch is
+# unaffected and byte-identical to Unix.
+IS_WINDOWS=false
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) IS_WINDOWS=true ;;
+esac
+
+jq -cn --argjson isWin "$IS_WINDOWS" --arg session "$SESSION_ID" --argjson flags "$FLAGS" \
   --arg trustSh "${ADAPTER_DIR}/trust-workspace.sh" '
   def extra_args:
     ($flags.extraArgs // "")
@@ -15,8 +33,8 @@ jq -cn --arg session "$SESSION_ID" --argjson flags "$FLAGS" \
   (
     # See build_launch_command.sh — the trust gate quits on Enter, so a
     # resumed pane needs the same pre-trust wrapper.
-    (if $flags.trust == true then [$trustSh] else [] end)
-    + (if (($flags.effort // "") | type == "string" and length > 0)
+    (if ($isWin | not) and $flags.trust == true then [$trustSh] else [] end)
+    + (if ($isWin | not) and (($flags.effort // "") | type == "string" and length > 0)
      then ["env", ("KIMI_MODEL_THINKING_EFFORT=" + $flags.effort)]
      else [] end)
     + ["kimi", "--session", $session]

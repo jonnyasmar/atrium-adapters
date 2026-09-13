@@ -22,7 +22,8 @@
       "~/.kimi-code/bin/kimi",
       "/opt/homebrew/bin/kimi",
       "/usr/local/bin/kimi",
-      "~/.local/bin/kimi"
+      "~/.local/bin/kimi",
+      "~/.kimi-code/bin/kimi.exe"
     ]
   },
   "install": {
