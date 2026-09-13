@@ -138,6 +138,15 @@ while (<STDIN>) {
   $sid ||= $bn;
   $cwd_val ||= $ENV{CWD} // "/";
 
+  # JSON-escape the cwd. A POSIX cwd carries nothing that needs escaping, so
+  # this was a no-op nobody missed. A Windows cwd is C:\Users\j\atrium, and
+  # emitting those backslashes raw produced an invalid JSON escape sequence
+  # that made atrium fail to parse the whole reply. Same treatment $name_val
+  # and $path_val already get below.
+  # NOTE: this body is a single-quoted shell string — no apostrophes here.
+  $cwd_val =~ s/\\/\\\\/g;
+  $cwd_val =~ s/"/\\"/g;
+
   # Build display name: combine first message + last prompt for richer context
   my $name_val = "";
   # Clean up first message

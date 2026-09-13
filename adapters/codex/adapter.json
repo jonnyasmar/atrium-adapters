@@ -23,7 +23,9 @@
       "/usr/local/bin/codex",
       "/opt/homebrew/bin/codex",
       "~/.local/bin/codex",
-      "~/.cargo/bin/codex"
+      "~/.cargo/bin/codex",
+      "~/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "~/AppData/Roaming/npm/codex.cmd"
     ]
   },
   "install": {

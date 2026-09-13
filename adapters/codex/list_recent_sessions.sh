@@ -61,6 +61,16 @@ if sessions:
     print(json.dumps({'sessions': sessions}))
     raise SystemExit(0)
 
+# Rollout transcripts are UTF-8. open() without an explicit encoding uses the
+# locale codec, which is UTF-8 on macOS/Linux but cp1252 on Windows — a single
+# non-Latin-1 byte in any rollout then raised UnicodeDecodeError, which escaped
+# the try/except (it is a ValueError subclass, not caught by the OSError arm
+# below), aborted this whole python body, and left the script exiting 1 with NO
+# JSON on stdout. Codex therefore reported zero sessions on every Windows box.
+# The sibling extract_session.py already pins utf-8/replace; these inline
+# readers now match it, so macOS/Linux behaviour is unchanged.
+# NOTE: this body is a double-quoted shell string — no backticks in comments.
+#
 # Rollout creation time does not move as a long-running thread stays active.
 # File mtime does, so it is the picker recency source of truth.
 paths = glob.glob(os.path.join(sessions_dir, '*/*/*/rollout-*.jsonl'))
@@ -69,7 +79,7 @@ for path in paths:
     if len(sessions) >= 20:
         break
     try:
-        with open(path) as f:
+        with open(path, encoding='utf-8', errors='replace') as f:
             first_line = f.readline()
         meta = json.loads(first_line)
         if meta.get('type') != 'session_meta':
@@ -106,7 +116,7 @@ if os.path.exists(history_path) and sessions:
     sid_set = {s['id'] for s in sessions}
     sid_names = {}
     try:
-        with open(history_path) as f:
+        with open(history_path, encoding='utf-8', errors='replace') as f:
             for line in f:
                 line = line.strip()
                 if not line:

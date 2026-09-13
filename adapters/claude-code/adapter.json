@@ -21,7 +21,9 @@
       "~/.local/bin/claude",
       "~/.npm/bin/claude",
       "/usr/local/bin/claude",
-      "/opt/homebrew/bin/claude"
+      "/opt/homebrew/bin/claude",
+      "~/.local/bin/claude.exe",
+      "~/AppData/Roaming/npm/claude.cmd"
     ]
   },
   "install": {

@@ -22,7 +22,9 @@
       "~/.local/bin/cursor-agent",
       "~/.local/bin/agent",
       "/usr/local/bin/cursor-agent",
-      "/opt/homebrew/bin/cursor-agent"
+      "/opt/homebrew/bin/cursor-agent",
+      "~/AppData/Local/cursor-agent/cursor-agent.exe",
+      "~/AppData/Local/cursor-agent/agent.exe"
     ]
   },
   "install": {
@@ -35,7 +37,7 @@
       "postInstallAuth": true
     },
     "windows": {
-      "cmd": "irm https://cursor.com/install.ps1 | iex",
+      "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"irm 'https://cursor.com/install?win32=true' | iex\"",
       "postInstallAuth": true
     }
   },

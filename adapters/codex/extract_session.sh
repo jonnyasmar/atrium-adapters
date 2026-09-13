@@ -56,7 +56,7 @@ import glob, json, os, sys
 root, session_id = sys.argv[1], sys.argv[2]
 for path in sorted(glob.glob(os.path.join(root, "*/*/*/rollout-*.jsonl")), reverse=True):
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8", errors="replace") as f:
             first = f.readline()
         meta = json.loads(first)
         if meta.get("type") != "session_meta":
