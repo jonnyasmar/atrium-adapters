@@ -2,7 +2,7 @@
 name: atrium-bug-report
 description: "Investigate an atrium problem from the local artifacts on this machine, determine a root cause where the evidence supports one, and file a curated issue on the public tracker jonnyasmar/atrium-issues. Use when the user reports that atrium misbehaved, when a seeded atrium bug-report block is present, or when the user asks to file/report an atrium bug. Covers instance resolution, log correlation, benign-noise filtering, redaction, and the approval gate before posting."
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
 ---
 
 # atrium — bug report
@@ -327,9 +327,29 @@ This is **best effort, and the user's approval of the literal body is the real b
 
 ---
 
-## Step 8 — Approval, then post
+## Step 8 — Freeze the approved bytes, then post
 
-Show the user the **complete final body, verbatim**, plus the title. Then ask. Not "shall I file this?" after a summary — the actual text.
+Before asking for approval, create an exclusive per-run draft file. **Never use a fixed path**: concurrent bug-report sessions share the same temporary directory.
+
+```bash
+ISSUE_DRAFT="$(mktemp "${TMPDIR:-/tmp}/atrium-issue.XXXXXX")"
+chmod 600 "$ISSUE_DRAFT"
+printf '%s\n' "$ISSUE_DRAFT"
+```
+
+Record the printed pathname and reuse that exact value as a quoted literal in later tool calls; shell variables do not survive between calls. Write the complete final body there, then make it read-only. If the user asks for edits, make this same unique file writable, edit it, make it read-only again, and repeat the approval flow. Never fall back to a fixed draft pathname, and never overwrite a different run's file.
+
+```bash
+ISSUE_DRAFT="<exact path printed by mktemp>"
+chmod 400 "$ISSUE_DRAFT"
+if command -v shasum >/dev/null 2>&1; then
+  shasum -a 256 "$ISSUE_DRAFT" | awk '{print $1}'
+else
+  sha256sum "$ISSUE_DRAFT" | awk '{print $1}'
+fi
+```
+
+Record that full-file digest. Read the body back from **that file** and use the read-back—not a separately reconstructed copy—for the approval message. Show the user the **complete final body, verbatim**, plus the title. Then ask. Not "shall I file this?" after a summary — the actual text.
 
 - If they say no: **stop.** Ask what to change, or drop it. Never post a revised version without a fresh approval.
 - If they want edits: revise, show the full body again, ask again.
@@ -339,9 +359,24 @@ Show the user the **complete final body, verbatim**, plus the title. Then ask. N
 ```bash
 gh auth status                       # must be authenticated to jonnyasmar/atrium-issues
 
+ISSUE_DRAFT="<exact path printed by mktemp>"
+APPROVED_SHA256="<digest recorded when the body was shown>"
+if command -v shasum >/dev/null 2>&1; then
+  ACTUAL_SHA256="$(shasum -a 256 "$ISSUE_DRAFT" | awk '{print $1}')"
+else
+  ACTUAL_SHA256="$(sha256sum "$ISSUE_DRAFT" | awk '{print $1}')"
+fi
+if [ "$ACTUAL_SHA256" != "$APPROVED_SHA256" ]; then
+  echo "approved issue draft changed; refusing to post" >&2
+  exit 1
+fi
+
 gh issue create --repo jonnyasmar/atrium-issues \
-  --title "<title>" --body-file /tmp/atrium-issue.md
+  --title "<title>" --body-file "$ISSUE_DRAFT" &&
+rm -f -- "$ISSUE_DRAFT"
 ```
+
+The digest check must be in the same shell invocation as `gh issue create`. If it fails, do not restore or post the old content: read the changed file, show the full body again, and obtain fresh approval. Delete only this run's exact draft path, and only after a successful post or an explicit refusal to post.
 
 `gh issue create` bypasses the issue form — that is fine and expected, because your body already carries the same sections. Do not invent or silently attempt `source:`, `area:`, or `version:` labels: the public tracker does not provision that taxonomy, and reporters commonly lack label permissions. Classification belongs in the body. A maintainer can add the existing `bug` label during triage.
 
