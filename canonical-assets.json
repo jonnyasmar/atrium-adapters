@@ -96,12 +96,12 @@
       "remotePath": "skills/atrium-bug-report/SKILL.md",
       "target": "bundled-skill",
       "skillName": "atrium-bug-report",
-      "sha256": "0fbc7fff316e0f4ffd8345f17238fd271471f79836878a3dfeed05bdc61c8ea0"
+      "sha256": "ba5d0478272f90d084917b885834e8d11011c3228f9ac0d51bc26fc76bb03ba0"
     }
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "d18c7ad4ecccae5cf571ec8c30b71f23063ac1cf",
-    "generation": 60
+    "commit": "010845aafea0549a67e1dd283305120bcf03c9a6",
+    "generation": 61
   }
 }
