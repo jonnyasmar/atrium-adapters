@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Grok launcher_options must match the live CLI catalog (grok 1.0.5 /
-# ~/.grok/models_cache.json): grok-4.6 + grok-4.5, per-model efforts,
-# no SKUs that are agent types or retired composer ids, no effort `max`.
+# Grok launcher_options must match the live CLI catalog (grok 1.0.40 /
+# ~/.grok/models_cache.json): grok-4.7 (default) + grok-4.7-build-fast +
+# grok-4.6 + grok-4.5, per-model efforts, no SKUs that are agent types
+# or retired composer ids, no effort `max`.
 # Atrium caches static launcher_options at adapter load — do not replace
 # this file with a script until the host executes that method.
 
@@ -24,11 +25,15 @@ diff_out="$(jq -e '
   (.options | map(select(.key == "model")) | .[0]) as $model
   | (.options | map(select(.key == "effort")) | .[0]) as $effort
   | [
-      if ($model.choices | map(.value)) == ["grok-4.6", "grok-4.5"] then empty
-      else {path: "model.choices.values", expected: ["grok-4.6", "grok-4.5"], actual: ($model.choices | map(.value))} end,
-      if ($model.choices | any(.value == "grok-build" or .value == "grok-composer-2.5-fast")) then
-        {path: "model.choices", expected: "no grok-build / grok-composer-2.5-fast", actual: ($model.choices | map(.value))}
+      if ($model.choices | map(.value)) == ["grok-4.7", "grok-4.7-build-fast", "grok-4.6", "grok-4.5"] then empty
+      else {path: "model.choices.values", expected: ["grok-4.7", "grok-4.7-build-fast", "grok-4.6", "grok-4.5"], actual: ($model.choices | map(.value))} end,
+      if ($model.choices | any(.value == "grok-build" or .value == "grok-composer-2.5-fast" or .value == "grok-4.7-build")) then
+        {path: "model.choices", expected: "no grok-build / grok-composer-2.5-fast / grok-4.7-build", actual: ($model.choices | map(.value))}
       else empty end,
+      if ($model.choices[] | select(.value == "grok-4.7") | .efforts) == ["low", "medium", "high", "xhigh"] then empty
+      else {path: "grok-4.7.efforts", expected: ["low", "medium", "high", "xhigh"], actual: ($model.choices[] | select(.value == "grok-4.7") | .efforts)} end,
+      if ($model.choices[] | select(.value == "grok-4.7-build-fast") | .efforts) == ["low", "medium", "high", "xhigh"] then empty
+      else {path: "grok-4.7-build-fast.efforts", expected: ["low", "medium", "high", "xhigh"], actual: ($model.choices[] | select(.value == "grok-4.7-build-fast") | .efforts)} end,
       if ($model.choices[] | select(.value == "grok-4.6") | .efforts) == ["low", "medium", "high", "xhigh"] then empty
       else {path: "grok-4.6.efforts", expected: ["low", "medium", "high", "xhigh"], actual: ($model.choices[] | select(.value == "grok-4.6") | .efforts)} end,
       if ($model.choices[] | select(.value == "grok-4.5") | .efforts) == ["low", "medium", "high"] then empty
@@ -81,10 +86,10 @@ fi
 {
   script="${ROOT}/adapters/grok/build_launch_command.sh"
   wrapper="$(cd "$(dirname "${ROOT}/adapters/grok/grok-with-atrium-rules.sh")" && pwd)/grok-with-atrium-rules.sh"
-  actual="$(bash "$script" '{"alwaysApprove":true,"model":"grok-4.6","effort":"xhigh"}')"
+  actual="$(bash "$script" '{"alwaysApprove":true,"model":"grok-4.7","effort":"xhigh"}')"
   cmd="$(echo "$actual" | jq -c '.command')"
   expected="$(jq -nc --arg w "$wrapper" \
-    '["env","GROK_DISABLE_AUTOUPDATER=1",$w,"--always-approve","--model","grok-4.6","--reasoning-effort","xhigh"]')"
+    '["env","GROK_DISABLE_AUTOUPDATER=1",$w,"--always-approve","--model","grok-4.7","--reasoning-effort","xhigh"]')"
   if [[ "$cmd" == "$expected" ]]; then
     printf '[PASS] grok launch forwards catalog model/effort flags\n'
   else
