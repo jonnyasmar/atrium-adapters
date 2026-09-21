@@ -269,7 +269,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "c89cf5a97b8d5e419669a98eccc1b70910e7632c6a386f137081b12d8f9516fe"
+      "contentSha256": "75746ecb215af48bcf3ed760c6dc4176f31cc0113e6bca63b2723986d207a31d"
     },
     {
       "name": "hermes",
@@ -390,7 +390,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "010845aafea0549a67e1dd283305120bcf03c9a6",
+    "commit": "d6257aef13298c52cfa296e564ef98820afafe5a",
     "sharedSha256": "71b4cc5d0077cde8a923e91cd60967923e43e9a408ede0e184cf3f5b1ad94492",
     "schemaSha256": "bff9986c3ef71c4ce11028f7be77ca3faae8d994c991158e8837ed057bdbfbaf",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
