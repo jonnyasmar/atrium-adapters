@@ -92,6 +92,10 @@
           "label": "Fable 5"
         },
         {
+          "value": "claude-opus-5-5-high",
+          "label": "Opus 5.5"
+        },
+        {
           "value": "claude-opus-5-thinking-high",
           "label": "Opus 5 Thinking"
         },
