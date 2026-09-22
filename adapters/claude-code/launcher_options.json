@@ -21,7 +21,7 @@
         },
         {
           "value": "opus",
-          "label": "Claude Opus 5",
+          "label": "Claude Opus 5.5",
           "efforts": ["low", "medium", "high", "xhigh", "max", "ultracode"]
         },
         {
