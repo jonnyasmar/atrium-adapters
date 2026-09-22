@@ -36,7 +36,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "b171bc7b9684049f55b3db08f7f0da29101c130a1ca54fc4689551c437d5f698",
+      "contentSha256": "dd2152e6f44b76d78f7acb92888bc7386d22310718d24b13cf7c138278006355",
       "maxAppVersion": null
     },
     {
@@ -141,7 +141,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "0332ef3cc129d606a5433a4222ed299e31944d655dc626d80883009d8ae91e45"
+      "contentSha256": "e73034f3ebb553bb2e0e586583c83f1d6795c5f78d07fa108cccd07579741666"
     },
     {
       "name": "kimi",
@@ -390,7 +390,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "d6257aef13298c52cfa296e564ef98820afafe5a",
+    "commit": "46620f1e49432d6f80c0ca67e7cc27dc35e41d1d",
     "sharedSha256": "71b4cc5d0077cde8a923e91cd60967923e43e9a408ede0e184cf3f5b1ad94492",
     "schemaSha256": "bff9986c3ef71c4ce11028f7be77ca3faae8d994c991158e8837ed057bdbfbaf",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
