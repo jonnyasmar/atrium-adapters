@@ -193,11 +193,15 @@ A task card can carry a **launch config** — the same "Launch" section the crea
 # Omit --launch-profile to use the adapter's Default profile.
 # Add/replace the config on an existing card the same way:
 "$ATRIUM_CLI_PATH" task update ATR-12 --adapter codex --execution-mode worktree
+
+# Scheduled card: if its adapter is limited at fire time, run on these instead.
+"$ATRIUM_CLI_PATH" task update ATR-12 --fallback codex --fallback grok
 ```
 
 - **`--launch-profile` is the HOW** (model / effort / CLI args / env — the launch profile). **`--agent` is the WHO** (a packaged agent's prompt + skills). They're orthogonal — set either or both. The legacy `--profile` flag is **not** the launch profile (it only labels an ad-hoc agent/skill selection); ignore it for launch binding.
 - Pin statuses explicitly with `--review-status` / `--completion-status` / `--in-progress-status` (ids from `task status list`); otherwise they're derived by name (`/review/i`, `/done|complete/i`, `/progress/i`) with positional fallbacks.
 - `--execution-mode worktree` isolates the run onto a sibling worktree (`--worktree-branch-source existing --worktree-branch <name>` to reuse a branch; the default `new` derives a fresh one at launch). `--merge-target <branch>` makes completion a merge request.
+- **Fallback when limited** (scheduled cards only): `--fallback <adapter>[:<profile>]`, repeated in order (max 8), replaces the card's fallback list; `--fallback-accounts-only` turns it on with no other providers; `--clear-fallback` removes it. None of these need `--adapter`. Before a scheduled run starts, if the card's adapter is rate/usage-limited atrium first tries that adapter's other accounts, then each fallback in order. Unknown limit data never counts as limited, and a run never switches mid-way. When everything is limited the run waits for the earliest reset (a card comment says so). The run's `launchProfile.launchFallback` records what it skipped and why.
 - Bad adapter / profile / status ids fail fast with the valid options listed. Read a card's stored config back with `task show <id> --json` (`launchConfig` field).
 
 ## Workspace commands
