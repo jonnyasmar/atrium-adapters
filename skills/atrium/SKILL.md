@@ -124,6 +124,8 @@ have to know about, because the default answers are scoped to this machine:
 
 Nothing about driving a pane requires focus, so there's never an incidental reason to take it. Browser panes in particular: screenshots render from Chromium's own content model and a pane in another room is force-mounted offscreen on first use, so `snapshot` / `click` / `fill` / `screenshot` all work on a pane that was never visible. Don't focus a browser pane, or switch to its room, to drive it.
 
+**Spawning another agent: leave the surface to atrium.** To start another agent in its own pane, run `pane create --adapter <name>` (add `--split "$ATRIUM_PANE_ID"` to open it beside you), or `agent launch <definition-slug>` for a saved agent definition. **Don't pass `--type terminal` or `--surface terminal`** unless the user asked for a terminal session. With either flag left out, the pane opens as a chat pane when the adapter supports chat, following the user's launch profile and launcher choice. If the result has `surfaceFallback`, chat wasn't available and you got a terminal instead. Relay its `warning` sentence to the user rather than retrying. If the launch is refused because chat availability couldn't be checked, retry it once as-is; don't switch to a terminal on your own.
+
 **Closing your own pane just works — don't schedule it.** `pane close "$ATRIUM_PANE_ID"` on your own pane waits for your current turn to finish, so your final reply still lands and the pane goes after it. It reports `status: scheduled`. Do NOT hand-roll the delay with `nohup … sleep N &` or any other background job: some harnesses reap their tool shell's process group when the command returns, so the close never runs and the pane stays open. `--now` closes immediately (cutting the reply you're writing); `--after-turn` gets the same courtesy when closing somebody *else's* busy agent pane.
 
 More generally: **never background an atrium CLI call.** Run it in the foreground and read the result — a backgrounded one may be killed before it reaches atrium, and you'd have no way to know.
@@ -146,6 +148,9 @@ More generally: **never background an atrium CLI call.** Run it in the foregroun
 # Split the current pane, open a browser in it (background — no --focus)
 "$ATRIUM_CLI_PATH" pane create --type browser \
   --url "https://example.com" --split "$ATRIUM_PANE_ID"
+
+# Start another agent beside you — no --type, so it opens as chat
+"$ATRIUM_CLI_PATH" pane create --adapter claude-code --split "$ATRIUM_PANE_ID"
 
 # Message another agent — then end your turn and wait for the reply.
 "$ATRIUM_CLI_PATH" agent message <agent-id-prefix> "Can you take the backend half of ATR-12?"

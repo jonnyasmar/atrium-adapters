@@ -5,7 +5,7 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97757",
   "binary": "claude",
-  "version": "1.19.23",
+  "version": "1.19.24",
   "updateCommand": [
     "claude",
     "update"
@@ -17,10 +17,10 @@
       "claude"
     ],
     "wellKnownPaths": [
+      "~/.local/bin/claude",
       "~/.npm/bin/claude",
       "/usr/local/bin/claude",
-      "/opt/homebrew/bin/claude",
-      "~/.local/bin/claude"
+      "/opt/homebrew/bin/claude"
     ]
   },
   "install": {
