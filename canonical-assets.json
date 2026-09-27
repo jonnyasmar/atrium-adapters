@@ -12,7 +12,7 @@
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "052658019a99360c0157403e2800ea01345eaa617a842b1cf4a14a0b6c0a2281"
+      "sha256": "98d5a87dc8f5697a300bc85996f2f43e212ee68ecb3bb4004c68cea627bc128e"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -101,7 +101,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "a5e0beb495ba88a47433c630ce0f03d2f64bc72a",
-    "generation": 66
+    "commit": "420612b8eecae0c279db211e4b30651299d5e128",
+    "generation": 67
   }
 }
