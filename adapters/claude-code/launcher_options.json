@@ -26,7 +26,7 @@
         },
         {
           "value": "sonnet",
-          "label": "Claude Sonnet 5",
+          "label": "Claude Sonnet 5.5",
           "efforts": ["low", "medium", "high", "xhigh", "max"]
         },
         {
