@@ -26,6 +26,7 @@ set -uo pipefail
 #
 # Env overrides:
 #   ATRIUM_TEST_PORT      Override hook-port discovery
+#   ATRIUM_TEST_TOKEN     Override hook-token discovery (pair with ATRIUM_TEST_PORT)
 #   ATRIUM_TEST_NO_HTTP   If "1", skip the /resolve acceptance check
 #   ATRIUM_TEST_NO_INSTALL If "1", skip install/uninstall (test fixtures only)
 
@@ -59,6 +60,17 @@ elif [[ -f "$ATRIUM_PORT_FILE" ]]; then
   RESOLVE_PORT="$(cat "$ATRIUM_PORT_FILE")"
 else
   RESOLVE_PORT=""
+fi
+
+# /resolve answers only a caller holding the running instance's per-boot
+# secret. Read after the port: atrium writes the token first.
+ATRIUM_TOKEN_FILE="${ATRIUM_DEV_DIR}/hook-token"
+if [[ -n "${ATRIUM_TEST_TOKEN:-}" ]]; then
+  RESOLVE_TOKEN="$ATRIUM_TEST_TOKEN"
+elif [[ -f "$ATRIUM_TOKEN_FILE" ]]; then
+  RESOLVE_TOKEN="$(cat "$ATRIUM_TOKEN_FILE")"
+else
+  RESOLVE_TOKEN=""
 fi
 
 # ── Color & counters ──────────────────────────────────────────────────
@@ -274,6 +286,7 @@ else
       '{uri: $uri, paneId: $pane, params: $params}')"
     response="$(curl -sS -X POST "http://127.0.0.1:${RESOLVE_PORT}/resolve" \
       -H 'Content-Type: application/json' \
+      -H "X-Atrium-Hook-Token: ${RESOLVE_TOKEN}" \
       -d "$payload" 2>&1)"
 
     if echo "$response" | jq -e '.ok == true' >/dev/null 2>&1; then
@@ -299,6 +312,7 @@ elif [[ -z "$RESOLVE_PORT" ]]; then
 else
   state_response="$(curl -sS -X POST "http://127.0.0.1:${RESOLVE_PORT}/resolve" \
     -H 'Content-Type: application/json' \
+    -H "X-Atrium-Hook-Token: ${RESOLVE_TOKEN}" \
     -d "$(jq -n --arg pane "$TEST_PANE_ID" '{uri: ("atrium://hooks/_state?paneId=" + $pane + "&limit=100")}')" 2>&1)"
 
   if ! echo "$state_response" | jq -e '.events | type == "array"' >/dev/null 2>&1; then
