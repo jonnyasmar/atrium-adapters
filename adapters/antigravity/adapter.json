@@ -5,10 +5,11 @@
   "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
   "accent": "#14b8a6",
   "binary": "agy",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "updateCommand": [
-    "agy",
-    "update"
+    "bash",
+    "-c",
+    "bin=\"$(command -v agy)\"; target=\"$(readlink \"$bin\" 2>/dev/null || printf %s \"$bin\")\"; case \"$target\" in */Caskroom/*) rest=\"${target#*/Caskroom/}\"; exec brew upgrade --cask \"${rest%%/*}\" ;; */Cellar/*) rest=\"${target#*/Cellar/}\"; exec brew upgrade \"${rest%%/*}\" ;; esac; exec agy update"
   ],
   "icon": "icon.svg",
   "chatTransport": {

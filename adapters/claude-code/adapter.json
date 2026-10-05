@@ -5,10 +5,11 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97757",
   "binary": "claude",
-  "version": "1.19.26",
+  "version": "1.19.27",
   "updateCommand": [
-    "claude",
-    "update"
+    "bash",
+    "-c",
+    "bin=\"$(command -v claude)\"; target=\"$(readlink \"$bin\" 2>/dev/null || printf %s \"$bin\")\"; case \"$target\" in */Caskroom/*) rest=\"${target#*/Caskroom/}\"; exec brew upgrade --cask \"${rest%%/*}\" ;; */Cellar/*) rest=\"${target#*/Cellar/}\"; exec brew upgrade \"${rest%%/*}\" ;; esac; exec claude update"
   ],
   "skillInstallPath": "~/.claude/skills/atrium/skill.md",
   "skillsDir": "~/.claude/skills",

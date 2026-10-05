@@ -42,14 +42,19 @@ installed_version="$(extract_version "$installed_output")" || true
 [[ -n "$installed_version" ]] || json_error "failed to parse installed Codex version"
 
 if atrium_binary_is_homebrew_managed "$CODEX_BIN"; then
-  jq -nc --arg installed "$installed_version" \
-    '{installedVersion: $installed, latestVersion: $installed, updateAvailable: false}'
-  exit 0
+  # Homebrew can only move to the version its tap publishes, which can lag npm.
+  if brew_package="$(atrium_official_homebrew_package "$CODEX_BIN")"; then
+    command -v curl >/dev/null 2>&1 || json_error "curl not found"
+    published_version="$(atrium_homebrew_published_version "$brew_package")" || json_error "failed to fetch latest Homebrew Codex version"
+    latest_version="$(extract_version "$published_version")" || true
+  else
+    latest_version="$installed_version"
+  fi
+else
+  command -v curl >/dev/null 2>&1 || json_error "curl not found"
+  registry_json="$(curl -fsS --connect-timeout 2 --max-time 5 'https://registry.npmjs.org/-/package/@openai%2Fcodex/dist-tags' 2>/dev/null)" || json_error "failed to fetch latest Codex version"
+  latest_version="$(printf '%s' "$registry_json" | jq -er '.latest | select(type == "string" and length > 0)' 2>/dev/null)" || json_error "failed to parse latest Codex version"
 fi
-
-command -v curl >/dev/null 2>&1 || json_error "curl not found"
-registry_json="$(curl -fsS --connect-timeout 2 --max-time 5 'https://registry.npmjs.org/-/package/@openai%2Fcodex/dist-tags' 2>/dev/null)" || json_error "failed to fetch latest Codex version"
-latest_version="$(printf '%s' "$registry_json" | jq -er '.latest | select(type == "string" and length > 0)' 2>/dev/null)" || json_error "failed to parse latest Codex version"
 [[ "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || json_error "failed to parse latest Codex version"
 
 update_available=false
