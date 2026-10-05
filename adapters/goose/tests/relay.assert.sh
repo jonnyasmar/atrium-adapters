@@ -131,12 +131,14 @@ esac
 LIVE_PORT_FILE="${LIVE_DIR}/hook-port"
 if [ "$FAILS" -eq 0 ] && [ -f "$LIVE_PORT_FILE" ] && [ -x "$LIVE_CLI" ]; then
   PORT="$(cat "$LIVE_PORT_FILE")"
+  TOKEN="$(cat "${LIVE_DIR}/hook-token" 2>/dev/null || true)"
   PANE="relay-live-$$"
   "${SCRUB[@]}" ATRIUM_DATA_DIR="$LIVE_DIR" ATRIUM_CLI_PATH="$LIVE_CLI" ATRIUM_PANE_ID="$PANE" \
     "$HOOK" post-tool-use-failure post-tool-use < "$FIX/post-tool-use-failure/tool-input.json"
   sleep 0.3
   state="$(curl -sS -X POST "http://127.0.0.1:${PORT}/resolve" \
     -H 'Content-Type: application/json' \
+    -H "X-Atrium-Hook-Token: ${TOKEN}" \
     -d "$(jq -n --arg p "$PANE" '{uri: ("atrium://hooks/_state?paneId=" + $p + "&limit=20")}')" 2>/dev/null || true)"
   if jq -e '
       [.events[] | select(.eventName == "post-tool-use")] | last

@@ -10,13 +10,28 @@ set -euo pipefail
 # parsing multi-MB image/multimodal payloads through jq.
 
 CWD="${1:?Usage: list_recent_sessions.sh <cwd>}"
-# Match Claude Code's project-dir encoding: leading '-', then '/', '.', and
-# spaces all collapse to '-'. Without '.' and space handling, workspaces like
-# '~/foo/.worktrees/bar' or '~/Developer/Personal Research' silently miss.
-ENCODED="-${CWD#/}"
-ENCODED="${ENCODED//\//-}"
-ENCODED="${ENCODED//./-}"
-ENCODED="${ENCODED// /-}"
+# Match Claude Code's project-dir encoding (mP() in its CLI bundle): every
+# UTF-16 code unit outside [a-zA-Z0-9] becomes '-' (so an astral char like an
+# emoji becomes two), and an encoding over 200 chars is cut to 200 and
+# suffixed with '-' + base36(|int32 Java-style string hash of the raw path|).
+ENCODED="$(CWD="$CWD" perl -e '
+  my $p = $ENV{CWD};
+  utf8::decode($p);
+  my @units = map {
+    my $c = ord;
+    $c > 0xFFFF ? (0xD800 + (($c - 0x10000) >> 10), 0xDC00 + (($c - 0x10000) & 0x3FF)) : $c
+  } split //, $p;
+  my $enc = join "", map { chr($_) =~ /^[a-zA-Z0-9]$/ ? chr($_) : "-" } @units;
+  if (length($enc) > 200) {
+    my $h = 0;
+    $h = ($h * 31 + $_) % 4294967296 for @units;  # (h<<5)-h+unit, mod 2^32
+    $h = 4294967296 - $h if $h >= 2147483648;     # abs() of it as a signed int32
+    my $b36 = "";
+    do { $b36 = (0..9, "a".."z")[$h % 36] . $b36; $h = int($h / 36) } while $h;
+    $enc = substr($enc, 0, 200) . "-$b36";
+  }
+  print $enc;
+')"
 PROJECT_DIR="${HOME}/.claude/projects/${ENCODED}"
 
 if [ ! -d "$PROJECT_DIR" ]; then

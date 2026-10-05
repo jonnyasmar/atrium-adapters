@@ -82,6 +82,71 @@ assert_source_path \
   "$CLAUDE_SOURCE" \
   env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/claude-code/list_recent_sessions.sh" "$WORKSPACE"
 
+# The cwds below are never created; the enumerator only encodes them. Each
+# expected folder name is Claude Code 2.1.289's own encoding, computed by
+# running the functions copied verbatim from its binary under node:
+#   node -e 'var zie=200;function Le(e){return Math.abs(jee(e)).toString(36)}
+#     function k(e){return e.replace(/[^a-zA-Z0-9]/g,"-")}
+#     function mP(e){let n=k(e);if(n.length<=zie)return n;return`${n.slice(0,zie)}-${Le(e)}`}
+#     function jee(t){let e=0;for(let n=0;n<t.length;n++)e=(e<<5)-e+t.charCodeAt(n)|0;return e}
+#     console.log(mP(process.argv[1]))' "<cwd>"
+claude_transcript() {
+  local folder="$1" session="$2" cwd="$3" entrypoint="${4:-cli}"
+  local source="${FIXTURE_HOME}/.claude/projects/${folder}/${session}.jsonl"
+  mkdir -p "$(dirname "$source")"
+  printf '{"type":"user","message":{"role":"user","content":"hello"},"entrypoint":"%s","cwd":"%s","sessionId":"%s"}\n' \
+    "$entrypoint" "$cwd" "$session" >"$source"
+  printf '%s' "$source"
+}
+
+assert_claude_cwd() {
+  local label="$1" folder="$2" session="$3" cwd="$4"
+  assert_source_path \
+    "$label" \
+    "$(claude_transcript "$folder" "$session" "$cwd")" \
+    env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/claude-code/list_recent_sessions.sh" "$cwd"
+}
+
+assert_claude_cwd \
+  "claude-code cwd with '_' and '@'" \
+  "-Users-fixture-dev-my-project-v2" \
+  claude-symbols \
+  "/Users/fixture/dev/my_project@v2"
+
+assert_claude_cwd \
+  "claude-code cwd with non-ASCII BMP char" \
+  "-Users-fixture-dev-caf-" \
+  claude-bmp \
+  "/Users/fixture/dev/café"
+
+CLAUDE_EXACT_LIMIT_CWD="/$(printf 'x%.0s' $(seq 1 199))"
+assert_claude_cwd \
+  "claude-code cwd encoding to exactly 200 chars (no hash suffix)" \
+  "-${CLAUDE_EXACT_LIMIT_CWD#/}" \
+  claude-exact-limit \
+  "$CLAUDE_EXACT_LIMIT_CWD"
+
+# 214 encoded chars → truncated to 200 + '-' + base36 hash. The emoji is two
+# UTF-16 units (two '-'), and jee() is negative here (-1359635390), so the
+# abs() step is exercised too.
+assert_claude_cwd \
+  "claude-code cwd encoding past 200 chars (hash suffix)" \
+  "-Users-fixture-dev----launch-caf--workspace-a-deliberately-long-directory-name-to-push-the-encoded-project-folder-past-claude-codes-two-hundred-character-limit-and-then-some-more-nesting-so-the-hash-s-mhhpdq" \
+  claude-long \
+  "/Users/fixture/dev/🚀 launch/café-workspace/a-deliberately-long-directory-name-to-push-the-encoded-project-folder-past-claude-codes-two-hundred-character-limit/and-then-some-more-nesting-so-the-hash-suffix-kicks-in"
+
+# atrium's own chat panes write "entrypoint":"sdk-*" transcripts (issue #124).
+# Claude Code's /resume picker hides SDK entrypoints; atrium's launcher must not.
+CLAUDE_SDK_CWD="/Users/fixture/dev/sdk-entrypoints"
+CLAUDE_SDK_CLI="$(claude_transcript -Users-fixture-dev-sdk-entrypoints sdk-cli-session "$CLAUDE_SDK_CWD" sdk-cli)"
+CLAUDE_SDK_TS="$(claude_transcript -Users-fixture-dev-sdk-entrypoints sdk-ts-session "$CLAUDE_SDK_CWD" sdk-ts)"
+touch -t 202607210000 "$CLAUDE_SDK_CLI"
+touch -t 202607220000 "$CLAUDE_SDK_TS"
+assert_session_ids \
+  "claude-code sdk-cli and sdk-ts entrypoints" \
+  '["sdk-ts-session","sdk-cli-session"]' \
+  env HOME="$FIXTURE_HOME" bash "$ROOT/adapters/claude-code/list_recent_sessions.sh" "$CLAUDE_SDK_CWD"
+
 CODEX_SOURCE="${FIXTURE_HOME}/.codex/sessions/2026/07/21/rollout-fixture.jsonl"
 mkdir -p "$(dirname "$CODEX_SOURCE")"
 printf '{"type":"session_meta","timestamp":"2026-07-21T12:00:00Z","payload":{"id":"codex-session","cwd":"%s","timestamp":"2026-07-21T12:00:00Z"}}\n' \
