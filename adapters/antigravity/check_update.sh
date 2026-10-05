@@ -73,33 +73,39 @@ ADAPTERS_DIR="$(dirname "$SCRIPT_DIR")"
 # shellcheck source=../shared/package-manager.sh
 source "$ADAPTERS_DIR/shared/package-manager.sh"
 if atrium_binary_is_homebrew_managed "$AGY_BIN"; then
-  emit_installed_only
-fi
+  # The cask can only move to the version it publishes (its version carries a
+  # ",<build>" suffix). A third-party tap has no published version to compare.
+  brew_package="$(atrium_official_homebrew_package "$AGY_BIN")" || emit_installed_only
+  command -v curl >/dev/null 2>&1 || json_error "curl not found"
+  published_version="$(atrium_homebrew_published_version "$brew_package")" ||
+    json_error "failed to fetch latest Homebrew Antigravity CLI version"
+  latest_version="$(extract_version "$published_version")" || true
+else
+  command -v curl >/dev/null 2>&1 || json_error "curl not found"
 
-command -v curl >/dev/null 2>&1 || json_error "curl not found"
+  case "$(uname -s)" in
+    Darwin) os="darwin" ;;
+    Linux) os="linux" ;;
+    *) emit_installed_only ;;
+  esac
+  case "$(uname -m)" in
+    x86_64 | amd64) arch="amd64" ;;
+    arm64 | aarch64) arch="arm64" ;;
+    *) emit_installed_only ;;
+  esac
 
-case "$(uname -s)" in
-  Darwin) os="darwin" ;;
-  Linux) os="linux" ;;
-  *) emit_installed_only ;;
-esac
-case "$(uname -m)" in
-  x86_64 | amd64) arch="amd64" ;;
-  arm64 | aarch64) arch="arm64" ;;
-  *) emit_installed_only ;;
-esac
-
-platform="${os}_${arch}"
-if [[ "$os" == "linux" ]]; then
-  if [[ -f /lib/libc.musl-x86_64.so.1 || -f /lib/libc.musl-aarch64.so.1 ]] || ldd /bin/ls 2>&1 | grep -q musl; then
-    platform="linux_${arch}_musl"
+  platform="${os}_${arch}"
+  if [[ "$os" == "linux" ]]; then
+    if [[ -f /lib/libc.musl-x86_64.so.1 || -f /lib/libc.musl-aarch64.so.1 ]] || ldd /bin/ls 2>&1 | grep -q musl; then
+      platform="linux_${arch}_musl"
+    fi
   fi
-fi
 
-manifest_json="$(curl -fsS --connect-timeout 2 --max-time 5 "$UPDATER_HOST/manifests/$platform.json" 2>/dev/null)" ||
-  json_error "failed to fetch latest Antigravity CLI version"
-latest_version="$(printf '%s' "$manifest_json" | jq -er '.version | select(type == "string" and length > 0)' 2>/dev/null)" ||
-  json_error "failed to parse latest Antigravity CLI version"
+  manifest_json="$(curl -fsS --connect-timeout 2 --max-time 5 "$UPDATER_HOST/manifests/$platform.json" 2>/dev/null)" ||
+    json_error "failed to fetch latest Antigravity CLI version"
+  latest_version="$(printf '%s' "$manifest_json" | jq -er '.version | select(type == "string" and length > 0)' 2>/dev/null)" ||
+    json_error "failed to parse latest Antigravity CLI version"
+fi
 [[ "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] ||
   json_error "failed to parse latest Antigravity CLI version"
 

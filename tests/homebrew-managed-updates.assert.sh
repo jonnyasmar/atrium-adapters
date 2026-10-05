@@ -24,6 +24,7 @@ echo "$url" >>"${CURL_LOG:?}"
 case "$url" in
   https://formulae.brew.sh/api/cask/*) printf '{"version":"%s"}\n' "${MOCK_BREW_VERSION:?}" ;;
   https://formulae.brew.sh/api/formula/*) printf '{"versions":{"stable":"%s"}}\n' "${MOCK_BREW_VERSION:?}" ;;
+  */manifests/*.json) printf '{"version":"%s"}\n' "${MOCK_LATEST_VERSION:?}" ;;
   *) printf '{"latest":"%s"}\n' "${MOCK_LATEST_VERSION:?}" ;;
 esac
 EOF
@@ -46,7 +47,7 @@ make_managed_adapter_layout() {
   local artifact generation_dir
 
   mkdir -p "$adapters_dir"
-  for artifact in claude-code codex opencode shared; do
+  for artifact in antigravity claude-code codex opencode shared; do
     generation_dir="$adapters_dir/.managed/$artifact/generations/test"
     mkdir -p "$generation_dir"
     cp -R "$REPO_ROOT/adapters/$artifact/." "$generation_dir/"
@@ -100,7 +101,7 @@ run_check() {
 }
 
 check_adapter() {
-  local adapter="$1" binary="$2" package_dir="$3"
+  local adapter="$1" binary="$2" package_dir="$3" direct_source="$4"
   local script="$MANAGED_ADAPTERS_DIR/$adapter/check_update.sh"
   local case_dir="$TMP/${package_dir//\//-}"
   local api_url official_tap brew_root out
@@ -117,7 +118,7 @@ check_adapter() {
   esac
 
   # Official tap with a newer published version: compare against Homebrew
-  # (2.1.235), never npm (2.1.240) — brew can't install what it hasn't published.
+  # (2.1.235), never upstream (2.1.240) — brew can't install what it hasn't published.
   brew_root="$case_dir-brew-newer"
   make_brew_install "$brew_root" "$binary" "$package_dir" "$official_tap"
   out="$(run_check "$script" "$brew_root/bin" "$brew_root/curl.log" 2.1.235)"
@@ -145,68 +146,80 @@ check_adapter() {
     && [ -n "$(printf '%s' "$out" | jq -r '.error // empty')" ] \
     || fail "$adapter did not report a failed Homebrew lookup as an error" "$out"
 
-  local npm_root="$case_dir-npm"
-  make_stubs "$npm_root/bin"
-  make_tool "$npm_root/lib/node_modules/$adapter/cli.js"
-  ln -s "../lib/node_modules/$adapter/cli.js" "$npm_root/bin/$binary"
-  out="$(run_check "$script" "$npm_root/bin" "$npm_root/curl.log" 2.1.235)"
-  assert_result "$adapter npm install" "$out" "2.1.240" "true"
-  [ "$(wc -l <"$npm_root/curl.log" | tr -d ' ')" = "1" ] \
-    || fail "$adapter npm install did not query the registry exactly once"
-  grep -q '^https://registry.npmjs.org/' "$npm_root/curl.log" \
-    || fail "$adapter npm install did not query npm" "$(cat "$npm_root/curl.log")"
+  local direct_root="$case_dir-direct"
+  make_stubs "$direct_root/bin"
+  make_tool "$direct_root/lib/node_modules/$adapter/cli.js"
+  ln -s "../lib/node_modules/$adapter/cli.js" "$direct_root/bin/$binary"
+  out="$(run_check "$script" "$direct_root/bin" "$direct_root/curl.log" 2.1.235)"
+  assert_result "$adapter direct install" "$out" "2.1.240" "true"
+  [ "$(wc -l <"$direct_root/curl.log" | tr -d ' ')" = "1" ] \
+    || fail "$adapter direct install did not query upstream exactly once"
+  [[ "$(cat "$direct_root/curl.log")" == "$direct_source"* ]] \
+    || fail "$adapter direct install did not query $direct_source" "$(cat "$direct_root/curl.log")"
 
-  echo "[PASS] $adapter checks Homebrew installs against Homebrew and npm installs against npm"
+  echo "[PASS] $adapter checks Homebrew installs against Homebrew and direct installs upstream"
 }
 
-check_adapter claude-code claude Caskroom/claude-code
-check_adapter claude-code claude Caskroom/claude-code@latest
-check_adapter codex codex Caskroom/codex
-check_adapter opencode opencode Cellar/opencode
+NPM=https://registry.npmjs.org/
+AGY_UPDATER=https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/
+check_adapter antigravity agy Caskroom/antigravity-cli "$AGY_UPDATER"
+check_adapter claude-code claude Caskroom/claude-code "$NPM"
+check_adapter claude-code claude Caskroom/claude-code@latest "$NPM"
+check_adapter codex codex Caskroom/codex "$NPM"
+check_adapter opencode opencode Cellar/opencode "$NPM"
 
-# `claude update` only prints brew instructions for a Homebrew install, so the
-# manifest's updateCommand must run brew itself. Execute the real argv.
-check_claude_update_command() {
-  local name="$1" expected="$2" root="$TMP/claude-update-$1"
+# Neither `claude update` (prints brew instructions) nor `agy update` (Google's
+# updater) upgrades a Homebrew install, so their manifests' updateCommand must
+# run brew itself. Execute the real argv.
+check_update_command() {
+  local adapter="$1" binary="$2" layout="$3" package_path="$4" expected="$5"
+  local root="$TMP/update-command-$adapter-$layout"
   local -a argv=()
   local arg log
 
   while IFS= read -r arg; do argv+=("$arg"); done \
-    < <(jq -r '.updateCommand[]' "$REPO_ROOT/adapters/claude-code/adapter.json")
+    < <(jq -r '.updateCommand[]' "$REPO_ROOT/adapters/$adapter/adapter.json")
 
   mkdir -p "$root/bin"
-  for stub in brew claude; do
+  for stub in brew "$binary"; do
     printf '#!/usr/bin/env bash\nprintf "%%s %%s\\n" %s "$*" >>"$CMD_LOG"\n' "$stub" >"$root/bin/$stub.stub"
     chmod +x "$root/bin/$stub.stub"
   done
   mv "$root/bin/brew.stub" "$root/bin/brew"
 
-  case "$name" in
+  case "$layout" in
     cask)
-      mkdir -p "$root/Caskroom/claude-code@latest/2.1.231"
-      mv "$root/bin/claude.stub" "$root/Caskroom/claude-code@latest/2.1.231/claude"
-      ln -s "$root/Caskroom/claude-code@latest/2.1.231/claude" "$root/bin/claude"
+      mkdir -p "$(dirname "$root/$package_path")"
+      mv "$root/bin/$binary.stub" "$root/$package_path"
+      ln -s "$root/$package_path" "$root/bin/$binary"
       ;;
     formula)
-      mkdir -p "$root/Cellar/claude-code/2.1.231/bin"
-      mv "$root/bin/claude.stub" "$root/Cellar/claude-code/2.1.231/bin/claude"
-      ln -s "../Cellar/claude-code/2.1.231/bin/claude" "$root/bin/claude"
+      mkdir -p "$(dirname "$root/$package_path")"
+      mv "$root/bin/$binary.stub" "$root/$package_path"
+      ln -s "../$package_path" "$root/bin/$binary"
       ;;
     native)
-      mv "$root/bin/claude.stub" "$root/bin/claude"
+      mv "$root/bin/$binary.stub" "$root/bin/$binary"
       ;;
   esac
 
   log="$root/commands.log"
   (cd "$TMP" && PATH="$root/bin:$SYSTEM_PATH" CMD_LOG="$log" "${argv[@]}") \
-    || fail "claude-code updateCommand exited non-zero for a $name install"
+    || fail "$adapter updateCommand exited non-zero for a $layout install"
   [ "$(cat "$log")" = "$expected" ] \
-    || fail "claude-code updateCommand ran the wrong command for a $name install" "$(cat "$log")"
+    || fail "$adapter updateCommand ran the wrong command for a $layout install" "$(cat "$log")"
 }
 
-check_claude_update_command cask "brew upgrade --cask claude-code@latest"
-check_claude_update_command formula "brew upgrade claude-code"
-check_claude_update_command native "claude update"
+check_update_command claude-code claude cask Caskroom/claude-code@latest/2.1.231/claude \
+  "brew upgrade --cask claude-code@latest"
+check_update_command claude-code claude formula Cellar/claude-code/2.1.231/bin/claude \
+  "brew upgrade claude-code"
+check_update_command claude-code claude native "" "claude update"
 echo "[PASS] claude-code updateCommand routes Homebrew installs to brew"
+
+check_update_command antigravity agy cask Caskroom/antigravity-cli/1.2.17,6683332533157888/antigravity \
+  "brew upgrade --cask antigravity-cli"
+check_update_command antigravity agy native "" "agy update"
+echo "[PASS] antigravity updateCommand routes Homebrew installs to brew"
 
 echo "[PASS] Homebrew-managed update checks complete"
