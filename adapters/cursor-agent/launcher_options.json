@@ -116,6 +116,14 @@
           "label": "Sonnet 5"
         },
         {
+          "value": "claude-haiku-5-5-thinking-high",
+          "label": "Haiku 5.5 Thinking"
+        },
+        {
+          "value": "claude-haiku-5-5-high",
+          "label": "Haiku 5.5"
+        },
+        {
           "value": "claude-opus-4-8-thinking-high",
           "label": "Opus 4.8 Thinking"
         },
