@@ -13,7 +13,7 @@
         "linux"
       ],
       "official": true,
-      "version": "1.19.27",
+      "version": "1.19.28",
       "minAppVersion": "0.310.1",
       "models": [
         "fable",
@@ -36,7 +36,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "e288fc754388f1ae9f472895e1debb6181bb949ad4027d29827b71a16f15a2fc",
+      "contentSha256": "d51b77112cd72bbb8a2bed1bbf5d46a73870c3c79797f27c6b349900fb9274bf",
       "maxAppVersion": null
     },
     {
@@ -122,7 +122,7 @@
         "windows"
       ],
       "official": true,
-      "version": "0.6.3",
+      "version": "0.6.4",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><title>Cursor</title><path d=\"M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23\"/></svg>",
       "install": {
@@ -140,7 +140,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "661281ad9d1fffdd122193bf43ffadd5fa48e21819741337da0510fcd1ec3bd6"
+      "contentSha256": "55814faa764737010864b8abbcde288d35663f64db51643dd3c0f3c39122b7c8"
     },
     {
       "name": "kimi",
@@ -389,7 +389,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "306322318b9451692bd5580a29bb822d0012ee37",
+    "commit": "9bd91485368dce58048ba0a2800885efcfa377fd",
     "sharedSha256": "b578a7c6ce1472211fc188b10f9b94628b6be6c8695696c78e2affaf3c86669a",
     "schemaSha256": "bff9986c3ef71c4ce11028f7be77ca3faae8d994c991158e8837ed057bdbfbaf",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"

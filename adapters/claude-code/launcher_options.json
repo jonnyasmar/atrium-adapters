@@ -31,7 +31,7 @@
         },
         {
           "value": "haiku",
-          "label": "Claude Haiku 4.5",
+          "label": "Claude Haiku 5.5",
           "efforts": ["low", "medium", "high", "xhigh", "max"]
         }
       ]
