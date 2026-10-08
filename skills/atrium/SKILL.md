@@ -258,6 +258,9 @@ Four modes — pick by what you're producing:
 
 Notes are file-backed, and atrium reconciles direct file writes in real-time — so for **incremental** body edits, `Edit`/`Write` on the body file directly is cheaper than `read` → mutate → `write`. Lifecycle (new / delete / list / search) stays on the CLI.
 
+- `note open <id> --split "$ATRIUM_PANE_ID" --direction subtab` — open a note as a subtab beside you in one call (plain `note open` adds a notepad pane to your room, or answers `reused: true` with one there already showing the note).
+- `note open <id> --pane-id <pane>` — load a note into an existing notepad pane instead of opening another; an untouched placeholder note it was showing is cleaned up.
+
 **When authoring a canvas or HTML note, or editing a note body file directly, read `references/notes-interactive-ui.md`** (sibling to this file). It covers the canvas spec format and component catalog, custom actions (`send_to_agent`, `atrium_command`), the HTML postMessage protocol, framing-template syntax, live streaming via `canvas-patch`, the direct-file-edit path and its traps, and a worked PR-triage example. Don't load it for everyday CLI note work.
 
 ## Inline interactive canvases in chat
