@@ -36,7 +36,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "d51b77112cd72bbb8a2bed1bbf5d46a73870c3c79797f27c6b349900fb9274bf",
+      "contentSha256": "f919312039a1b34df9811a6c4b5602b5794d95b55f3f4d551d96c3c17340280a",
       "maxAppVersion": null
     },
     {
@@ -78,7 +78,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "d4599bef456b68ba964b4c0ea997c449e03e3259f19d0a3e2c404d56b2b13b31",
+      "contentSha256": "b16efc6bc2757c1f4ac0f0bf41a237132ff042a1d136ba3287aa7a72f169b45d",
       "maxAppVersion": null
     },
     {
@@ -203,7 +203,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "e1e6c2a317c537164752200726fe68749bbb277ae761809093c0d79190e95060",
+      "contentSha256": "949a3486007f67e7bb6820a3bd4b08d5941ab1fd7c59795d0f91d72bafa06bf7",
       "maxAppVersion": null
     },
     {
@@ -235,7 +235,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "9061de0b72a3c9ec2a1835c201bafd22f960dc4b871313ba0b407edd17c7ef4c",
+      "contentSha256": "c72157d8ec7e5d71328585902dca31c7eeaada1611b65017b22f85cc54cbe846",
       "maxAppVersion": null
     },
     {
@@ -327,7 +327,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "24c3bab0aaa677ae03e2e9a09c99ffa7c22ceda1be36bc9a26a473d743bb50ad",
+      "contentSha256": "b72b73d1e2feecad7d83a7aa932c7815a88073b247b0c786c9a350313817cb2f",
       "maxAppVersion": null
     },
     {
@@ -389,8 +389,8 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "9bd91485368dce58048ba0a2800885efcfa377fd",
-    "sharedSha256": "b578a7c6ce1472211fc188b10f9b94628b6be6c8695696c78e2affaf3c86669a",
+    "commit": "e1eff52b8d7cb7196c9345eb69423d2bdd990f48",
+    "sharedSha256": "6804c7571123fc52479da1202b991a086b82bc327e80e9e0328fcf8330348169",
     "schemaSha256": "bff9986c3ef71c4ce11028f7be77ca3faae8d994c991158e8837ed057bdbfbaf",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },
