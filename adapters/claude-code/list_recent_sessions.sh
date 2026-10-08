@@ -136,6 +136,11 @@ while (<STDIN>) {
   }
 
   $sid ||= $bn;
+  # A cwd captured from the transcript is raw JSON, so it is already escaped
+  # and the escape below would double it (C:\\Users read back with doubled
+  # separators). Undo the transcript escaping once, before the ENV fallback,
+  # so the single escape below is right for both sources. No-op on POSIX.
+  $cwd_val =~ s/\\\\/\\/g;
   $cwd_val ||= $ENV{CWD} // "/";
 
   # JSON-escape the cwd. A POSIX cwd carries nothing that needs escaping, so
