@@ -13,7 +13,7 @@
         "linux"
       ],
       "official": true,
-      "version": "1.19.28",
+      "version": "1.19.29",
       "minAppVersion": "0.310.1",
       "models": [
         "fable",
@@ -36,7 +36,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "d51b77112cd72bbb8a2bed1bbf5d46a73870c3c79797f27c6b349900fb9274bf",
+      "contentSha256": "f919312039a1b34df9811a6c4b5602b5794d95b55f3f4d551d96c3c17340280a",
       "maxAppVersion": null
     },
     {
@@ -51,7 +51,7 @@
         "linux"
       ],
       "official": true,
-      "version": "1.25.1",
+      "version": "1.25.2",
       "minAppVersion": "0.228.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" fill-rule=\"evenodd\"><title>Codex</title><path clip-rule=\"evenodd\" d=\"M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z\"/></svg>",
       "models": [
@@ -78,7 +78,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "d4599bef456b68ba964b4c0ea997c449e03e3259f19d0a3e2c404d56b2b13b31",
+      "contentSha256": "b16efc6bc2757c1f4ac0f0bf41a237132ff042a1d136ba3287aa7a72f169b45d",
       "maxAppVersion": null
     },
     {
@@ -186,7 +186,7 @@
         "linux"
       ],
       "official": true,
-      "version": "0.5.14",
+      "version": "0.5.15",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" fill=\"currentColor\"><title>opencode</title><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M384 416H128V96H384V416ZM320 160H192V352H320V160Z\"/><path opacity=\"0.6\" d=\"M320 224V352H192V224H320Z\"/></svg>",
       "install": {
@@ -203,7 +203,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "e1e6c2a317c537164752200726fe68749bbb277ae761809093c0d79190e95060",
+      "contentSha256": "949a3486007f67e7bb6820a3bd4b08d5941ab1fd7c59795d0f91d72bafa06bf7",
       "maxAppVersion": null
     },
     {
@@ -218,7 +218,7 @@
         "linux"
       ],
       "official": true,
-      "version": "0.6.7",
+      "version": "0.6.8",
       "minAppVersion": "0.234.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 800\" fill=\"currentColor\"><title>Pi</title><path fill-rule=\"evenodd\" d=\"M165.29 165.29 H517.36 V400 H400 V517.36 H282.65 V634.72 H165.29 Z M282.65 282.65 V400 H400 V282.65 Z\"/><path d=\"M517.36 400 H634.72 V634.72 H517.36 Z\"/></svg>",
       "install": {
@@ -235,7 +235,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "9061de0b72a3c9ec2a1835c201bafd22f960dc4b871313ba0b407edd17c7ef4c",
+      "contentSha256": "c72157d8ec7e5d71328585902dca31c7eeaada1611b65017b22f85cc54cbe846",
       "maxAppVersion": null
     },
     {
@@ -310,7 +310,7 @@
         "linux"
       ],
       "official": true,
-      "version": "16.4.9",
+      "version": "16.4.10",
       "minAppVersion": "0.233.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 90\" width=\"120\" height=\"90\"><rect x=\"10\" y=\"8\" width=\"100\" height=\"12\" rx=\"2\" fill=\"currentColor\"/><rect x=\"25\" y=\"20\" width=\"12\" height=\"62\" rx=\"2\" fill=\"currentColor\"/><rect x=\"75\" y=\"20\" width=\"12\" height=\"45\" rx=\"2\" fill=\"currentColor\"/><rect x=\"71\" y=\"55\" width=\"20\" height=\"16\" rx=\"3\" fill=\"#f97316\"/><rect x=\"76\" y=\"59\" width=\"3\" height=\"8\" rx=\"1\" fill=\"#0d0d0d\"/><rect x=\"82\" y=\"59\" width=\"3\" height=\"8\" rx=\"1\" fill=\"#0d0d0d\"/><circle cx=\"18\" cy=\"14\" r=\"2\" fill=\"#f97316\" opacity=\"0.8\"/><circle cx=\"102\" cy=\"14\" r=\"2\" fill=\"#f97316\" opacity=\"0.8\"/></svg>",
       "install": {
@@ -327,7 +327,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "24c3bab0aaa677ae03e2e9a09c99ffa7c22ceda1be36bc9a26a473d743bb50ad",
+      "contentSha256": "b72b73d1e2feecad7d83a7aa932c7815a88073b247b0c786c9a350313817cb2f",
       "maxAppVersion": null
     },
     {
@@ -389,8 +389,8 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "9bd91485368dce58048ba0a2800885efcfa377fd",
-    "sharedSha256": "b578a7c6ce1472211fc188b10f9b94628b6be6c8695696c78e2affaf3c86669a",
+    "commit": "e1eff52b8d7cb7196c9345eb69423d2bdd990f48",
+    "sharedSha256": "6804c7571123fc52479da1202b991a086b82bc327e80e9e0328fcf8330348169",
     "schemaSha256": "bff9986c3ef71c4ce11028f7be77ca3faae8d994c991158e8837ed057bdbfbaf",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },

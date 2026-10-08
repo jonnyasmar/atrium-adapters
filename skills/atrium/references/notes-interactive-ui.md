@@ -374,12 +374,12 @@ Two custom actions extend the catalog beyond the standard json-render set:
   | `atrium://commands/workspace.delete` | `workspaceId: string` | Delete a workspace |
   | `atrium://commands/theme.switch` | — | Cycle through atrium themes |
   | `atrium://commands/config.set` | `key, value` | Update a config setting |
-  | `atrium://commands/pane.create` | `workspaceId, type, position?` | Open a new pane (`type` ∈ `"terminal" \| "browser" \| ...`) |
+  | `atrium://commands/pane.create` | `type?, cwd?, url?, roomName?, workspaceId?` | Open a pane in a new room (`type` ∈ `"terminal" \| "browser" \| "git-changes" \| "notepad"`; `url` required for browser) |
   | `atrium://commands/pane.close` | `paneId` | Close a pane |
   | `atrium://commands/pane.resize` | `paneId, direction` | Resize a pane |
-  | `atrium://commands/pane.split` | `paneId, type, direction` | Split a pane |
+  | `atrium://commands/pane.split` | `paneId, type?, direction?, noteId?, noteWorkspaceId?` | Split a pane; with `type=notepad&noteId=…` the new notepad opens holding that note |
   | `atrium://commands/pane.rename` | `paneId, name` | Rename a pane |
-  | `atrium://commands/notepad.open` | `noteId, workspaceId` | Open a specific note in a notepad pane |
+  | `atrium://commands/notepad.open` | `noteId, workspaceId, paneId?` | Open a note in a new notepad pane; with `paneId`, load it into that existing notepad pane instead |
   | `atrium://commands/file.open` | `path` (or `filePath`), `workspaceId?` | Open a file in an editor pane |
   | `atrium://commands/adapter.list` | — | List installed adapters (read-only) |
 

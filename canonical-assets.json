@@ -12,7 +12,7 @@
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "98d5a87dc8f5697a300bc85996f2f43e212ee68ecb3bb4004c68cea627bc128e"
+      "sha256": "d0d9707ee45e0490646064ccc58f548dc5a05ffcbbcb14454f5b68a683943884"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -26,7 +26,7 @@
       "remotePath": "skills/atrium/references/notes-interactive-ui.md",
       "target": "adapter-skill-reference",
       "destName": "notes-interactive-ui.md",
-      "sha256": "2976d4cf2be2dd6c8206a74d96b41d98a2ec9cb9f21f188acb179697c3b47f93"
+      "sha256": "4a31feec2241626b1d200f40490e08693cf6e7fee4ab4b60785a1c9fe564ead6"
     },
     {
       "id": "atrium-skill-chat-canvas-fence",
@@ -101,7 +101,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "9bd91485368dce58048ba0a2800885efcfa377fd",
-    "generation": 73
+    "commit": "e1eff52b8d7cb7196c9345eb69423d2bdd990f48",
+    "generation": 74
   }
 }

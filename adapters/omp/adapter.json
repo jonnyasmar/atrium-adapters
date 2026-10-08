@@ -5,10 +5,11 @@
   "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
   "accent": "#f97316",
   "binary": "omp",
-  "version": "16.4.9",
+  "version": "16.4.10",
   "updateCommand": [
-    "omp",
-    "update"
+    "bash",
+    "-c",
+    "n=\"Oh My Pi\"; x=\"$(command -v omp)\" || { echo \"$n is not installed or not on PATH.\" >&2; exit 127; }; r() { t=\"$1\"; i=0; while [ -L \"$t\" ] && [ $i -lt 40 ]; do l=\"$(readlink \"$t\")\"; case \"$l\" in /*) t=\"$l\" ;; *) t=\"${t%/*}/$l\" ;; esac; i=$((i+1)); done; }; r \"$x\"; I=\"\"; S=\"\"; for y in \"$x\" \"$t\"; do case \"$y\" in */mise/installs/*) z=\"${y#*/mise/installs/}\"; I=\"${y%%/mise/installs/*}/mise/installs/${z%%/*}\"; break ;; esac; D=\"$y\"; while [ \"${D%/*}\" != \"$D\" ]; do D=\"${D%/*}\"; if [ -f \"$D/.mise.backend.toml\" ] || [ -f \"$D/.mise.backend\" ]; then I=\"$D\"; break 2; fi; done; done; case \"$x\" in */mise/shims/*) S=1 ;; */shims/*) [ \"$t\" != \"$x\" ] && [ \"${t##*/}\" = mise ] && S=1 ;; esac; case \"${I##*/}\" in node|nodejs|bun) ;; *) if [ -n \"$I$S\" ]; then M=\"${I%/installs/*}\"; [ -n \"$I\" ] || M=\"${x%/shims/*}\"; export MISE_DATA_DIR=\"${MISE_DATA_DIR:-$M}\"; m=\"$(command -v mise)\" || { [ -n \"$S\" ] && [ \"${t##*/}\" = mise ] && m=\"$t\"; }; k=\"$(sed -n \"s/^short = \\\"\\(.*\\)\\\"$/\\1/p\" \"$I/.mise.backend.toml\" 2>/dev/null)\"; case \"${I##*/}\" in npm-oh-my-pi-pi-coding-agent|\"\") k=\"${k:-npm:@oh-my-pi/pi-coding-agent}\" ;; esac; k=\"${k:-${I##*/}}\"; [ -n \"$m\" ] || { echo \"$n is installed by mise (${I:-$x}), but mise is not on PATH. Run: mise upgrade --bump $k\" >&2; exit 3; }; o=\"$(cd && \"$m\" which --plugin omp 2>/dev/null)\"; case \"$o\" in \"\") echo \"$n is installed by mise (${I:-$x}), but no mise config in your home directory selects it. Run: mise use -g $k@latest\" >&2; exit 3 ;; node|nodejs|bun|core:node|core:bun) r \"$(cd && \"$m\" which omp)\" ;; *) cd && MISE_YES=1 \"$m\" upgrade --bump \"$o\" && exit; echo \"Updating $n with mise failed. Run: mise upgrade --bump $o\" >&2; exit 1 ;; esac; fi ;; esac; case \"$t\" in */lib/node_modules/@oh-my-pi/pi-coding-agent/*) P=\"$(cd \"${t%%/lib/node_modules/@oh-my-pi/pi-coding-agent/*}\" && pwd)\"; G=\"$(npm prefix -g 2>/dev/null)\"; if [ \"$(cd \"$P\" && pwd -P)\" != \"$(cd \"${G:-/-}\" 2>/dev/null && pwd -P)\" ]; then N=\"$P/bin/npm\"; [ -x \"$N\" ] || N=\"$(command -v npm)\" || { echo \"$n was installed with npm into $P, but npm is not on PATH.\" >&2; exit 3; }; \"$N\" install -g --allow-scripts=bun --prefix \"$P\" bun @oh-my-pi/pi-coding-agent && exit; echo \"Updating $n with npm failed. Run: npm install -g --allow-scripts=bun --prefix $P bun @oh-my-pi/pi-coding-agent\" >&2; exit 1; fi ;; esac; exec omp update"
   ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.omp/agent/skills/atrium/SKILL.md",

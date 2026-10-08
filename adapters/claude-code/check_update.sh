@@ -37,11 +37,25 @@ command -v jq >/dev/null 2>&1 || json_error "jq not found"
 CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
 [[ -n "$CLAUDE_BIN" ]] || json_error "claude not found"
 
+mise_tool=""
+if mise_tool="$(atrium_mise_tool_for_binary "$CLAUDE_BIN" claude)" \
+  && mise_bin="$(atrium_mise_command "$CLAUDE_BIN")" \
+  && mise_current="$(atrium_mise_current_binary "$CLAUDE_BIN" "$mise_bin" claude)"; then
+  mise_owner="$CLAUDE_BIN"
+  CLAUDE_BIN="$mise_current"
+else
+  mise_tool=""
+fi
+
 installed_output="$(DISABLE_AUTOUPDATER=1 "$CLAUDE_BIN" --version 2>&1)" || json_error "failed to determine installed Claude Code version"
 installed_version="$(extract_version "$installed_output")" || true
 [[ -n "$installed_version" ]] || json_error "failed to parse installed Claude Code version"
 
-if atrium_binary_is_homebrew_managed "$CLAUDE_BIN"; then
+if [[ -n "$mise_tool" ]]; then
+  # mise holds back releases younger than the user's minimum_release_age.
+  published_version="$(atrium_mise_latest_version "$mise_owner" "$mise_bin" "$mise_tool")" || json_error "failed to fetch latest mise Claude Code version"
+  latest_version="$(extract_version "$published_version")" || true
+elif atrium_binary_is_homebrew_managed "$CLAUDE_BIN"; then
   # Homebrew can only move to the version its tap publishes, which can lag npm.
   if brew_package="$(atrium_official_homebrew_package "$CLAUDE_BIN")"; then
     command -v curl >/dev/null 2>&1 || json_error "curl not found"

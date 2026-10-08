@@ -98,6 +98,9 @@ jobs:
       - name: Validate package-manager-aware update checks
         run: bash tests/homebrew-managed-updates.assert.sh
 
+      - name: Validate mise- and npm-prefix-aware update routing
+        run: bash tests/mise-managed-updates.assert.sh
+
       - name: Validate kimi workspace-trust pre-accept
         run: bash tests/kimi-workspace-trust.assert.sh
 
