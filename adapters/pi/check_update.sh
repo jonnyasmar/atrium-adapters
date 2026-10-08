@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ADAPTERS_DIR="$(dirname "$SCRIPT_DIR")"
+source "$ADAPTERS_DIR/shared/package-manager.sh"
+
 json_error() {
   local message="$1"
   if command -v jq >/dev/null 2>&1; then
@@ -30,15 +34,32 @@ version_is_newer() {
 }
 
 command -v jq >/dev/null 2>&1 || json_error "jq not found"
-command -v curl >/dev/null 2>&1 || json_error "curl not found"
-command -v pi >/dev/null 2>&1 || json_error "pi not found"
+PI_BIN="$(command -v pi 2>/dev/null || true)"
+[[ -n "$PI_BIN" ]] || json_error "pi not found"
 
-installed_output="$(PI_SKIP_VERSION_CHECK=1 pi --version 2>&1)" || json_error "failed to determine installed Pi version"
+mise_tool=""
+if mise_tool="$(atrium_mise_tool_for_binary "$PI_BIN" pi)" \
+  && mise_bin="$(atrium_mise_command "$PI_BIN")" \
+  && mise_current="$(atrium_mise_current_binary "$PI_BIN" "$mise_bin" pi)"; then
+  mise_owner="$PI_BIN"
+  PI_BIN="$mise_current"
+else
+  mise_tool=""
+fi
+
+installed_output="$(PI_SKIP_VERSION_CHECK=1 "$PI_BIN" --version 2>&1)" || json_error "failed to determine installed Pi version"
 installed_version="$(extract_version "$installed_output")" || true
 [[ -n "$installed_version" ]] || json_error "failed to parse installed Pi version"
 
-registry_json="$(curl -fsS --connect-timeout 2 --max-time 5 'https://registry.npmjs.org/-/package/@earendil-works%2Fpi-coding-agent/dist-tags' 2>/dev/null)" || json_error "failed to fetch latest Pi version"
-latest_version="$(printf '%s' "$registry_json" | jq -er '.latest | select(type == "string" and length > 0)' 2>/dev/null)" || json_error "failed to parse latest Pi version"
+if [[ -n "$mise_tool" ]]; then
+  # mise holds back releases younger than the user's minimum_release_age.
+  published_version="$(atrium_mise_latest_version "$mise_owner" "$mise_bin" "$mise_tool")" || json_error "failed to fetch latest mise Pi version"
+  latest_version="$(extract_version "$published_version")" || true
+else
+  command -v curl >/dev/null 2>&1 || json_error "curl not found"
+  registry_json="$(curl -fsS --connect-timeout 2 --max-time 5 'https://registry.npmjs.org/-/package/@earendil-works%2Fpi-coding-agent/dist-tags' 2>/dev/null)" || json_error "failed to fetch latest Pi version"
+  latest_version="$(printf '%s' "$registry_json" | jq -er '.latest | select(type == "string" and length > 0)' 2>/dev/null)" || json_error "failed to parse latest Pi version"
+fi
 [[ "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || json_error "failed to parse latest Pi version"
 
 update_available=false

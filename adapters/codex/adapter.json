@@ -5,10 +5,11 @@
   "description": "OpenAI's AI coding assistant",
   "accent": "#059669",
   "binary": "codex",
-  "version": "1.25.1",
+  "version": "1.25.2",
   "updateCommand": [
-    "codex",
-    "update"
+    "bash",
+    "-c",
+    "n=\"Codex\"; x=\"$(command -v codex)\" || { echo \"$n is not installed or not on PATH.\" >&2; exit 127; }; r() { t=\"$1\"; i=0; while [ -L \"$t\" ] && [ $i -lt 40 ]; do l=\"$(readlink \"$t\")\"; case \"$l\" in /*) t=\"$l\" ;; *) t=\"${t%/*}/$l\" ;; esac; i=$((i+1)); done; }; r \"$x\"; I=\"\"; S=\"\"; for y in \"$x\" \"$t\"; do case \"$y\" in */mise/installs/*) z=\"${y#*/mise/installs/}\"; I=\"${y%%/mise/installs/*}/mise/installs/${z%%/*}\"; break ;; esac; D=\"$y\"; while [ \"${D%/*}\" != \"$D\" ]; do D=\"${D%/*}\"; if [ -f \"$D/.mise.backend.toml\" ] || [ -f \"$D/.mise.backend\" ]; then I=\"$D\"; break 2; fi; done; done; case \"$x\" in */mise/shims/*) S=1 ;; */shims/*) [ \"$t\" != \"$x\" ] && [ \"${t##*/}\" = mise ] && S=1 ;; esac; case \"${I##*/}\" in node|nodejs|bun) ;; *) if [ -n \"$I$S\" ]; then M=\"${I%/installs/*}\"; [ -n \"$I\" ] || M=\"${x%/shims/*}\"; export MISE_DATA_DIR=\"${MISE_DATA_DIR:-$M}\"; m=\"$(command -v mise)\" || { [ -n \"$S\" ] && [ \"${t##*/}\" = mise ] && m=\"$t\"; }; k=\"$(sed -n \"s/^short = \\\"\\(.*\\)\\\"$/\\1/p\" \"$I/.mise.backend.toml\" 2>/dev/null)\"; case \"${I##*/}\" in npm-openai-codex|\"\") k=\"${k:-npm:@openai/codex}\" ;; esac; k=\"${k:-${I##*/}}\"; [ -n \"$m\" ] || { echo \"$n is installed by mise (${I:-$x}), but mise is not on PATH. Run: mise upgrade --bump $k\" >&2; exit 3; }; o=\"$(cd && \"$m\" which --plugin codex 2>/dev/null)\"; case \"$o\" in \"\") echo \"$n is installed by mise (${I:-$x}), but no mise config in your home directory selects it. Run: mise use -g $k@latest\" >&2; exit 3 ;; node|nodejs|bun|core:node|core:bun) r \"$(cd && \"$m\" which codex)\" ;; *) cd && MISE_YES=1 \"$m\" upgrade --bump \"$o\" && exit; echo \"Updating $n with mise failed. Run: mise upgrade --bump $o\" >&2; exit 1 ;; esac; fi ;; esac; case \"$t\" in */lib/node_modules/@openai/codex/*) P=\"$(cd \"${t%%/lib/node_modules/@openai/codex/*}\" && pwd)\"; G=\"$(npm prefix -g 2>/dev/null)\"; if [ \"$(cd \"$P\" && pwd -P)\" != \"$(cd \"${G:-/-}\" 2>/dev/null && pwd -P)\" ]; then N=\"$P/bin/npm\"; [ -x \"$N\" ] || N=\"$(command -v npm)\" || { echo \"$n was installed with npm into $P, but npm is not on PATH.\" >&2; exit 3; }; \"$N\" install -g --prefix \"$P\" @openai/codex && exit; echo \"Updating $n with npm failed. Run: npm install -g --prefix $P @openai/codex\" >&2; exit 1; fi ;; esac; exec codex update"
   ],
   "icon": "icon.svg",
   "skillInstallPath": "~/.codex/skills/atrium/SKILL.md",
