@@ -107,6 +107,9 @@ jobs:
       - name: Validate Claude root bypass compatibility
         run: bash tests/claude-root-bypass.assert.sh
 
+      - name: Validate symlinked hook configuration
+        run: python3 tests/hook-config-symlinks.py
+
       - name: Validate atrium bug-report contract
         run: bash tests/atrium-bug-report-contract.assert.sh
 

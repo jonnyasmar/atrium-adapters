@@ -13,6 +13,7 @@ set -euo pipefail
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 CONFIG_TOML="${HOME}/.codex/config.toml"
 HOOKS_JSON="${HOME}/.codex/hooks.json"
+source "$(dirname "$0")/../shared/config-file.sh"
 CONFIG_LOCK="${HOME}/.codex/.atrium-hooks.lock"
 CONFIG_LOCK_HELD=false
 
@@ -226,7 +227,7 @@ enable_hooks_feature() {
   fi
 
   local tmp
-  tmp="$(mktemp "${CONFIG_TOML}.atrium-tmp.XXXXXX")"
+  tmp="$(atrium_config_temp "$CONFIG_TOML")"
   awk '
     function feature_key(line, key) {
       if (line !~ /^[[:space:]]*[A-Za-z0-9_-]+[[:space:]]*=/) return ""
@@ -275,20 +276,20 @@ enable_hooks_feature() {
       }
     }
   ' feature_marker="__ATRIUM_FEATURES__" "$CONFIG_TOML" > "$tmp"
-  mv "$tmp" "$CONFIG_TOML"
+  atrium_config_commit "$tmp" "$CONFIG_TOML"
 }
 
 disable_hooks_feature() {
   [ -f "$CONFIG_TOML" ] || return 0
   if grep -qE '^\s*(codex_hooks|hooks)\s*=' "$CONFIG_TOML" 2>/dev/null; then
     local tmp
-    tmp="$(mktemp "${CONFIG_TOML}.atrium-tmp.XXXXXX")"
+    tmp="$(atrium_config_temp "$CONFIG_TOML")"
     # Flip both legacy `codex_hooks` and current `hooks` to false. Leaving
     # the legacy key behind would re-trigger the deprecation warning, but
     # disable is non-destructive by contract — users who want it gone can
     # delete the line manually.
     sed -E 's/^([[:space:]]*(codex_hooks|hooks)[[:space:]]*=[[:space:]]*).*/\1false/' "$CONFIG_TOML" > "$tmp"
-    mv "$tmp" "$CONFIG_TOML"
+    atrium_config_commit "$tmp" "$CONFIG_TOML"
   fi
 }
 
@@ -297,20 +298,18 @@ disable_hooks_feature() {
 remove_atrium_mcp_config() {
   [ -f "$CONFIG_TOML" ] || return 0
   local tmp
-  tmp="$(mktemp "${CONFIG_TOML}.atrium-tmp.XXXXXX")"
+  tmp="$(atrium_config_temp "$CONFIG_TOML")"
   awk '
     BEGIN { skip = 0 }
     /^\[mcp_servers\.atrium(\.env)?\]$/ { skip = 1; next }
     /^\[/ { if (skip) skip = 0 }
     !skip { print }
   ' "$CONFIG_TOML" > "$tmp"
-  mv "$tmp" "$CONFIG_TOML"
+  atrium_config_commit "$tmp" "$CONFIG_TOML"
 }
 
 uninstall_mcp_server() {
-  if command -v codex &>/dev/null; then
-    codex mcp remove atrium >/dev/null 2>&1 || true
-  fi
+  # Keep this edit on our symlink-preserving writer too.
   remove_atrium_mcp_config
 }
 
@@ -330,8 +329,10 @@ trust_all_hooks() {
     echo "atrium hooks: python3 not found, skipping auto-trust" >&2
     return 0
   fi
-  python3 - "$HOOKS_JSON" "$CONFIG_TOML" <<'PYEOF'
-import hashlib, json, os, re, sys, tempfile
+  local tmp
+  tmp="$(atrium_config_temp "$CONFIG_TOML")"
+  if ! python3 - "$HOOKS_JSON" "$CONFIG_TOML" > "$tmp" <<'PYEOF'
+import hashlib, json, re, sys
 from pathlib import Path
 
 hooks_path = Path(sys.argv[1])
@@ -443,17 +444,13 @@ if state_entries:
         parts.append('enabled = true\n')
         parts.append(f'trusted_hash = "{state_entries[key]}"\n')
 
-fd, tmp_name = tempfile.mkstemp(
-    prefix=f'{config_path.name}.atrium-tmp.', dir=config_path.parent
-)
-os.close(fd)
-tmp = Path(tmp_name)
-try:
-    tmp.write_text(''.join(parts))
-    tmp.replace(config_path)
-finally:
-    tmp.unlink(missing_ok=True)
+sys.stdout.write(''.join(parts))
 PYEOF
+  then
+    rm -f "$tmp"
+    return 1
+  fi
+  atrium_config_commit "$tmp" "$CONFIG_TOML"
 }
 
 # Strip every atrium-owned [hooks.state."<HOOKS_JSON>:..."] entry on uninstall.
@@ -465,8 +462,10 @@ untrust_atrium_hooks() {
   if ! command -v python3 >/dev/null 2>&1; then
     return 0
   fi
-  python3 - "$HOOKS_JSON" "$CONFIG_TOML" <<'PYEOF'
-import os, re, sys, tempfile
+  local tmp
+  tmp="$(atrium_config_temp "$CONFIG_TOML")"
+  if ! python3 - "$HOOKS_JSON" "$CONFIG_TOML" > "$tmp" <<'PYEOF'
+import re, sys
 from pathlib import Path
 
 hooks_path = Path(sys.argv[1])
@@ -490,17 +489,13 @@ for line in text.splitlines():
 while out and not out[-1].strip():
     out.pop()
 content = ('\n'.join(out) + '\n') if out else ''
-fd, tmp_name = tempfile.mkstemp(
-    prefix=f'{config_path.name}.atrium-tmp.', dir=config_path.parent
-)
-os.close(fd)
-tmp = Path(tmp_name)
-try:
-    tmp.write_text(content)
-    tmp.replace(config_path)
-finally:
-    tmp.unlink(missing_ok=True)
+sys.stdout.write(content)
 PYEOF
+  then
+    rm -f "$tmp"
+    return 1
+  fi
+  atrium_config_commit "$tmp" "$CONFIG_TOML"
 }
 
 has_atrium_hooks_in() {
@@ -540,9 +535,9 @@ do_install() {
     ' "$HOOKS_JSON")"
 
   local tmp
-  tmp="$(mktemp "${HOOKS_JSON}.atrium-tmp.XXXXXX")"
+  tmp="$(atrium_config_temp "$HOOKS_JSON")"
   printf '%s\n' "$updated" > "$tmp"
-  mv "$tmp" "$HOOKS_JSON"
+  atrium_config_commit "$tmp" "$HOOKS_JSON"
 
   uninstall_mcp_server
   trust_all_hooks
@@ -579,9 +574,9 @@ do_uninstall() {
     ' "$HOOKS_JSON")"
 
   local tmp
-  tmp="$(mktemp "${HOOKS_JSON}.atrium-tmp.XXXXXX")"
+  tmp="$(atrium_config_temp "$HOOKS_JSON")"
   printf '%s\n' "$updated" > "$tmp"
-  mv "$tmp" "$HOOKS_JSON"
+  atrium_config_commit "$tmp" "$HOOKS_JSON"
 
   uninstall_mcp_server
 
