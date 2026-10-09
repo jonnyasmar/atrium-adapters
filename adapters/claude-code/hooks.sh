@@ -7,6 +7,7 @@ set -euo pipefail
 
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 SETTINGS_FILE="${HOME}/.claude/settings.json"
+source "$(dirname "$0")/../shared/config-file.sh"
 
 if ! command -v jq &>/dev/null; then
   echo '{"error": "jq is required for hook management"}' >&2
@@ -219,9 +220,10 @@ do_install() {
     )
     ' "$SETTINGS_FILE")"
 
-  local tmp="${SETTINGS_FILE}.atrium-tmp"
+  local tmp
+  tmp="$(atrium_config_temp "$SETTINGS_FILE")"
   printf '%s\n' "$updated" > "$tmp"
-  mv "$tmp" "$SETTINGS_FILE"
+  atrium_config_commit "$tmp" "$SETTINGS_FILE"
 
   uninstall_mcp_server
 
@@ -252,9 +254,10 @@ do_uninstall() {
     else . end
     ' "$SETTINGS_FILE")"
 
-  local tmp="${SETTINGS_FILE}.atrium-tmp"
+  local tmp
+  tmp="$(atrium_config_temp "$SETTINGS_FILE")"
   printf '%s\n' "$updated" > "$tmp"
-  mv "$tmp" "$SETTINGS_FILE"
+  atrium_config_commit "$tmp" "$SETTINGS_FILE"
 
   uninstall_mcp_server
 
