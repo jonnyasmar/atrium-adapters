@@ -113,8 +113,10 @@ attempts=$(( budget_ms / interval_ms ))
 sleep_s="$(awk "BEGIN{printf \"%.3f\", $interval_ms/1000}" 2>/dev/null || echo 0.12)"
 
 # Also bound wall-clock time: where each check spawns slowly (Git Bash on
-# Windows), the attempt count alone could outlast the hook timeout.
-deadline=$(( SECONDS + (budget_ms + 999) / 1000 ))
+# Windows), the attempt count alone could outlast the hook timeout. SECONDS is
+# whole seconds, so the 2 s of slack keeps this from ever binding before the
+# attempt count does on a fast machine.
+deadline=$(( SECONDS + (budget_ms + 999) / 1000 + 2 ))
 i=0
 while [ "$i" -lt "$attempts" ] && [ "$SECONDS" -lt "$deadline" ]; do
   [ "$(run_check "$mode" "$path")" = "true" ] && exit 0
