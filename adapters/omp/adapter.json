@@ -5,7 +5,7 @@
   "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
   "accent": "#f97316",
   "binary": "omp",
-  "version": "16.4.11",
+  "version": "16.4.12",
   "updateCommand": [
     "bash",
     "-c",

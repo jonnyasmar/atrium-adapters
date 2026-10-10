@@ -13,9 +13,15 @@ set -euo pipefail
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 CONFIG_TOML="${HOME}/.codex/config.toml"
 HOOKS_JSON="${HOME}/.codex/hooks.json"
-source "$(dirname "$0")/../shared/config-file.sh"
+# <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+# and `..` through it resolves physically, so find shared/ from the logical path.
+ADAPTER_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$ADAPTER_DIR" in
+  */.managed/*/generations/*) SHARED_DIR="${ADAPTER_DIR%/.managed/*}/shared" ;;
+  *) SHARED_DIR="${ADAPTER_DIR%/*}/shared" ;;
+esac
+source "$SHARED_DIR/config-file.sh"
 CONFIG_LOCK="${HOME}/.codex/.atrium-hooks.lock"
-CONFIG_LOCK_HELD=false
 
 if ! command -v jq &>/dev/null; then
   echo '{"error": "jq is required for hook management"}' >&2
@@ -175,39 +181,6 @@ ensure_codex_dir() {
   local dir
   dir="$(dirname "$CONFIG_TOML")"
   [ -d "$dir" ] || mkdir -p "$dir"
-}
-
-release_config_lock() {
-  if [ "$CONFIG_LOCK_HELD" = "true" ] && [ "$(cat "$CONFIG_LOCK" 2>/dev/null || true)" = "$$" ]; then
-    rm -f "$CONFIG_LOCK"
-  fi
-  CONFIG_LOCK_HELD=false
-}
-
-acquire_config_lock() {
-  ensure_codex_dir
-
-  local attempts=0 owner current
-  while ! (set -o noclobber; printf '%s\n' "$$" > "$CONFIG_LOCK") 2>/dev/null; do
-    owner="$(cat "$CONFIG_LOCK" 2>/dev/null || true)"
-    if [[ "$owner" =~ ^[0-9]+$ ]] && ! kill -0 "$owner" 2>/dev/null; then
-      current="$(cat "$CONFIG_LOCK" 2>/dev/null || true)"
-      if [ "$current" = "$owner" ]; then
-        rm -f "$CONFIG_LOCK"
-        continue
-      fi
-    fi
-
-    attempts=$((attempts + 1))
-    if [ "$attempts" -ge 600 ]; then
-      echo "atrium hooks: timed out waiting for Codex config lock: $CONFIG_LOCK" >&2
-      return 1
-    fi
-    sleep 0.05
-  done
-
-  CONFIG_LOCK_HELD=true
-  trap release_config_lock EXIT HUP INT TERM
 }
 
 ensure_hooks_file() {
@@ -512,7 +485,7 @@ do_install() {
   local new_hooks
   new_hooks="$(build_all_hooks)"
 
-  acquire_config_lock
+  atrium_config_lock "$CONFIG_LOCK"
   enable_hooks_feature
   ensure_hooks_file
 
@@ -546,7 +519,7 @@ do_install() {
 }
 
 do_uninstall() {
-  acquire_config_lock
+  atrium_config_lock "$CONFIG_LOCK"
   disable_hooks_feature
   untrust_atrium_hooks
 

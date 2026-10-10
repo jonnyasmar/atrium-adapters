@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ADAPTERS_DIR="$(dirname "$SCRIPT_DIR")"
-source "$ADAPTERS_DIR/shared/package-manager.sh"
+# <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+# and `..` through it resolves physically, so find shared/ from the logical path.
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$SCRIPT_DIR" in
+  */.managed/*/generations/*) SHARED_DIR="${SCRIPT_DIR%/.managed/*}/shared" ;;
+  *) SHARED_DIR="${SCRIPT_DIR%/*}/shared" ;;
+esac
+source "$SHARED_DIR/package-manager.sh"
 
 json_error() {
   local message="$1"

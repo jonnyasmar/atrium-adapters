@@ -5,7 +5,7 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97757",
   "binary": "claude",
-  "version": "1.19.31",
+  "version": "1.19.33",
   "updateCommand": [
     "bash",
     "-c",

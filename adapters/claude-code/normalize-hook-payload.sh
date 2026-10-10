@@ -98,8 +98,19 @@ case "$EVENT" in
       # assistant message is flushed to the transcript (verified: at fire-time
       # only the user prompt is on disk), so scraping immediately yields the
       # PREVIOUS turn's reply — "one behind". Wait for the reply to land first.
-      settle="$(dirname "$0")/../shared/await-transcript-settle.sh"
-      [ -x "$settle" ] && "$settle" claude "$transcript_path"
+      # <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+      # and `..` through it resolves physically, so find shared/ from the logical path.
+      settle_dir="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+      case "$settle_dir" in
+        */.managed/*/generations/*) settle_dir="${settle_dir%/.managed/*}" ;;
+        *) settle_dir="${settle_dir%/*}" ;;
+      esac
+      settle="$settle_dir/shared/await-transcript-settle.sh"
+      if [ -x "$settle" ]; then
+        "$settle" claude "$transcript_path"
+      else
+        echo "atrium: transcript settle wait missing: $settle" >&2
+      fi
 
       # Read only the last ~800 lines, then reverse so the first
       # text-bearing assistant turn we hit is the most recent one.

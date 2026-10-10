@@ -5,9 +5,15 @@ set -euo pipefail
 # Output: {installedVersion, latestVersion, updateAvailable} per
 # schemas/methods/check_update.schema.json (additionalProperties: false).
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+# and `..` through it resolves physically, so find shared/ from the logical path.
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$SCRIPT_DIR" in
+  */.managed/*/generations/*) SHARED_DIR="${SCRIPT_DIR%/.managed/*}/shared" ;;
+  *) SHARED_DIR="${SCRIPT_DIR%/*}/shared" ;;
+esac
 # shellcheck source=../shared/package-manager.sh
-source "$SCRIPT_DIR/../shared/package-manager.sh"
+source "$SHARED_DIR/package-manager.sh"
 
 # Fail soft: the SDK prefers exit 0 with an empty result over a non-zero exit.
 json_error() {

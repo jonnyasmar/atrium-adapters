@@ -10,15 +10,21 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+# and `..` through it resolves physically, so find shared/ from the logical path.
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$SCRIPT_DIR" in
+  */.managed/*/generations/*) SHARED_DIR="${SCRIPT_DIR%/.managed/*}/shared" ;;
+  *) SHARED_DIR="${SCRIPT_DIR%/*}/shared" ;;
+esac
 
 # Prefer the copy installed under ATRIUM_DATA_DIR (what the running app uses);
 # fall back to the sibling shared/ tree for repo-local tests and source checkouts.
 CONTEXT_FILE=""
 if [ -n "${ATRIUM_DATA_DIR:-}" ] && [ -f "${ATRIUM_DATA_DIR}/adapters/shared/atrium-context.md" ]; then
   CONTEXT_FILE="${ATRIUM_DATA_DIR}/adapters/shared/atrium-context.md"
-elif [ -f "${SCRIPT_DIR}/../shared/atrium-context.md" ]; then
-  CONTEXT_FILE="${SCRIPT_DIR}/../shared/atrium-context.md"
+elif [ -f "${SHARED_DIR}/atrium-context.md" ]; then
+  CONTEXT_FILE="${SHARED_DIR}/atrium-context.md"
 fi
 
 if [ -n "$CONTEXT_FILE" ]; then

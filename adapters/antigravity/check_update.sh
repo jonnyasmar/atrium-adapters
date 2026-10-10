@@ -68,10 +68,15 @@ emit_installed_only() {
 }
 
 # Homebrew-managed installs are updated by brew, not the Google updater.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ADAPTERS_DIR="$(dirname "$SCRIPT_DIR")"
+# <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+# and `..` through it resolves physically, so find shared/ from the logical path.
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$SCRIPT_DIR" in
+  */.managed/*/generations/*) SHARED_DIR="${SCRIPT_DIR%/.managed/*}/shared" ;;
+  *) SHARED_DIR="${SCRIPT_DIR%/*}/shared" ;;
+esac
 # shellcheck source=../shared/package-manager.sh
-source "$ADAPTERS_DIR/shared/package-manager.sh"
+source "$SHARED_DIR/package-manager.sh"
 if atrium_binary_is_homebrew_managed "$AGY_BIN"; then
   # The cask can only move to the version it publishes (its version carries a
   # ",<build>" suffix). A third-party tap has no published version to compare.

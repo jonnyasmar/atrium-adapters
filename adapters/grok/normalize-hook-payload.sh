@@ -148,8 +148,19 @@ case "$EVENT" in
       # Wait for this turn's reply to be flushed before scraping — same
       # "stop fires before the final message lands" race fixed for claude-code
       # (the hook can otherwise read the previous turn's reply, "one behind").
-      settle="$(dirname "$0")/../shared/await-transcript-settle.sh"
-      [ -x "$settle" ] && "$settle" grok "$chat_path"
+      # <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+      # and `..` through it resolves physically, so find shared/ from the logical path.
+      settle_dir="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+      case "$settle_dir" in
+        */.managed/*/generations/*) settle_dir="${settle_dir%/.managed/*}" ;;
+        *) settle_dir="${settle_dir%/*}" ;;
+      esac
+      settle="$settle_dir/shared/await-transcript-settle.sh"
+      if [ -x "$settle" ]; then
+        "$settle" grok "$chat_path"
+      else
+        echo "atrium: transcript settle wait missing: $settle" >&2
+      fi
       last_msg="$(tail -r "$chat_path" 2>/dev/null | jq -rR --slurp '
         split("\n")
         | map(select(. != "") | fromjson?)
