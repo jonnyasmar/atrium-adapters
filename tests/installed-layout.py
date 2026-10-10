@@ -165,27 +165,51 @@ class HookEntrypointsFromInstalledLayout(unittest.TestCase):
                 self.assertEqual(recorder.read_text(), f"{mode} {transcript}\n")
 
     def test_other_shared_runtime_consumers_resolve_from_installed_layout(self):
-        box = Sandbox(self, adapters=("shared", "goose", "grok"))
-        update = run(box.script("goose", "check_update.sh"), env=box.env)
-        self.assertEqual(json.loads(update.stdout)["error"], "goose not found")
+        updaters = sorted(path.parent.name for path in ADAPTERS.glob("*/check_update.sh"))
+        self.assertIn("goose", updaters)
+        box = Sandbox(self, adapters=("shared", *sorted({"grok", *updaters})))
+        for adapter in updaters:
+            for entry in ("logical", "physical"):
+                with self.subTest(adapter=adapter, entry=entry):
+                    script = box.script(adapter, "check_update.sh")
+                    if entry == "physical":
+                        script = Path(os.path.realpath(script))
+                    # No real binaries on PATH, so each reports an error and
+                    # never reaches the network.
+                    update = json.loads(run(script, env=box.env).stdout)
+                    self.assertIs(update["updateAvailable"], False)
+                    self.assertIn("error", update)
 
         env = {key: value for key, value in box.env.items() if key != "ATRIUM_DATA_DIR"}
         rules = run(box.script("grok", "atrium-session-rules.sh"), env=env)
         first_line = (ADAPTERS / "shared/atrium-context.md").read_text().splitlines()[0]
         self.assertIn(first_line, rules.stdout)
 
-    def test_scripts_never_reach_shared_through_a_parent_path(self):
+    def test_scripts_reach_shared_only_through_the_managed_layout_resolver(self):
         # `..` after an adapter dir is resolved physically through the managed
-        # symlink. Resolve the logical adapter dir and take its parent instead.
+        # symlink, and the parent of a physical generation dir is not the
+        # adapters dir. Scripts that find shared/ from their own location must
+        # use the resolver that maps .managed/<name>/generations/<id> back.
         banned = re.compile(r'\.\./shared|dirname "\$0"\)/\.\.')
+        relative_shared = re.compile(r"shared/|SHARED_DIR")
+        resolver = "*/.managed/*/generations/*)"
         offenders = []
         for script in sorted(ADAPTERS.glob("*/**/*.sh")):
             relative = script.relative_to(ADAPTERS)
             if relative.parts[0] == "shared" or "tests" in relative.parts:
                 continue
-            for number, line in enumerate(script.read_text(encoding="utf-8").splitlines(), 1):
-                if not line.lstrip().startswith("#") and banned.search(line):
+            text = script.read_text(encoding="utf-8")
+            for number, line in enumerate(text.splitlines(), 1):
+                if line.lstrip().startswith("#"):
+                    continue
+                if banned.search(line):
                     offenders.append(f"adapters/{relative}:{number}: {line.strip()}")
+                elif (
+                    relative_shared.search(line)
+                    and "ATRIUM_DATA_DIR" not in line
+                    and resolver not in text
+                ):
+                    offenders.append(f"adapters/{relative}:{number}: no managed-layout resolver")
         self.assertEqual(offenders, [])
 
 
