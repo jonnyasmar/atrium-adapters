@@ -37,7 +37,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "e8f488c2d5ab7f1637ea9f2686bac263c4818e02075e5796e6a337425ef79c37",
+      "contentSha256": "72eec7dde6af765e18e3ba0e96eddd4390790a96b887cd45ed775cbe1f8b5ec3",
       "maxAppVersion": null
     },
     {
@@ -80,7 +80,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "a541fa88a3dae7d066fa446831072c74ba5bfd1a7557fb9a739105345294e1d7",
+      "contentSha256": "ac16c2032b06060a3de10fd589f6bc23755db4228a9d2b590923a37dc27d7a80",
       "maxAppVersion": null
     },
     {
@@ -113,7 +113,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "09b2957878c45115f345908071af5874c24ae40d3593bde5b627f10df3e5b61d",
+      "contentSha256": "8c9d99d5f471e7df83aa32d919c749adaad4a3f901cb946aa8aa9b8f965daad3",
       "maxAppVersion": null
     },
     {
@@ -212,7 +212,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "52ade3b8347ea9bd2afaf3e28a5db0cfe87b781cf047909079a7439d6f4db774",
+      "contentSha256": "0bf819d08d2fd5094a85539cf5a0fd8f8d7b19b54237381105848f757da49de6",
       "maxAppVersion": null
     },
     {
@@ -245,7 +245,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "3d46330c00dcf7674b8ca21e15b0a362b75a24224b29067f558cc19bc12258a4",
+      "contentSha256": "931e9ffffbd3af5e0e3722328aff9fea3f6b1d4653e15e51973806c304bb79d1",
       "maxAppVersion": null
     },
     {
@@ -344,7 +344,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "461c4521dd2d6e52d05f2119eb155d9db40055e3b6af06d0f1c7da7059da3e40",
+      "contentSha256": "a2093ed00ff05f75629cb97e63e4ba65910a1e8c8c03a3ede0872a3e98ccec1e",
       "maxAppVersion": null
     },
     {
@@ -416,8 +416,8 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "0a5b388c1f2bc041892e095c8a378dd38507d84d",
-    "sharedSha256": "a310f9f493a632a61ca341a79f3df801639fe9877c05bc4ab05864b3d691b2c8",
+    "commit": "85b843435ed4d453d4cc9c6fef0faec899de4f29",
+    "sharedSha256": "d5945f8be5c873e7318c5ddf655100a001dd107aac5d7122c1150fab776d983c",
     "schemaSha256": "bff9986c3ef71c4ce11028f7be77ca3faae8d994c991158e8837ed057bdbfbaf",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },
