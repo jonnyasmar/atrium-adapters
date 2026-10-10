@@ -13,7 +13,14 @@ set -euo pipefail
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 CONFIG_TOML="${HOME}/.codex/config.toml"
 HOOKS_JSON="${HOME}/.codex/hooks.json"
-source "$(dirname "$0")/../shared/config-file.sh"
+# <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
+# and `..` through it resolves physically, so find shared/ from the logical path.
+ADAPTER_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$ADAPTER_DIR" in
+  */.managed/*/generations/*) SHARED_DIR="${ADAPTER_DIR%/.managed/*}/shared" ;;
+  *) SHARED_DIR="${ADAPTER_DIR%/*}/shared" ;;
+esac
+source "$SHARED_DIR/config-file.sh"
 CONFIG_LOCK="${HOME}/.codex/.atrium-hooks.lock"
 CONFIG_LOCK_HELD=false
 

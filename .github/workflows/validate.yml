@@ -110,6 +110,11 @@ jobs:
       - name: Validate symlinked hook configuration
         run: python3 tests/hook-config-symlinks.py
 
+      # atrium installs adapters/<name> as a symlink into a versioned
+      # generation; scripts must work through it, not just from this repo.
+      - name: Validate scripts from atrium's installed layout
+        run: python3 tests/installed-layout.py
+
       - name: Validate atrium bug-report contract
         run: bash tests/atrium-bug-report-contract.assert.sh
 
