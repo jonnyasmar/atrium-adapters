@@ -232,6 +232,23 @@ class ClaudeSettingsWrites(unittest.TestCase):
         self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o640)
         self.assertEqual(statusline_command(json.loads(target.read_text())), "my-line")
 
+    def test_invalid_settings_never_cost_the_saved_statusline(self):
+        box = Sandbox(self)
+        settings = box.home / ".claude/settings.json"
+        chain = box.home / ".claude/.atrium-statusline-chain"
+        statusline = box.script("claude-code", "statusline.sh")
+        for operation in ("install", "uninstall"):
+            with self.subTest(operation=operation):
+                settings.parent.mkdir(exist_ok=True)
+                settings.write_text('{"statusLine": {"command": "atrium-statusline-relay"\n')
+                chain.write_text("my-line")
+                result = subprocess.run(
+                    [str(statusline), operation], env=box.env, capture_output=True, text=True
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(chain.read_text(), "my-line", f"{operation} deleted the saved statusLine")
+                self.assertFalse((box.home / ".claude/.atrium-settings.lock").exists())
+
     def test_concurrent_installs_from_two_instances_lose_no_edits(self):
         box = Sandbox(self, instances=2)
         for round_number in range(6):

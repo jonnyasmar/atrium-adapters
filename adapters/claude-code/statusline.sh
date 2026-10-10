@@ -91,28 +91,31 @@ do_install() {
 
   atrium_config_lock "$SETTINGS_LOCK"
   ensure_settings_file
-  local original
+  local original updated
   original="$(<"$SETTINGS_FILE")"
-
-  # Preserve the user's prior command ONCE — only when the current slot is
-  # not already atrium-owned. A second instance installing over an
-  # atrium-owned slot must not overwrite the saved original with our relay.
-  if ! is_atrium_owned "$original"; then
-    local prior
-    prior="$(current_command "$original")"
-    if [ -n "$prior" ]; then
-      printf '%s' "$prior" > "$CHAIN_FILE"
-    else
-      rm -f "$CHAIN_FILE"
-    fi
-  fi
-
-  local updated
+  # Exits on a settings.json that is not valid JSON, before the chain file
+  # below is touched.
   updated="$(jq \
     --arg cmd "$cmd" \
     '.statusLine = {"type": "command", "command": $cmd}' \
     <<< "$original")"
+
+  # Preserve the user's prior command ONCE — only when the current slot is
+  # not already atrium-owned. A second instance installing over an
+  # atrium-owned slot must not overwrite the saved original with our relay.
+  # Saving goes first; dropping a stale chain waits for a successful write.
+  local adopting=false prior=""
+  if ! is_atrium_owned "$original"; then
+    adopting=true
+    prior="$(current_command "$original")"
+  fi
+  if [ -n "$prior" ]; then
+    printf '%s' "$prior" > "$CHAIN_FILE"
+  fi
   atrium_config_replace "$SETTINGS_FILE" "$original" "$updated"
+  if [ "$adopting" = true ] && [ -z "$prior" ]; then
+    rm -f "$CHAIN_FILE"
+  fi
   atrium_config_unlock
 
   echo '{"subcommand": "install", "installed": true}'
@@ -127,6 +130,8 @@ do_uninstall() {
   atrium_config_lock "$SETTINGS_LOCK"
   local original
   original="$(<"$SETTINGS_FILE")"
+  # Invalid JSON would read as "not ours" and cost the user the saved chain.
+  jq empty <<< "$original"
 
   # Only touch the slot if we own it — never clobber a user statusLine.
   if is_atrium_owned "$original"; then
