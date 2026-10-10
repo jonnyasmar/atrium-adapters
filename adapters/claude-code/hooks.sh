@@ -7,6 +7,8 @@ set -euo pipefail
 
 SUBCOMMAND="${1:?Usage: hooks.sh <install|uninstall|status>}"
 SETTINGS_FILE="${HOME}/.claude/settings.json"
+# Shared with statusline.sh: both rewrite settings.json, from every instance.
+SETTINGS_LOCK="${HOME}/.claude/.atrium-settings.lock"
 # <data>/adapters/<name> is a symlink into .managed/<name>/generations/<id>
 # and `..` through it resolves physically, so find shared/ from the logical path.
 ADAPTER_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -205,15 +207,17 @@ has_atrium_hooks_in() {
 }
 
 do_install() {
-  ensure_settings_file
-
   local new_hooks
   new_hooks="$(build_all_hooks)"
+
+  atrium_config_lock "$SETTINGS_LOCK"
+  ensure_settings_file
 
   # Deep-merge atrium hooks into existing settings.json. For every key in
   # new_hooks: strip any prior atrium entries, then append fresh ones.
   # Non-atrium hook entries are preserved untouched.
-  local updated
+  local original updated
+  original="$(<"$SETTINGS_FILE")"
   updated="$(jq \
     --argjson new_hooks "$new_hooks" \
     --arg marker "$ATRIUM_HOOK_MARKER_RE" \
@@ -225,12 +229,10 @@ do_install() {
         + $new_hooks[$k]
       )
     )
-    ' "$SETTINGS_FILE")"
+    ' <<< "$original")"
 
-  local tmp
-  tmp="$(atrium_config_temp "$SETTINGS_FILE")"
-  printf '%s\n' "$updated" > "$tmp"
-  atrium_config_commit "$tmp" "$SETTINGS_FILE"
+  atrium_config_replace "$SETTINGS_FILE" "$original" "$updated"
+  atrium_config_unlock
 
   uninstall_mcp_server
 
@@ -243,9 +245,12 @@ do_uninstall() {
     return
   fi
 
+  atrium_config_lock "$SETTINGS_LOCK"
+
   # Strip atrium entries from every category under .hooks, prune empty arrays,
   # drop .hooks entirely if nothing remains.
-  local updated
+  local original updated
+  original="$(<"$SETTINGS_FILE")"
   updated="$(jq \
     --arg marker "$ATRIUM_HOOK_MARKER_RE" \
     '
@@ -259,12 +264,10 @@ do_uninstall() {
       )
       | if (.hooks | length) == 0 then del(.hooks) else . end
     else . end
-    ' "$SETTINGS_FILE")"
+    ' <<< "$original")"
 
-  local tmp
-  tmp="$(atrium_config_temp "$SETTINGS_FILE")"
-  printf '%s\n' "$updated" > "$tmp"
-  atrium_config_commit "$tmp" "$SETTINGS_FILE"
+  atrium_config_replace "$SETTINGS_FILE" "$original" "$updated"
+  atrium_config_unlock
 
   uninstall_mcp_server
 

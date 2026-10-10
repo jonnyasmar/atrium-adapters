@@ -13,14 +13,17 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
+import time
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 ADAPTERS = ROOT / "adapters"
 GENERATION = f"{'a' * 64}-{'b' * 40}"
+MARKER = "atrium-statusline-relay"
 
 
 def install_like_atrium(data_dir, names):
@@ -84,6 +87,27 @@ class Sandbox:
 
     def script(self, adapter, name, instance=0):
         return self.data_dirs[instance] / "adapters" / adapter / name
+
+    def env_for(self, instance):
+        return {**self.env, "ATRIUM_DATA_DIR": str(self.data_dirs[instance])}
+
+    def link_settings(self, content='{"userSetting": true}\n', mode=0o640):
+        """~/.claude/settings.json as a symlink into a dotfiles dir (issue #137)."""
+        dotfiles = self.home / "dotfiles"
+        dotfiles.mkdir(exist_ok=True)
+        target = dotfiles / "settings.json"
+        target.write_text(content)
+        target.chmod(mode)
+        link = self.home / ".claude" / "settings.json"
+        link.parent.mkdir(exist_ok=True)
+        if link.is_symlink() or link.exists():
+            link.unlink()
+        link.symlink_to(os.path.relpath(target, link.parent))
+        return link, target
+
+
+def statusline_command(settings):
+    return (settings.get("statusLine") or {}).get("command", "")
 
 
 def has_atrium_hooks(settings):
@@ -163,6 +187,128 @@ class HookEntrypointsFromInstalledLayout(unittest.TestCase):
                 if not line.lstrip().startswith("#") and banned.search(line):
                     offenders.append(f"adapters/{relative}:{number}: {line.strip()}")
         self.assertEqual(offenders, [])
+
+
+class ClaudeSettingsWrites(unittest.TestCase):
+    def test_steady_state_passes_leave_settings_untouched(self):
+        for layout in ("plain", "symlinked"):
+            box = Sandbox(self)
+            link, target = box.link_settings()
+            if layout == "plain":
+                link.unlink()
+                shutil.move(target, link)
+                target = link
+            for script in ("statusline.sh", "hooks.sh"):
+                with self.subTest(layout=layout, script=script):
+                    path = box.script("claude-code", script)
+                    run(path, "install", env=box.env)
+                    before = target.stat()
+                    listing = sorted(os.listdir(target.parent)) + sorted(os.listdir(link.parent))
+                    time.sleep(0.02)
+                    run(path, "install", env=box.env)
+                    run(path, "install", env=box.env)
+                    after = target.stat()
+                    self.assertEqual(link.is_symlink(), layout == "symlinked")
+                    self.assertEqual(after.st_ino, before.st_ino, f"{script} replaced an unchanged file")
+                    self.assertEqual(after.st_mtime_ns, before.st_mtime_ns, f"{script} rewrote an unchanged file")
+                    self.assertEqual(sorted(os.listdir(target.parent)) + sorted(os.listdir(link.parent)), listing)
+
+    def test_statusline_writes_through_a_symlinked_settings_file(self):
+        box = Sandbox(self)
+        link, target = box.link_settings(
+            '{"userSetting": true, "statusLine": {"type": "command", "command": "my-line"}}\n'
+        )
+        statusline = box.script("claude-code", "statusline.sh")
+        run(statusline, "install", env=box.env)
+        self.assertTrue(link.is_symlink(), "install replaced the settings symlink")
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o640)
+        settings = json.loads(target.read_text())
+        self.assertTrue(settings["userSetting"])
+        self.assertIn(MARKER, statusline_command(settings))
+        self.assertEqual((box.home / ".claude/.atrium-statusline-chain").read_text(), "my-line")
+
+        run(statusline, "uninstall", env=box.env)
+        self.assertTrue(link.is_symlink(), "uninstall replaced the settings symlink")
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o640)
+        self.assertEqual(statusline_command(json.loads(target.read_text())), "my-line")
+
+    def test_concurrent_installs_from_two_instances_lose_no_edits(self):
+        box = Sandbox(self, instances=2)
+        for round_number in range(6):
+            link, target = box.link_settings()
+            processes = [
+                subprocess.Popen(
+                    [str(box.script("claude-code", name, instance)), "install"],
+                    env=box.env_for(instance),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                for instance in (0, 1)
+                for name in ("hooks.sh", "statusline.sh")
+            ]
+            for process in processes:
+                _, stderr = process.communicate(timeout=120)
+                self.assertEqual(process.returncode, 0, f"round {round_number}: {stderr}")
+            self.assertTrue(link.is_symlink(), f"round {round_number}: settings symlink replaced")
+            settings = json.loads(target.read_text())
+            self.assertTrue(settings.get("userSetting"), f"round {round_number}: user edit lost")
+            self.assertTrue(has_atrium_hooks(settings), f"round {round_number}: hooks lost")
+            self.assertIn(MARKER, statusline_command(settings), f"round {round_number}: statusLine lost")
+        self.assertFalse((box.home / ".claude/.atrium-settings.lock").exists(), "lock left behind")
+
+    def test_steady_state_passes_never_clobber_a_concurrent_settings_writer(self):
+        box = Sandbox(self, instances=2)
+        link, target = box.link_settings()
+        run(box.script("claude-code", "hooks.sh"), "install", env=box.env)
+        run(box.script("claude-code", "statusline.sh"), "install", env=box.env)
+
+        stop = box.home / "stop"
+        loop = 'while [ ! -e "$1" ]; do "$2" install >/dev/null && "$3" install >/dev/null || exit 1; done'
+        installers = [
+            subprocess.Popen(
+                [
+                    "bash", "-c", loop, "loop", str(stop),
+                    str(box.script("claude-code", "statusline.sh", instance)),
+                    str(box.script("claude-code", "hooks.sh", instance)),
+                ],
+                env=box.env_for(instance),
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            for instance in (0, 1)
+        ]
+
+        # Claude Code (or the user's editor) rewriting the file atomically while
+        # atrium passes run; JSON.stringify(_, null, 2) formatting, like jq's.
+        edits = 150
+        for index in range(edits):
+            real = Path(os.path.realpath(link))
+            settings = json.loads(real.read_text())
+            settings[f"edit-{index}"] = index
+            scratch = real.with_name(f".writer-{index}")
+            scratch.write_text(json.dumps(settings, indent=2) + "\n")
+            os.replace(scratch, real)
+            time.sleep(0.004)
+        stop.touch()
+        for installer in installers:
+            _, stderr = installer.communicate(timeout=120)
+            self.assertEqual(installer.returncode, 0, stderr)
+
+        settings = json.loads(link.read_text())
+        lost = [index for index in range(edits) if f"edit-{index}" not in settings]
+        self.assertEqual(lost, [], f"{len(lost)}/{edits} concurrent edits were lost")
+        self.assertTrue(link.is_symlink())
+
+    def test_a_lock_left_by_a_dead_process_does_not_block_installs(self):
+        box = Sandbox(self)
+        box.link_settings()
+        dead = subprocess.Popen(["true"])
+        dead.wait()
+        lock = box.home / ".claude/.atrium-settings.lock"
+        lock.write_text(f"{dead.pid}\n")
+        run(box.script("claude-code", "statusline.sh"), "install", env=box.env)
+        self.assertFalse(lock.exists())
 
 
 if __name__ == "__main__":
