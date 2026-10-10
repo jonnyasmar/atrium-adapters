@@ -300,16 +300,46 @@ class ClaudeSettingsWrites(unittest.TestCase):
         self.assertEqual(lost, [], f"{len(lost)}/{edits} concurrent edits were lost")
         self.assertTrue(link.is_symlink())
 
-    def test_a_lock_left_by_a_dead_process_does_not_block_installs(self):
-        box = Sandbox(self)
-        box.link_settings()
+    def test_stale_locks_are_taken_over(self):
         dead = subprocess.Popen(["true"])
         dead.wait()
-        lock = box.home / ".claude/.atrium-settings.lock"
-        lock.write_text(f"{dead.pid}\n")
-        run(box.script("claude-code", "statusline.sh"), "install", env=box.env)
-        self.assertFalse(lock.exists())
+        cases = (
+            ("dead owner", f"{dead.pid}\n", 0),
+            # A live process the user owns, e.g. a reused PID.
+            ("old lock held by a live pid", f"{os.getpid()}\n", 120),
+            ("owner died before writing its pid", "", 120),
+            ("not a pid", "not-a-pid\n", 0),
+        )
+        for name, content, age in cases:
+            with self.subTest(name):
+                box = Sandbox(self)
+                box.link_settings()
+                lock = box.home / ".claude/.atrium-settings.lock"
+                lock.write_text(content)
+                if age:
+                    then = time.time() - age
+                    os.utime(lock, (then, then))
+                started = time.monotonic()
+                run(box.script("claude-code", "statusline.sh"), "install", env=box.env)
+                self.assertLess(time.monotonic() - started, 3, "waited on a stale lock")
+                self.assertFalse(lock.exists())
 
+    def test_a_live_lock_is_waited_for(self):
+        box = Sandbox(self)
+        link, target = box.link_settings()
+        lock = box.home / ".claude/.atrium-settings.lock"
+        lock.write_text(f"{os.getpid()}\n")
+        installer = subprocess.Popen(
+            [str(box.script("claude-code", "statusline.sh")), "install"],
+            env=box.env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+        )
+        time.sleep(0.6)
+        self.assertIsNone(installer.poll(), "took a lock its live owner still holds")
+        self.assertNotIn("statusLine", json.loads(target.read_text()))
+        lock.unlink()
+        _, stderr = installer.communicate(timeout=30)
+        self.assertEqual(installer.returncode, 0, stderr)
+        self.assertIn(MARKER, statusline_command(json.loads(target.read_text())))
 
 if __name__ == "__main__":
     unittest.main()

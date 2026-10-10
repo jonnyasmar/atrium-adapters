@@ -57,34 +57,54 @@ atrium_config_replace() {
 
 # Cross-process lock around a config read-modify-write. Every atrium instance
 # (stable, dev, a remote daemon) runs these scripts against the same HOME, so
-# an in-process mutex is not enough. The lock file holds the owner's PID; a
-# lock whose owner is gone is taken over. Released on exit or by
+# an in-process mutex is not enough. The lock file holds the owner's PID. It
+# is taken over when that PID is gone, when it holds anything but a PID, or
+# when it is over a minute old: holders keep it for seconds, a PID can be
+# reused by an unrelated live process, and an owner killed between creating
+# the file and writing its PID leaves it empty. Released on exit or by
 # atrium_config_unlock.
 ATRIUM_CONFIG_LOCK=""
 
+# Seconds since FILE was modified; prints nothing when that is unknown.
+atrium_config_age() {
+  local mtime
+  mtime="$(stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null)" || return 0
+  [[ "$mtime" =~ ^[0-9]+$ ]] || return 0
+  printf '%s\n' "$(($(date +%s) - mtime))"
+}
+
 atrium_config_lock() {
-  local lock="$1" attempts=0 owner current
+  local lock="$1" attempts=0 owner current stale age
   [ -d "${lock%/*}" ] || mkdir -p "${lock%/*}"
   until (set -o noclobber; printf '%s\n' "$$" > "$lock") 2>/dev/null; do
+    attempts=$((attempts + 1))
+    if [ "$attempts" -gt 600 ]; then
+      echo "atrium hooks: timed out waiting for config lock: $lock" >&2
+      return 1
+    fi
+
     owner=""
     { read -r owner < "$lock"; } 2>/dev/null || true
-    if [[ "$owner" =~ ^[0-9]+$ ]] && ! kill -0 "$owner" 2>/dev/null; then
+    stale=false
+    if [[ "$owner" =~ ^[0-9]+$ ]]; then
+      kill -0 "$owner" 2>/dev/null || stale=true
+    elif [ -n "$owner" ]; then
+      stale=true
+    fi
+    if [ "$stale" = false ] && [ $((attempts % 20)) -eq 1 ]; then
+      age="$(atrium_config_age "$lock")"
+      if [ -n "$age" ] && [ "$age" -ge 60 ]; then
+        stale=true
+      fi
+    fi
+    if [ "$stale" = true ]; then
+      # Re-read so a lock another waiter just took over is left alone.
       current=""
       { read -r current < "$lock"; } 2>/dev/null || true
       if [ "$current" = "$owner" ]; then
         rm -f "$lock"
         continue
       fi
-    elif [ -z "$owner" ] && [ -n "$(find "$lock" -mmin +1 2>/dev/null)" ]; then
-      # Owner died between creating the file and writing its PID.
-      rm -f "$lock"
-      continue
-    fi
-
-    attempts=$((attempts + 1))
-    if [ "$attempts" -ge 600 ]; then
-      echo "atrium hooks: timed out waiting for config lock: $lock" >&2
-      return 1
     fi
     sleep 0.05
   done
