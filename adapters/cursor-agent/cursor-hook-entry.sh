@@ -30,6 +30,11 @@ ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
 # settling stop behind them) wedge it in "working".
 [ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0
 
+# hooks.json is global, so this also runs for Cursor sessions with no atrium
+# pane (started outside atrium). An emit there has nothing to attribute the
+# event to; skip it and the jq, python and CLI spawns it costs.
+[ -n "${ATRIUM_PANE_ID:-}" ] || exit 0
+
 # Base transform: alias conversation_id → session_id when the latter is
 # absent. Atrium's shared adapter-detection path reads payload.session_id
 # uniformly; Cursor emits conversation_id on every hook but session_id

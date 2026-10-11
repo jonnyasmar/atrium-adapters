@@ -27,15 +27,37 @@ if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]; then
 fi
 
 EVENT="${1:?event name required}"
-ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
-ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NORMALIZER="${ADAPTER_DIR}/normalize-hook-payload.sh"
 
 # Cursor Agent sets this when invoked as `cursor-agent` / `agent`. Real
 # Claude Code never does. Bail before we claim the pane as claude-code.
 if [ -n "${CURSOR_INVOKED_AS:-}" ]; then
   exit 0
 fi
+
+# Claude Code refuses its native bypass mode under uid 0. A root terminal
+# launched from an atrium YOLO profile carries this process-local marker, so
+# approve the permission request on the user's behalf without changing their
+# persisted Claude settings. AskUserQuestion is not a permission request and
+# still reaches the user, matching native bypass behavior.
+reply_root_bypass() {
+  if [ "$EVENT" = "permission-request" ] \
+    && [ "${ATRIUM_CLAUDE_ROOT_BYPASS_PERMISSIONS:-}" = "1" ]; then
+    printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}'
+  fi
+}
+
+# settings.json is global, so this also runs for Claude Code sessions with no
+# atrium pane (started outside atrium, or a quarantined sign-in TUI). An emit
+# there has nothing to attribute the event to, so skip it, and the subshells
+# and CLI spawn it costs, before doing any work.
+if [ -z "${ATRIUM_PANE_ID:-}" ]; then
+  reply_root_bypass
+  exit 0
+fi
+
+ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
+ADAPTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NORMALIZER="${ADAPTER_DIR}/normalize-hook-payload.sh"
 
 input="$(cat)"
 
@@ -78,15 +100,7 @@ else
         --json 2>/dev/null
 fi
 
-# Claude Code refuses its native bypass mode under uid 0. A root terminal
-# launched from an atrium YOLO profile carries this process-local marker, so
-# approve the permission request on the user's behalf without changing their
-# persisted Claude settings. AskUserQuestion is not a permission request and
-# still reaches the user, matching native bypass behavior.
-if [ "$EVENT" = "permission-request" ] \
-  && [ "${ATRIUM_CLAUDE_ROOT_BYPASS_PERMISSIONS:-}" = "1" ]; then
-  printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}'
-fi
+reply_root_bypass
 
 # Never break the agent session on emit failure.
 exit 0

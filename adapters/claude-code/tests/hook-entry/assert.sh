@@ -21,7 +21,7 @@ chmod +x "$STUB_CLI" "$ENTRY"
 
 export ATRIUM_CLI_PATH="$STUB_CLI"
 export ATRIUM_PANE_ID="test-pane"
-unset CURSOR_INVOKED_AS || true
+unset CURSOR_INVOKED_AS ATRIUM_CHAT_SDK_HOOKS || true
 
 pass=0
 fail=0
@@ -92,6 +92,38 @@ JSON
 # 9. Empty stdin still passes through (bare lifecycle ping)
 check "empty stdin emits" 1 \
   env -u CURSOR_INVOKED_AS bash "$ENTRY" session-start </dev/null
+
+# 10. No atrium pane (a session started outside atrium) → no emit (#140)
+check "missing ATRIUM_PANE_ID suppresses emit" 0 \
+  env -u CURSOR_INVOKED_AS -u ATRIUM_PANE_ID bash "$ENTRY" pre-tool-use <<'JSON'
+{"session_id":"abc","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"ls"}}
+JSON
+
+check "empty ATRIUM_PANE_ID suppresses emit" 0 \
+  env -u CURSOR_INVOKED_AS ATRIUM_PANE_ID= bash "$ENTRY" session-start <<'JSON'
+{"session_id":"abc","transcript_path":"/Users/x/.claude/projects/foo/abc.jsonl","cwd":"/tmp"}
+JSON
+
+# 11. The installed settings.json command never spawns the entry script
+# outside atrium, and still reaches it (and the emit) inside a pane.
+HOOK_HOME="$TMP/home"
+mkdir -p "$HOOK_HOME"
+HOME="$HOOK_HOME" ATRIUM_DATA_DIR="$TMP/data" bash "$ROOT/hooks.sh" install >/dev/null
+INSTALLED_DATA="$TMP/installed"
+mkdir -p "$INSTALLED_DATA/adapters"
+ln -s "$ROOT" "$INSTALLED_DATA/adapters/claude-code"
+PRE_TOOL_CMD="$(jq -r '.hooks.PreToolUse[].hooks[].command | select(test("claude-hook-entry"))' \
+  "$HOOK_HOME/.claude/settings.json")"
+check "installed command outside atrium skips the entry" 0 \
+  env -u CURSOR_INVOKED_AS -u ATRIUM -u ATRIUM_PANE_ID ATRIUM_DATA_DIR="$INSTALLED_DATA" \
+  bash -c "$PRE_TOOL_CMD" <<'JSON'
+{"session_id":"abc","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"ls"}}
+JSON
+check "installed command in an atrium pane emits" 1 \
+  env -u CURSOR_INVOKED_AS ATRIUM=1 ATRIUM_DATA_DIR="$INSTALLED_DATA" \
+  bash -c "$PRE_TOOL_CMD" <<'JSON'
+{"session_id":"abc","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"ls"}}
+JSON
 
 echo "---"
 echo "$pass passed, $fail failed"

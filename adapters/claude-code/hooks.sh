@@ -44,6 +44,11 @@ CURSOR_GUARD='[ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0'
 # settings still load for chat. claude-hook-entry.sh has its own early-exit.
 CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
 
+# settings.json is global, so these hooks also fire for Claude Code sessions
+# started outside atrium. Bail in the hook's own shell there instead of
+# spawning a script per event just to have it exit (~150 ms each on Windows).
+ATRIUM_GUARD='[ -n "${ATRIUM:-}" ] || exit 0'
+
 # Event table: kebab-case event name, Claude settings key, matcher.
 # Each event becomes one hook entry in the corresponding settings.json key.
 #
@@ -80,7 +85,7 @@ build_hook_command() {
   local event="$1"
   local entry
   entry="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/claude-hook-entry.sh\" $event"
-  printf '%s; %s; exit 0' "$ATRIUM_HOOK_MARKER_PREFIX" "$entry"
+  printf '%s; %s; %s; exit 0' "$ATRIUM_HOOK_MARKER_PREFIX" "$ATRIUM_GUARD" "$entry"
 }
 
 # Assemble the full hooks object by walking the event table, then append the
@@ -158,13 +163,13 @@ build_all_hooks() {
   # `none` and wire no injection there (the grok-revert lesson: no dead wiring).
   # Resolved via ${ATRIUM_DATA_DIR:-...} so stable / dev / beta installs coexist.
   local inject_base inject_ss_base inject_ss inject_ups inject_pt inject_post
-  inject_base="$CURSOR_GUARD; $CHAT_SDK_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
+  inject_base="$CURSOR_GUARD; $CHAT_SDK_GUARD; $ATRIUM_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
   # SessionStart carries no CHAT_SDK_GUARD, for the same reason as the
   # resolve-manifest entries above (dead SDK callback). Beyond the provider
   # content itself, this hop is what records the `sessionStart` injection-log
   # entry the chat UI anchors its session-context marker to — guarded, chat
   # panes get the context but no marker.
-  inject_ss_base="$CURSOR_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
+  inject_ss_base="$CURSOR_GUARD; $ATRIUM_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
   inject_ss="$(jq -n --arg cmd "$inject_ss_base session-start" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"

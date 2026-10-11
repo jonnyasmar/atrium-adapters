@@ -41,6 +41,12 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manif
 CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
 CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
 
+# hooks.json is global, so these also fire for Codex sessions with no atrium
+# pane (started outside atrium, or a quarantined sign-in TUI). An emit there
+# has nothing to attribute the event to; skip it and the CLI spawn it costs.
+PANE_GUARD='[ -n "${ATRIUM_PANE_ID:-}" ] || exit 0'
+PANE_JSON_NOOP='[ -n "${ATRIUM_PANE_ID:-}" ] || printf "{}\n"'
+
 # Event table: kebab-case event name, Codex settings key, matcher.
 # Matchers for SessionEnd / SubagentStart / SubagentStop are kept by
 # codex's matcher_pattern_for_event (only UserPromptSubmit + Stop drop).
@@ -69,11 +75,11 @@ subagent-stop\tSubagentStop\t*'
 build_hook_command() {
   local event="$1"
   local trailer="exit 0"
-  local guard="$CHAT_SDK_GUARD"
+  local guard="$CHAT_SDK_GUARD; $PANE_GUARD"
   if [ "$event" = "user-prompt-submit" ]; then
     trailer='printf "{}\n"; exit 0'
-    # The parser needs a `{}` envelope even when the chat guard trips.
-    guard="$CHAT_SDK_JSON_NOOP; $CHAT_SDK_GUARD"
+    # The parser needs a `{}` envelope even when a guard trips.
+    guard="$CHAT_SDK_JSON_NOOP; $CHAT_SDK_GUARD; $PANE_JSON_NOOP; $PANE_GUARD"
   fi
   # For `post-tool-use` events, the native payload is piped through
   # `normalize-hook-payload.sh` first so atrium consumes the canonical
