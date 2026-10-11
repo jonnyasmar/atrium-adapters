@@ -72,10 +72,13 @@ my $TAIL_BYTES = 65536;   # tail scan: latest title records and last prompt
 my $PREAMBLE = "This session is being continued from a previous conversation";
 my %ESC = (n => "\n", t => "\t", r => "\r", b => "\x08", f => "\x0c", u => "");
 
+# utf8::decode alone is lax: it accepts encoded surrogates (\xED\xA0\x80)
+# and code points past U+10FFFF, which strict decoders reject. So any non-ASCII
+# value keeps only well-formed UTF-8 runs and drops every other byte (a torn
+# write, a window edge, or bytes some other tool wrote) before decoding.
 sub decode_text {
   my ($s) = @_;
-  return $s if utf8::decode($s);
-  # Not valid UTF-8 (a torn write): keep the valid runs, drop the stray bytes.
+  return $s unless $s =~ /[\x80-\xff]/;
   $s =~ s/((?:[\x00-\x7f]|[\xc2-\xdf][\x80-\xbf]|\xe0[\xa0-\xbf][\x80-\xbf]|[\xe1-\xec\xee\xef][\x80-\xbf]{2}|\xed[\x80-\x9f][\x80-\xbf]|\xf0[\x90-\xbf][\x80-\xbf]{2}|[\xf1-\xf3][\x80-\xbf]{3}|\xf4[\x80-\x8f][\x80-\xbf]{2})+)|[\x80-\xff]/defined $1 ? $1 : ""/ge;
   utf8::decode($s);
   return $s;
@@ -137,10 +140,12 @@ sub tidy {
   return $s;
 }
 
+# Measured and cut in graphemes, so an emoji sequence counts once either way.
 sub clip {
   my ($s, $max) = @_;
-  return $s if length($s) <= $max;
-  my ($head) = $s =~ /\A(\X{0,@{[$max - 1]}})/;
+  my @graphemes = $s =~ /(\X)/g;
+  return $s if @graphemes <= $max;
+  my $head = join "", @graphemes[0 .. $max - 2];
   $head =~ s/ $//;
   return $head . "\x{2026}";
 }
@@ -258,8 +263,10 @@ while (my $entry = <STDIN>) {
   if ($fsize > 0 && open my $fh, "<:raw", $filepath) {
     my $seek_pos = $fsize > $TAIL_BYTES ? $fsize - $TAIL_BYTES : 0;
     if ($seek_pos > 0) {
-      seek($fh, $seek_pos, 0);
-      <$fh>;  # discard the partial first line
+      # Discard the partial first line, unless the window starts on a line.
+      seek($fh, $seek_pos - 1, 0);
+      read($fh, my $before, 1);
+      <$fh> if $before ne "\n";
     }
     while (my $line = <$fh>) {
       if (substr($line, 0, 48) =~ $METADATA_RECORD) {

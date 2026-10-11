@@ -109,6 +109,31 @@ write("tail-title", [user("tail-title", "tail prompt")] + filler
       + [meta("custom-title", "tail-title", customTitle="Title from the tail")])
 write("head-title", [user("head-title", "head prompt"),
                      meta("custom-title", "head-title", customTitle="Title from the head")] + filler)
+
+# The 64 KB tail window starting exactly on a line: that line is whole and
+# must be read, not discarded as a partial one.
+def line(record):
+    return (json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+boundary_title = line(meta("custom-title", "tail-boundary", customTitle="Title on the boundary"))
+pad = line(assistant("tail-boundary", ""))
+pad = line(assistant("tail-boundary", "x" * (65536 - len(boundary_title) - len(pad))))
+assert len(boundary_title) + len(pad) == 65536
+with open(os.path.join(project, "tail-boundary.jsonl"), "wb") as f:
+    f.write(line(user("tail-boundary", "boundary prompt")))
+    # Past the 80-line head scan, so only the tail can find the title.
+    for _ in range(100):
+        f.write(line(assistant("pad", "x" * 1000)))
+    f.write(boundary_title + pad)
+
+# Bytes Perl's lax utf8::decode accepts but strict UTF-8 rejects: an encoded
+# surrogate and a code point past U+10FFFF.
+with open(os.path.join(project, "lax-bytes.jsonl"), "wb") as f:
+    f.write(line(user("lax-bytes", "beforeSURROGATEmiddleBEYONDafter"))
+            .replace(b"SURROGATE", b"\xed\xa0\x80").replace(b"BEYOND", b"\xf4\x90\x80\x80"))
+
+# Twelve family emoji: 84 code points, 12 graphemes, so no cut.
+write("emoji-title", [user("emoji-title", "prompt"),
+                      meta("custom-title", "emoji-title", customTitle="\U0001F468\u200d\U0001F469\u200d\U0001F467\u200d\U0001F466" * 12)])
 PY
 
 OUTPUT_FILE="${FIXTURE_HOME}/output.json"
@@ -137,6 +162,9 @@ expected = {
     "bare-command": "/clear",
     "tail-title": "Title from the tail",
     "head-title": "Title from the head",
+    "tail-boundary": "Title on the boundary",
+    "lax-bytes": "beforemiddleafter",
+    "emoji-title": "\U0001F468\u200d\U0001F469\u200d\U0001F467\u200d\U0001F466" * 12,
 }
 failures = 0
 for sid, want in expected.items():
