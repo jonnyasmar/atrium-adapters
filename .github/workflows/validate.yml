@@ -76,6 +76,9 @@ jobs:
       - name: Validate recent-session source metadata
         run: bash tests/list-recent-sessions-source-path.assert.sh
 
+      - name: Validate Claude Code session labels
+        run: bash tests/claude-code-session-labels.assert.sh
+
       - name: Validate grok launcher catalog
         run: |
           bash tests/grok-launcher-catalog.assert.sh
