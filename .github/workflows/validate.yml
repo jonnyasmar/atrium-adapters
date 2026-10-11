@@ -79,6 +79,9 @@ jobs:
       - name: Validate session listers' Python resolution and Windows cwds
         run: bash tests/list-recent-sessions-python.assert.sh
 
+      - name: Validate extractors' and codex auto-trust's Python resolution
+        run: bash tests/adapter-python-resolution.assert.sh
+
       - name: Validate Claude Code session labels
         run: bash tests/claude-code-session-labels.assert.sh
 

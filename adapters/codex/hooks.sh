@@ -292,6 +292,34 @@ uninstall_mcp_server() {
   remove_atrium_mcp_config
 }
 
+# Resolve a runnable Python 3 into PYTHON. On Windows `python3` is often the
+# Microsoft Store app-execution alias (...\Microsoft\WindowsApps\python3): it
+# exists but runs nothing, while python.org and conda installs answer to
+# `python` or the `py -3` launcher. Inline rather than in ../shared: sourcing
+# that costs two subshells per call on Windows.
+find_python() {
+  local name path
+  for name in python3 python py; do
+    hash "$name" 2>/dev/null || continue
+    path="$name"
+    if [ "${BASH_VERSINFO[0]}" -ge 4 ]; then
+      path="${BASH_CMDS[$name]:-$name}"
+      shopt -s nocasematch
+      case "$path" in
+        */microsoft/windowsapps/*)
+          shopt -u nocasematch
+          continue
+          ;;
+      esac
+      shopt -u nocasematch
+    fi
+    PYTHON=("$path")
+    [ "$name" != py ] || PYTHON+=(-3)
+    return 0
+  done
+  return 1
+}
+
 # Pre-trust every hook in hooks.json by writing [hooks.state."<key>"] entries
 # into config.toml. Without this, codex 0.129+ flags every hook as
 # "untrusted" on first launch and forces the user through a /hooks review
@@ -304,13 +332,13 @@ uninstall_mcp_server() {
 # hook-command change refreshes the hashes (otherwise codex would report
 # the hooks as "modified" and re-prompt for review).
 trust_all_hooks() {
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "atrium hooks: python3 not found, skipping auto-trust" >&2
+  if ! find_python; then
+    echo "atrium hooks: no runnable Python 3 (tried python3, python, py -3), skipping auto-trust" >&2
     return 0
   fi
   local tmp
   tmp="$(atrium_config_temp "$CONFIG_TOML")"
-  if ! python3 - "$HOOKS_JSON" "$CONFIG_TOML" > "$tmp" <<'PYEOF'
+  if ! "${PYTHON[@]}" - "$HOOKS_JSON" "$CONFIG_TOML" > "$tmp" <<'PYEOF'
 import hashlib, json, re, sys
 from pathlib import Path
 
@@ -364,7 +392,7 @@ def compute_hash(label, matcher, command, timeout_sec, status_message):
 
 if not hooks_path.exists():
     sys.exit(0)
-data = json.loads(hooks_path.read_text() or '{}')
+data = json.loads(hooks_path.read_text(encoding='utf-8') or '{}')
 state_entries = {}
 for event_pascal, groups in (data.get('hooks') or {}).items():
     label = EVENT_LABELS.get(event_pascal)
@@ -393,7 +421,7 @@ for event_pascal, groups in (data.get('hooks') or {}).items():
 # rewrite the whole atrium-owned trust block from scratch each install, so
 # stale entries (e.g. from a prior install whose hooks have since changed)
 # don't accumulate. Lines outside hooks.state are preserved verbatim.
-text = config_path.read_text() if config_path.exists() else ''
+text = config_path.read_text(encoding='utf-8') if config_path.exists() else ''
 section_re = re.compile(r'^\s*\[\s*([^\]]+?)\s*\]\s*$')
 out, in_state = [], False
 for line in text.splitlines():
@@ -423,7 +451,8 @@ if state_entries:
         parts.append('enabled = true\n')
         parts.append(f'trusted_hash = "{state_entries[key]}"\n')
 
-sys.stdout.write(''.join(parts))
+# Bytes, not text: a Windows interpreter would write cp1252 and CRLF.
+sys.stdout.buffer.write(''.join(parts).encode('utf-8'))
 PYEOF
   then
     rm -f "$tmp"
@@ -438,12 +467,12 @@ PYEOF
 # never match this prefix and stay untouched.
 untrust_atrium_hooks() {
   [ -f "$CONFIG_TOML" ] || return 0
-  if ! command -v python3 >/dev/null 2>&1; then
+  if ! find_python; then
     return 0
   fi
   local tmp
   tmp="$(atrium_config_temp "$CONFIG_TOML")"
-  if ! python3 - "$HOOKS_JSON" "$CONFIG_TOML" > "$tmp" <<'PYEOF'
+  if ! "${PYTHON[@]}" - "$HOOKS_JSON" "$CONFIG_TOML" > "$tmp" <<'PYEOF'
 import re, sys
 from pathlib import Path
 
@@ -452,7 +481,7 @@ config_path = Path(sys.argv[2])
 prefix = str(hooks_path)
 if not config_path.exists():
     sys.exit(0)
-text = config_path.read_text()
+text = config_path.read_text(encoding='utf-8')
 section_re = re.compile(r'^\s*\[\s*hooks\.state\.\s*"([^"]+)"\s*\]\s*$')
 out, drop = [], False
 for line in text.splitlines():
@@ -468,7 +497,7 @@ for line in text.splitlines():
 while out and not out[-1].strip():
     out.pop()
 content = ('\n'.join(out) + '\n') if out else ''
-sys.stdout.write(content)
+sys.stdout.buffer.write(content.encode('utf-8'))
 PYEOF
   then
     rm -f "$tmp"
