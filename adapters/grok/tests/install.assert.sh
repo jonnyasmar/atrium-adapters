@@ -113,4 +113,13 @@ if ! printf '%s' "$failure_cmd" | grep -qE 'hook emit post-tool-use([[:space:]]|
   exit 1
 fi
 
+# grok's ACP initialize advertises promptCapabilities.image=false, but 1.0.50
+# hands a session/prompt image block to the model. Only this flag lets the
+# chat composer accept a pasted image, so it must not drift back to false.
+ADAPTER_JSON="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/adapter.json"
+if ! jq -e '.chatTransport.capabilities.imageInput == true' "$ADAPTER_JSON" >/dev/null; then
+  echo "install.assert: chatTransport.capabilities.imageInput must be true" >&2
+  exit 1
+fi
+
 exit 0

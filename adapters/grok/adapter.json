@@ -118,7 +118,7 @@
       "commandDiscovery": true,
       "planMode": false,
       "contextUsage": true,
-      "imageInput": false,
+      "imageInput": true,
       "checkpointing": false,
       "subagentEvents": true,
       "steering": true,
