@@ -33,11 +33,17 @@ require 'mktemp .*atrium-issue\.XXXXXX' 'issue drafts must use an exclusive per-
 require 'APPROVED_SHA256=' 'posting must bind the approval to the complete draft bytes'
 require 'ACTUAL_SHA256=' 'posting must verify the complete draft bytes immediately before gh'
 require 'body-file.*ISSUE_DRAFT' 'gh must post from the exclusive per-run draft'
+require 'chat-restore-failure' 'handled chat restore failures must be discoverable'
+require 'startup-day.*file' 'surviving sidecar stderr must not imply midnight rotation'
+require 'Screenshot/chunk.*macOS-only' 'capture extraction must state its platform boundary'
+require 'Any trimming is a draft revision' 'fallback edits must go through approval again'
 
 reject 'labels=bug,source:in-app' 'fallback still assumes unprovisioned labels'
 reject 'for L in bug source:in-app' 'posting still silently mutates an unprovisioned taxonomy'
 reject '^## `area:` labels|— `area:' 'unprovisioned area labels have returned'
 reject 'typical busy day logs|~15,000 INFO' 'static log-volume calibration has returned'
 reject '/tmp/atrium-issue\.md' 'fixed issue-draft paths allow concurrent sessions to swap bodies'
+reject '90% of the (file|volume)' 'static stderr-volume assumptions have returned'
+reject 'cef.log.*\*\*only\*\* place' 'browser host failures also reach the app log'
 
 echo "atrium-bug-report contract: ok"
