@@ -87,6 +87,27 @@ def plain_spelling(path):
     return path
 
 
+def windows_spellings(path):
+    # The spellings producers actually write for one Windows directory, so the
+    # registry's cwd index can answer before a case-folding scan has to.
+    p = path.replace('/', '\\')
+    if p.startswith(VERBATIM_UNC):
+        p = '\\\\' + p[len(VERBATIM_UNC):]
+    elif p.startswith(VERBATIM):
+        p = p[len(VERBATIM):]
+    if len(p) > 3:
+        p = p.rstrip('\\')
+    if p.startswith('\\\\'):
+        forms = {p, VERBATIM_UNC + p[2:]}
+    else:
+        forms = set()
+        for drive in (p[0].upper(), p[0].lower()):
+            forms.update({drive + p[1:], VERBATIM + drive + p[1:]})
+        forms.update({form.replace('\\', '/') for form in forms if not form.startswith(VERBATIM)})
+    forms.add(path)
+    return sorted(forms)
+
+
 # Modern Codex maintains an indexed thread registry with both direct-resume
 # classification and real activity recency. Prefer it over walking thousands
 # of rollout files; the rollout remains the transcript source path.
@@ -96,20 +117,29 @@ if os.path.isfile(db_path):
         columns = {row[1] for row in conn.execute('PRAGMA table_info(threads)')}
         required = {'thread_source', 'rollout_path', 'recency_at_ms'}
         if required.issubset(columns):
+            def threads_where(cwd_match, params):
+                return conn.execute(f'''
+                    SELECT id, title, first_user_message, rollout_path,
+                           COALESCE(NULLIF(recency_at_ms, 0), updated_at * 1000)
+                    FROM threads
+                    WHERE {cwd_match} AND archived = 0
+                      AND COALESCE(thread_source, '') <> 'subagent'
+                    ORDER BY recency_at_ms DESC
+                    LIMIT 10
+                ''', params).fetchall()
+
             if target_key is None:
-                cwd_match, cwd_param = 'cwd = ?', cwd
+                rows = threads_where('cwd = ?', (cwd,))
             else:
-                conn.create_function('atrium_windows_key', 1, windows_key)
-                cwd_match, cwd_param = 'atrium_windows_key(cwd) = ?', target_key
-            rows = conn.execute(f'''
-                SELECT id, title, first_user_message, rollout_path,
-                       COALESCE(NULLIF(recency_at_ms, 0), updated_at * 1000)
-                FROM threads
-                WHERE {cwd_match} AND archived = 0
-                  AND COALESCE(thread_source, '') <> 'subagent'
-                ORDER BY recency_at_ms DESC
-                LIMIT 10
-            ''', (cwd_param,)).fetchall()
+                # The likely spellings first: an IN list keeps the cwd index.
+                # Only a folder spelled some other way (mixed case past the
+                # drive letter) pays for the full scan through windows_key.
+                spellings = windows_spellings(cwd)
+                marks = ', '.join('?' for _ in spellings)
+                rows = threads_where(f'cwd IN ({marks})', tuple(spellings))
+                if not rows:
+                    conn.create_function('atrium_windows_key', 1, windows_key)
+                    rows = threads_where('atrium_windows_key(cwd) = ?', (target_key,))
             for sid, title, first_user_message, source_path, activity_ms in rows:
                 if not sid or not source_path or not os.path.isfile(source_path):
                     continue
@@ -233,6 +263,46 @@ fi
 
 ESCAPED_CWD="${CWD//\'/\'\'}"
 
+# The registry stores Windows folders as \\?\D:\proj while atrium asks with
+# D:\proj, so match the spellings producers write (the Python strategy's
+# windows_spellings). POSIX paths keep their exact match. No subshells: each
+# one costs a process on Windows.
+CWD_MATCH="cwd = '${ESCAPED_CWD}'"
+win="${CWD//\//\\}"
+case "$win" in
+  '\\?\UNC\'*) win="\\\\${win:8}" ;;
+  '\\?\'*) win="${win:4}" ;;
+esac
+while [ "${#win}" -gt 3 ] && [ "${win%\\}" != "$win" ]; do
+  win="${win%\\}"
+done
+spellings=()
+case "$win" in
+  [A-Za-z]:\\* | [A-Za-z]:)
+    upper=ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    lower=abcdefghijklmnopqrstuvwxyz
+    drive="${win:0:1}"
+    rest="${win:1}"
+    case "$upper" in
+      *"$drive"*) before="${upper%%"$drive"*}" ;;
+      *) before="${lower%%"$drive"*}" ;;
+    esac
+    for letter in "${upper:${#before}:1}" "${lower:${#before}:1}"; do
+      spellings+=("$letter$rest" "\\\\?\\$letter$rest" "$letter${rest//\\//}")
+    done
+    ;;
+  '\\'*)
+    spellings=("$win" "\\\\?\\UNC\\${win:2}")
+    ;;
+esac
+if [ "${#spellings[@]}" -gt 0 ]; then
+  CWD_MATCH="cwd IN ('${ESCAPED_CWD}'"
+  for spelling in "${spellings[@]}"; do
+    CWD_MATCH="${CWD_MATCH}, '${spelling//\'/\'\'}'"
+  done
+  CWD_MATCH="${CWD_MATCH})"
+fi
+
 THREAD_SOURCE_FILTER=""
 HAS_THREAD_SOURCE="$(sqlite3 -readonly "$DB_PATH" \
   "SELECT COUNT(*) FROM pragma_table_info('threads') WHERE name = 'thread_source'" 2>/dev/null)" || \
@@ -244,9 +314,9 @@ fi
 
 # Try -readonly first, fall back to normal open (macOS quarantine xattr)
 RAW="$(sqlite3 -json -readonly "$DB_PATH" \
-  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE cwd = '${ESCAPED_CWD}' AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || \
+  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE ${CWD_MATCH} AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || \
 RAW="$(sqlite3 -json "$DB_PATH" \
-  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE cwd = '${ESCAPED_CWD}' AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || {
+  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE ${CWD_MATCH} AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || {
   echo '{"sessions": []}'
   exit 0
 }
@@ -267,7 +337,7 @@ if command -v jq &>/dev/null; then
            | if length > 50 then .[:47] + "..." else . end)
         else null end
       ),
-      cwd: (.cwd // $cwd),
+      cwd: $cwd,
       lastActive: (.updated_at | tonumber | todate),
       sourcePath: $source_path
     }] | {sessions: .}'
@@ -285,7 +355,7 @@ elif command -v perl &>/dev/null; then
       push @sessions, {
         id => $row->{id},
         name => $name eq "" ? undef : $name,
-        cwd => $row->{cwd} // $ENV{CODEX_SESSION_CWD},
+        cwd => $ENV{CODEX_SESSION_CWD},
         lastActive => strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(0 + $row->{updated_at})),
         sourcePath => $ENV{CODEX_SESSION_SOURCE},
       };

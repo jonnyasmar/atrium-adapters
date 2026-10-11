@@ -28,6 +28,13 @@ chmod +x "$BIN/python" "$STUB_DIR/python3"
 # Listers may use coreutils; the PATH must not reach a real python3, though.
 ln -s "$(command -v dirname)" "$BIN/dirname"
 
+# `py` is the Windows launcher: only `py -3 …` may reach the interpreter.
+PYL_BIN="$TMP/pylauncher"
+mkdir -p "$PYL_BIN"
+printf '#!/bin/sh\n[ "$1" = -3 ] || { echo "py without -3" >>"$INTERPRETER_LOG"; exit 2; }\nshift\necho python >>"$INTERPRETER_LOG"\nexec "%s" "$@"\n' "$REAL_PYTHON" >"$PYL_BIN/py"
+chmod +x "$PYL_BIN/py"
+ln -s "$(command -v dirname)" "$PYL_BIN/dirname"
+
 HOME_FIXTURE="$TMP/home"
 mkdir -p \
   "$HOME_FIXTURE/.gemini/antigravity-cli/cache" \
@@ -47,8 +54,8 @@ assert_uses_python() {
     fail "$adapter $label: lister exited unsuccessfully"
   elif ! jq -e '.sessions | type == "array"' <<<"$output" >/dev/null 2>&1; then
     fail "$adapter $label: invalid output: $output"
-  elif grep -q stub "$log"; then
-    fail "$adapter $label: ran the WindowsApps alias stub"
+  elif grep -q -e stub -e "py without -3" "$log"; then
+    fail "$adapter $label: ran the alias stub or \`py\` without -3"
   elif ! grep -q python "$log"; then
     fail "$adapter $label: never reached \`python\`"
   else
@@ -58,6 +65,7 @@ assert_uses_python() {
 
 for adapter in codex antigravity cursor-agent muse opencode omp pi; do
   assert_uses_python "$adapter" "$BIN" "falls back to \`python\` without python3"
+  assert_uses_python "$adapter" "$PYL_BIN" "falls back to \`py -3\` without python3 or python"
   if [ "${BASH_VERSINFO[0]}" -ge 4 ]; then
     assert_uses_python "$adapter" "$STUB_DIR:$BIN" "skips the WindowsApps python3 alias"
   else
@@ -114,6 +122,25 @@ assert_codex_ids "codex registry matches a \\\\?\\ cwd" \
   '[["codex-win","windows title"]]' "$REGISTRY_HOME" 'D:\Proj\Codex'
 assert_codex_ids "codex registry folds drive case, separators and a trailing slash" \
   '[["codex-win","windows title"]]' "$REGISTRY_HOME" 'd:/proj/codex/'
+
+# Without Python the sqlite3 CLI fallback must match the same spellings, and
+# report the folder the way atrium asked for it.
+SQLITE_ONLY="$TMP/sqlite-only"
+mkdir -p "$SQLITE_ONLY"
+ln -s "$(command -v sqlite3)" "$SQLITE_ONLY/sqlite3"
+ln -s "$(command -v jq)" "$SQLITE_ONLY/jq"
+for asked in 'D:\Proj\Codex' 'd:/Proj/Codex/'; do
+  if ! output="$(env -i HOME="$REGISTRY_HOME" PATH="$SQLITE_ONLY" \
+    "$BASH" "$ROOT/adapters/codex/list_recent_sessions.sh" "$asked" 2>/dev/null)"; then
+    fail "codex sqlite3 fallback for $asked: lister exited unsuccessfully"
+  elif ! jq -e --arg asked "$asked" \
+    '[.sessions[] | [.id, .name, .cwd]] == [["codex-win", "windows title", $asked]]' \
+    <<<"$output" >/dev/null; then
+    fail "codex sqlite3 fallback for $asked: got $output"
+  else
+    pass "codex sqlite3 fallback matches a \\\\?\\ cwd asked as $asked"
+  fi
+done
 
 # The rollout fallback compares session_meta.cwd the same way.
 ROLLOUT_HOME="$TMP/rollout-home"
