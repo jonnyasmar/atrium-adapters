@@ -28,6 +28,18 @@
 set -uo pipefail
 
 EVENT="${1:-}"
+
+# The hook config is global, so this also runs for agy sessions with no atrium
+# pane (started outside atrium). Nothing can be attributed there: answer agy's
+# per-event contract and skip the jq, normalizer and CLI spawns.
+if [ -z "${ATRIUM_PANE_ID:-}" ]; then
+  case "$EVENT" in
+    post-tool-use | session-start | stop) printf '{}\n' ;;
+    *) printf '{"decision":"allow"}\n' ;;
+  esac
+  exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Self-locating defaults: this script lives at <data-dir>/adapters/antigravity,

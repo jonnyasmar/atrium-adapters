@@ -37,6 +37,11 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manif
 CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
 CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
 
+# The hook file is global, so these also fire for Grok sessions with no atrium
+# pane (started outside atrium). An emit there has nothing to attribute the
+# event to; skip it and the normalizer + CLI spawns it costs.
+PANE_GUARD='[ -n "${ATRIUM_PANE_ID:-}" ] || exit 0'
+
 # Channel discovery — bake the right CLI fallback path into hook
 # commands so dev/stable installs don't clobber each other. The probe
 # inspects the running script's own location so a single machine with
@@ -91,8 +96,8 @@ build_hook_command() {
   if [ "$event" = "post-tool-use-failure" ]; then
     emit_event="post-tool-use"
   fi
-  printf '%s; %s; %s %s | "${ATRIUM_CLI_PATH:-%s}" hook emit %s --adapter grok --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$NORMALIZER_REF" "$event" "$ATRIUM_CLI_FALLBACK" "$emit_event"
+  printf '%s; %s; %s; %s %s | "${ATRIUM_CLI_PATH:-%s}" hook emit %s --adapter grok --pane-id "${ATRIUM_PANE_ID:-}" --json 2>/dev/null; exit 0' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$PANE_GUARD" "$NORMALIZER_REF" "$event" "$ATRIUM_CLI_FALLBACK" "$emit_event"
 }
 
 # Build the plugin's hooks/hooks.json content.

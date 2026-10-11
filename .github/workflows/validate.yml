@@ -76,6 +76,15 @@ jobs:
       - name: Validate recent-session source metadata
         run: bash tests/list-recent-sessions-source-path.assert.sh
 
+      - name: Validate session listers' Python resolution and Windows cwds
+        run: bash tests/list-recent-sessions-python.assert.sh
+
+      - name: Validate extractors' and codex auto-trust's Python resolution
+        run: bash tests/adapter-python-resolution.assert.sh
+
+      - name: Validate Claude Code session labels
+        run: bash tests/claude-code-session-labels.assert.sh
+
       - name: Validate grok launcher catalog
         run: |
           bash tests/grok-launcher-catalog.assert.sh
@@ -106,6 +115,12 @@ jobs:
 
       - name: Validate Claude root bypass compatibility
         run: bash tests/claude-root-bypass.assert.sh
+
+      - name: Validate Claude hook entry guards
+        run: bash adapters/claude-code/tests/hook-entry/assert.sh
+
+      - name: Validate codex, grok, cursor-agent and antigravity pane guards
+        run: bash tests/hook-pane-guards.assert.sh
 
       - name: Validate symlinked hook configuration
         run: python3 tests/hook-config-symlinks.py

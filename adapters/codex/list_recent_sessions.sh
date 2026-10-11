@@ -11,16 +11,102 @@ CWD="${1:?Usage: list_recent_sessions.sh <cwd>}"
 SESSIONS_DIR="${HOME}/.codex/sessions"
 DB_PATH="${HOME}/.codex/state_5.sqlite"
 
-# ── Strategy 1: modern SQLite registry, then rollout files ──
-if { [ -d "$SESSIONS_DIR" ] || [ -f "$DB_PATH" ]; } && command -v python3 &>/dev/null; then
-  RESULT=$(python3 -c "
-import json, os, glob, sqlite3, sys
+# Resolve a runnable Python 3 into PYTHON. On Windows `python3` is often the
+# Microsoft Store app-execution alias (...\Microsoft\WindowsApps\python3): it
+# exists but runs nothing, while python.org and conda installs answer to
+# `python` or the `py -3` launcher. Inline rather than in ../shared: sourcing
+# that costs two subshells per call on Windows, on the launcher's path.
+find_python() {
+  local name path
+  for name in python3 python py; do
+    hash "$name" 2>/dev/null || continue
+    path="$name"
+    if [ "${BASH_VERSINFO[0]}" -ge 4 ]; then
+      path="${BASH_CMDS[$name]:-$name}"
+      shopt -s nocasematch
+      case "$path" in
+        */microsoft/windowsapps/*)
+          shopt -u nocasematch
+          continue
+          ;;
+      esac
+      shopt -u nocasematch
+    fi
+    PYTHON=("$path")
+    [ "$name" != py ] || PYTHON+=(-3)
+    return 0
+  done
+  return 1
+}
+
+list_with_python() {
+  "${PYTHON[@]}" - "$CWD" "$SESSIONS_DIR" "$DB_PATH" <<'PY'
+import json, os, glob, re, sqlite3, sys
 from datetime import datetime, timezone
 
 cwd = sys.argv[1]
 sessions_dir = sys.argv[2]
 db_path = sys.argv[3]
 sessions = []
+
+VERBATIM = '\\\\?\\'
+VERBATIM_UNC = '\\\\?\\UNC\\'
+
+
+def windows_key(path):
+    # One spelling per Windows directory, or None for anything else. Codex's
+    # thread registry stores the extended-length form (\\?\D:\proj) while its
+    # rollouts and atrium use D:\proj, and producers disagree on drive-letter
+    # case and separators. NTFS paths are case-insensitive, so fold them.
+    if not isinstance(path, str):
+        return None
+    p = path.replace('/', '\\')
+    if p.startswith(VERBATIM_UNC):
+        p = '\\\\' + p[len(VERBATIM_UNC):]
+    elif p.startswith(VERBATIM):
+        p = p[len(VERBATIM):]
+    if not (re.match(r'[A-Za-z]:(\\|$)', p) or p.startswith('\\\\')):
+        return None
+    if len(p) > 3:
+        p = p.rstrip('\\')
+    return p.casefold()
+
+
+target_key = windows_key(cwd)
+
+
+def same_dir(candidate):
+    if target_key is None:
+        return candidate == cwd
+    return windows_key(candidate) == target_key
+
+
+def plain_spelling(path):
+    if isinstance(path, str) and path.startswith(VERBATIM) and not path.startswith(VERBATIM_UNC):
+        return path[len(VERBATIM):]
+    return path
+
+
+def windows_spellings(path):
+    # The spellings producers actually write for one Windows directory, so the
+    # registry's cwd index can answer before a case-folding scan has to.
+    p = path.replace('/', '\\')
+    if p.startswith(VERBATIM_UNC):
+        p = '\\\\' + p[len(VERBATIM_UNC):]
+    elif p.startswith(VERBATIM):
+        p = p[len(VERBATIM):]
+    if len(p) > 3:
+        p = p.rstrip('\\')
+    if p.startswith('\\\\'):
+        forms = {p, VERBATIM_UNC + p[2:]}
+    else:
+        forms = set()
+        for drive in (p[0].upper(), p[0].lower()):
+            forms.update({drive + p[1:], VERBATIM + drive + p[1:]})
+        forms.update({form.replace('\\', '/') for form in forms if not form.startswith(VERBATIM)})
+    forms.add(path)
+    return sorted(forms)
+
 
 # Modern Codex maintains an indexed thread registry with both direct-resume
 # classification and real activity recency. Prefer it over walking thousands
@@ -31,15 +117,29 @@ if os.path.isfile(db_path):
         columns = {row[1] for row in conn.execute('PRAGMA table_info(threads)')}
         required = {'thread_source', 'rollout_path', 'recency_at_ms'}
         if required.issubset(columns):
-            rows = conn.execute('''
-                SELECT id, title, first_user_message, rollout_path,
-                       COALESCE(NULLIF(recency_at_ms, 0), updated_at * 1000)
-                FROM threads
-                WHERE cwd = ? AND archived = 0
-                  AND COALESCE(thread_source, '') <> 'subagent'
-                ORDER BY recency_at_ms DESC
-                LIMIT 10
-            ''', (cwd,)).fetchall()
+            def threads_where(cwd_match, params):
+                return conn.execute(f'''
+                    SELECT id, title, first_user_message, rollout_path,
+                           COALESCE(NULLIF(recency_at_ms, 0), updated_at * 1000)
+                    FROM threads
+                    WHERE {cwd_match} AND archived = 0
+                      AND COALESCE(thread_source, '') <> 'subagent'
+                    ORDER BY recency_at_ms DESC
+                    LIMIT 10
+                ''', params).fetchall()
+
+            if target_key is None:
+                rows = threads_where('cwd = ?', (cwd,))
+            else:
+                # The likely spellings first: an IN list keeps the cwd index.
+                # Only a folder spelled some other way (mixed case past the
+                # drive letter) pays for the full scan through windows_key.
+                spellings = windows_spellings(cwd)
+                marks = ', '.join('?' for _ in spellings)
+                rows = threads_where(f'cwd IN ({marks})', tuple(spellings))
+                if not rows:
+                    conn.create_function('atrium_windows_key', 1, windows_key)
+                    rows = threads_where('atrium_windows_key(cwd) = ?', (target_key,))
             for sid, title, first_user_message, source_path, activity_ms in rows:
                 if not sid or not source_path or not os.path.isfile(source_path):
                     continue
@@ -51,7 +151,7 @@ if os.path.isfile(db_path):
                     'name': name,
                     'cwd': cwd,
                     'lastActive': datetime.fromtimestamp(activity_ms / 1000, timezone.utc).isoformat().replace('+00:00', 'Z'),
-                    'sourcePath': source_path,
+                    'sourcePath': plain_spelling(source_path),
                 })
         conn.close()
     except (OSError, sqlite3.Error, ValueError, TypeError):
@@ -62,14 +162,10 @@ if sessions:
     raise SystemExit(0)
 
 # Rollout transcripts are UTF-8. open() without an explicit encoding uses the
-# locale codec, which is UTF-8 on macOS/Linux but cp1252 on Windows — a single
-# non-Latin-1 byte in any rollout then raised UnicodeDecodeError, which escaped
-# the try/except (it is a ValueError subclass, not caught by the OSError arm
-# below), aborted this whole python body, and left the script exiting 1 with NO
-# JSON on stdout. Codex therefore reported zero sessions on every Windows box.
-# The sibling extract_session.py already pins utf-8/replace; these inline
-# readers now match it, so macOS/Linux behaviour is unchanged.
-# NOTE: this body is a double-quoted shell string — no backticks in comments.
+# locale codec, which is UTF-8 on macOS/Linux but cp1252 on Windows, so a
+# single non-Latin-1 byte in any rollout raised UnicodeDecodeError and aborted
+# this whole listing. The sibling extract_session.py already pins
+# utf-8/replace; these readers match it.
 #
 # Rollout creation time does not move as a long-running thread stays active.
 # File mtime does, so it is the picker recency source of truth.
@@ -85,7 +181,7 @@ for path in paths:
         if meta.get('type') != 'session_meta':
             continue
         payload = json.loads(meta['payload']) if isinstance(meta.get('payload'), str) else meta.get('payload', {})
-        if payload.get('cwd') != cwd:
+        if not same_dir(payload.get('cwd')):
             continue
         source = payload.get('source') if isinstance(payload.get('source'), dict) else {}
         has_subagent_source = any(isinstance(source.get(key), dict) for key in ('subagent', 'subAgent', 'SubAgent'))
@@ -136,11 +232,21 @@ if os.path.exists(history_path) and sessions:
 # Sort by lastActive descending, limit to 10
 sessions.sort(key=lambda s: s.get('lastActive', ''), reverse=True)
 print(json.dumps({'sessions': sessions[:10]}))
-" "$CWD" "$SESSIONS_DIR" "$DB_PATH" 2>/dev/null)
+PY
+}
 
-  if [ -n "$RESULT" ] && [ "$RESULT" != '{"sessions": []}' ]; then
-    echo "$RESULT"
-    exit 0
+# ── Strategy 1: modern SQLite registry, then rollout files ──
+if [ -d "$SESSIONS_DIR" ] || [ -f "$DB_PATH" ]; then
+  if find_python; then
+    # A failing interpreter must fall through to Strategy 2, not abort the
+    # script under `set -e` with nothing on stdout.
+    RESULT="$(list_with_python 2>/dev/null)" || RESULT=""
+    if [ -n "$RESULT" ] && [ "$RESULT" != '{"sessions": []}' ]; then
+      echo "$RESULT"
+      exit 0
+    fi
+  else
+    echo "list_recent_sessions: no runnable Python 3 (tried python3, python, py -3)" >&2
   fi
 fi
 
@@ -157,6 +263,46 @@ fi
 
 ESCAPED_CWD="${CWD//\'/\'\'}"
 
+# The registry stores Windows folders as \\?\D:\proj while atrium asks with
+# D:\proj, so match the spellings producers write (the Python strategy's
+# windows_spellings). POSIX paths keep their exact match. No subshells: each
+# one costs a process on Windows.
+CWD_MATCH="cwd = '${ESCAPED_CWD}'"
+win="${CWD//\//\\}"
+case "$win" in
+  '\\?\UNC\'*) win="\\\\${win:8}" ;;
+  '\\?\'*) win="${win:4}" ;;
+esac
+while [ "${#win}" -gt 3 ] && [ "${win%\\}" != "$win" ]; do
+  win="${win%\\}"
+done
+spellings=()
+case "$win" in
+  [A-Za-z]:\\* | [A-Za-z]:)
+    upper=ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    lower=abcdefghijklmnopqrstuvwxyz
+    drive="${win:0:1}"
+    rest="${win:1}"
+    case "$upper" in
+      *"$drive"*) before="${upper%%"$drive"*}" ;;
+      *) before="${lower%%"$drive"*}" ;;
+    esac
+    for letter in "${upper:${#before}:1}" "${lower:${#before}:1}"; do
+      spellings+=("$letter$rest" "\\\\?\\$letter$rest" "$letter${rest//\\//}")
+    done
+    ;;
+  '\\'*)
+    spellings=("$win" "\\\\?\\UNC\\${win:2}")
+    ;;
+esac
+if [ "${#spellings[@]}" -gt 0 ]; then
+  CWD_MATCH="cwd IN ('${ESCAPED_CWD}'"
+  for spelling in "${spellings[@]}"; do
+    CWD_MATCH="${CWD_MATCH}, '${spelling//\'/\'\'}'"
+  done
+  CWD_MATCH="${CWD_MATCH})"
+fi
+
 THREAD_SOURCE_FILTER=""
 HAS_THREAD_SOURCE="$(sqlite3 -readonly "$DB_PATH" \
   "SELECT COUNT(*) FROM pragma_table_info('threads') WHERE name = 'thread_source'" 2>/dev/null)" || \
@@ -168,9 +314,9 @@ fi
 
 # Try -readonly first, fall back to normal open (macOS quarantine xattr)
 RAW="$(sqlite3 -json -readonly "$DB_PATH" \
-  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE cwd = '${ESCAPED_CWD}' AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || \
+  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE ${CWD_MATCH} AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || \
 RAW="$(sqlite3 -json "$DB_PATH" \
-  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE cwd = '${ESCAPED_CWD}' AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || {
+  "SELECT id, cwd, title, updated_at, first_user_message FROM threads WHERE ${CWD_MATCH} AND archived = 0${THREAD_SOURCE_FILTER} ORDER BY updated_at DESC LIMIT 10" 2>/dev/null)" || {
   echo '{"sessions": []}'
   exit 0
 }
@@ -191,7 +337,7 @@ if command -v jq &>/dev/null; then
            | if length > 50 then .[:47] + "..." else . end)
         else null end
       ),
-      cwd: (.cwd // $cwd),
+      cwd: $cwd,
       lastActive: (.updated_at | tonumber | todate),
       sourcePath: $source_path
     }] | {sessions: .}'
@@ -209,7 +355,7 @@ elif command -v perl &>/dev/null; then
       push @sessions, {
         id => $row->{id},
         name => $name eq "" ? undef : $name,
-        cwd => $row->{cwd} // $ENV{CODEX_SESSION_CWD},
+        cwd => $ENV{CODEX_SESSION_CWD},
         lastActive => strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(0 + $row->{updated_at})),
         sourcePath => $ENV{CODEX_SESSION_SOURCE},
       };

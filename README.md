@@ -225,6 +225,14 @@ or transcript UI, not in an interactive resume picker.
 
 Each session: `id` (string), `name` (string or null), `cwd` (string), `lastActive` (ISO 8601 string).
 
+**When the list can't be built** (a missing interpreter or tool, an unreadable store), still print `{"sessions": []}` and exit 0, and say why in one stderr line prefixed with the method name:
+
+```
+list_recent_sessions: no runnable Python 3 (tried python3, python, py -3)
+```
+
+atrium shows that reason — in the launcher's resume picker, `atrium adapter sessions`, and the iOS app — instead of reporting that the directory has no sessions. Only prefixed lines count when the script exits 0; any other stderr is treated as noise. A non-zero exit, timeout, or non-JSON output is reported too, using the prefixed line or else the last stderr line.
+
 **Performance:** Called per visible pane. Must complete in under 50ms. Use batch operations (`stat` + `sort` + `jq -s`), never per-file subprocess loops.
 
 ---

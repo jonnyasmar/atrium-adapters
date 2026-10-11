@@ -5,7 +5,7 @@
   "description": "Nous Research's tool-calling AI agent",
   "accent": "#e0a32e",
   "binary": "hermes",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "updateCommand": [
     "hermes",
     "update"
@@ -94,7 +94,7 @@
       "commandDiscovery": true,
       "planMode": false,
       "contextUsage": true,
-      "imageInput": false,
+      "imageInput": true,
       "checkpointing": false,
       "subagentEvents": false,
       "steering": false,
