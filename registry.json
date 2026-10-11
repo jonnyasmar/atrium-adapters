@@ -37,7 +37,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "72eec7dde6af765e18e3ba0e96eddd4390790a96b887cd45ed775cbe1f8b5ec3",
+      "contentSha256": "dbbcf107030c06c169feb1cd12c09603c1b464ac8b302f8c41a430db02feaae2",
       "maxAppVersion": null
     },
     {
@@ -80,7 +80,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "ac16c2032b06060a3de10fd589f6bc23755db4228a9d2b590923a37dc27d7a80",
+      "contentSha256": "a37091cd7a3c6df8e9aee955248fed637ba80e472b5f160d3789fe049e9006f3",
       "maxAppVersion": null
     },
     {
@@ -113,7 +113,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "8c9d99d5f471e7df83aa32d919c749adaad4a3f901cb946aa8aa9b8f965daad3",
+      "contentSha256": "bfbc2c230ce76363d25e041bb1ee90baeb8833d321e569c18e3ab6650594f737",
       "maxAppVersion": null
     },
     {
@@ -147,7 +147,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "456ab03cbf3dece3c60d686a5fee62b22b47bf064a817ea3287e06de92d9e9a8"
+      "contentSha256": "bffbd1798234c9b6111c91695d58541ab0ba763c35e134837094930b5abce4b6"
     },
     {
       "name": "kimi",
@@ -212,7 +212,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "0bf819d08d2fd5094a85539cf5a0fd8f8d7b19b54237381105848f757da49de6",
+      "contentSha256": "d487b7eac8350871db33c6b37237cdaea093fc9578c61de61480671322d90847",
       "maxAppVersion": null
     },
     {
@@ -245,7 +245,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "931e9ffffbd3af5e0e3722328aff9fea3f6b1d4653e15e51973806c304bb79d1",
+      "contentSha256": "10bab066836ecd2f96e4d772777f7b3766fde1c55f4b33fb07f58eecc7da4ac1",
       "maxAppVersion": null
     },
     {
@@ -279,7 +279,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "3b8e8b16792c64a2eb76d9860a5eac4c0f820f5893965cfc4b60892f97eafb4f"
+      "contentSha256": "98fba95fc8c9081973ec2235ee5230a2ec77393808ddd3e6985dd823c7e6e6d1"
     },
     {
       "name": "hermes",
@@ -311,7 +311,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "75fe7bccd1fa3d0177829fb330e8f25b280b90d60f50a841a7e385daeb833a6f",
+      "contentSha256": "1289bdbd907795c3c60a94654feea80ff4dca460299f651609ef5590669138c3",
       "maxAppVersion": null
     },
     {
@@ -344,7 +344,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "a2093ed00ff05f75629cb97e63e4ba65910a1e8c8c03a3ede0872a3e98ccec1e",
+      "contentSha256": "c9dc55334273c80a3596f0b5ff5c790fb84d6ecce296e92a60472515780d7181",
       "maxAppVersion": null
     },
     {
@@ -377,7 +377,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "bd84694d2061c51ce25b475305b9fcd5e5d3e1b35fa4c04249dad29730e298dd",
+      "contentSha256": "6fa0847cb862029393e0c306735fc850987dda43746c95706cc40086c2667109",
       "maxAppVersion": null
     },
     {
@@ -411,14 +411,14 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "d492dbec08d56eec5a3e347526b2aa993173beb6668807cbf77cd78b01509649"
+      "contentSha256": "38e5dd48763cefc373d20ac58da951f5a3446247e309921f5e739fe4f03f8946"
     }
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "85b843435ed4d453d4cc9c6fef0faec899de4f29",
+    "commit": "5e5dbd5c4a2112378f441e6e6e3d505fba30aa74",
     "sharedSha256": "d5945f8be5c873e7318c5ddf655100a001dd107aac5d7122c1150fab776d983c",
-    "schemaSha256": "bff9986c3ef71c4ce11028f7be77ca3faae8d994c991158e8837ed057bdbfbaf",
+    "schemaSha256": "39b50785d4720c5dde13c636acff9ea53b76fb1f99360cbbc3c47db4248d7eb4",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },
   "tombstones": []
