@@ -268,7 +268,7 @@
             },
             "toolImageRead": {
               "type": "boolean",
-              "description": "Optional. TOOL channel: the agent has a file-reading tool that returns an image the model can actually look at (claude-sdk/claude-code Read, codex view_image, grok read_file, opencode read). Orthogonal to 'imageInput' — grok and opencode are imageInput:false yet read images this way, which is what makes a screenshot path from `atrium computer observe` usable. Absent means unprobed, not false."
+              "description": "Optional. TOOL channel: the agent has a file-reading tool that returns an image the model can actually look at (claude-sdk/claude-code Read, codex view_image, grok read_file, opencode read). Orthogonal to 'imageInput': an agent can read images this way whether or not its transport carries a pasted one, and this channel is what makes a screenshot path from `atrium computer observe` usable. Absent means unprobed, not false."
             }
           },
           "additionalProperties": false
