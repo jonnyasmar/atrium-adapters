@@ -73,4 +73,14 @@ if ! jq -e --arg p "$plugin_uri" '(.plugin // []) | index($p)' "$cfg" >/dev/null
   exit 1
 fi
 
+# opencode 1.19.0 advertises promptCapabilities.image=true and hands a
+# session/prompt image block to a vision model (probed 2026-10-11; its default
+# free model is text-only and says so). Only this flag lets the new-chat
+# launcher attach a pasted image before the session starts.
+ADAPTER_JSON="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/adapter.json"
+if ! jq -e '.chatTransport.capabilities.imageInput == true' "$ADAPTER_JSON" >/dev/null; then
+  echo "install.assert: chatTransport.capabilities.imageInput must be true" >&2
+  exit 1
+fi
+
 exit 0
