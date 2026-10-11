@@ -119,6 +119,9 @@ jobs:
       - name: Validate Claude hook entry guards
         run: bash adapters/claude-code/tests/hook-entry/assert.sh
 
+      - name: Validate codex, grok, cursor-agent and antigravity pane guards
+        run: bash tests/hook-pane-guards.assert.sh
+
       - name: Validate symlinked hook configuration
         run: python3 tests/hook-config-symlinks.py
 

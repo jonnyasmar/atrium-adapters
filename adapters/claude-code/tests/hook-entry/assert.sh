@@ -119,6 +119,13 @@ check "installed command outside atrium skips the entry" 0 \
   bash -c "$PRE_TOOL_CMD" <<'JSON'
 {"session_id":"abc","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"ls"}}
 JSON
+# The settings.json guard on its own: a stray pane id must not get a session
+# outside atrium past it (the entry script would otherwise emit).
+check "installed command without ATRIUM skips the entry even with a pane id" 0 \
+  env -u CURSOR_INVOKED_AS -u ATRIUM ATRIUM_PANE_ID=stray-pane ATRIUM_DATA_DIR="$INSTALLED_DATA" \
+  bash -c "$PRE_TOOL_CMD" <<'JSON'
+{"session_id":"abc","cwd":"/tmp","tool_name":"Bash","tool_input":{"command":"ls"}}
+JSON
 check "installed command in an atrium pane emits" 1 \
   env -u CURSOR_INVOKED_AS ATRIUM=1 ATRIUM_DATA_DIR="$INSTALLED_DATA" \
   bash -c "$PRE_TOOL_CMD" <<'JSON'
