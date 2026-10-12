@@ -89,6 +89,9 @@ jobs:
         run: |
           bash tests/grok-launcher-catalog.assert.sh
 
+      - name: Validate Muse Wonder launcher catalog and flags
+        run: python3 adapters/muse/tests/launcher_test.py
+
       - name: Validate goose launch-profile flag plumbing
         run: bash tests/goose-launch-profile-flags.assert.sh
 
