@@ -87,15 +87,27 @@ class LaunchCommandTests(unittest.TestCase):
                 self.assertNotIn(WRAPPER, launch(flags))
                 self.assertIn("opencode", launch(flags))
 
+    def test_resume_survives_posix_quoting(self):
+        # chat→terminal handoff types each argv word single-quoted; a quoted
+        # `VAR=1` is not an assignment, so the line must lead with `env`.
+        command = resume("ses_1", {})
+        self.assertEqual(command[0], "env")
+        quoted = " ".join("'" + word.replace("'", "'\\''") + "'" for word in command)
+        result = subprocess.run(
+            ["bash", "-c", quoted.replace("'opencode'", "'true'", 1)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_resume_mirrors_launch(self):
         self.assertEqual(
             resume('ses_"1', {"model": "opencode/x", "agent": "plan", "extraArgs": "--pure"}),
-            ["OPENCODE_DISABLE_AUTOUPDATE=1", "opencode", "--session", 'ses_"1',
+            HEAD + ["opencode", "--session", 'ses_"1',
              "--model", "opencode/x", "--agent", "plan", "--pure"],
         )
         self.assertEqual(
             resume("ses_1", {"model": "opencode/x", "effort": "low"}),
-            ["OPENCODE_DISABLE_AUTOUPDATE=1", "ATRIUM_OPENCODE_VARIANT=low", WRAPPER,
+            HEAD + ["ATRIUM_OPENCODE_VARIANT=low", WRAPPER,
              "--session", "ses_1", "--model", "opencode/x"],
         )
 

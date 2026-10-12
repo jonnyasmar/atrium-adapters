@@ -4,8 +4,10 @@ set -euo pipefail
 # build_resume_command.sh — Build the command to resume an OpenCode session.
 # OpenCode resume format: opencode --session <session_id>
 # Takes $1 = session ID, $2 = JSON flags
-# Output: {"command": ["OPENCODE_DISABLE_AUTOUPDATE=1", "opencode", "--session", "session-id", ...flags]}
+# Output: {"command": ["env", "OPENCODE_DISABLE_AUTOUPDATE=1", "opencode", "--session", "session-id", ...flags]}
 #
+# `env`, not a bare `VAR=1` prefix: chat→terminal handoff POSIX-quotes every
+# argv word, and a quoted assignment is a command name to the shell.
 # An effort swaps `opencode` for the variant wrapper exactly as in
 # build_launch_command.sh (keep the defs in sync).
 
@@ -17,7 +19,7 @@ WRAPPER="${SCRIPT_DIR}/opencode-with-variant.sh"
 
 if ! command -v jq &>/dev/null; then
   ESCAPED_SESSION_ID="$(printf '%s' "$SESSION_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')"
-  echo "{\"command\": [\"OPENCODE_DISABLE_AUTOUPDATE=1\", \"opencode\", \"--session\", \"${ESCAPED_SESSION_ID}\"]}"
+  echo "{\"command\": [\"env\", \"OPENCODE_DISABLE_AUTOUPDATE=1\", \"opencode\", \"--session\", \"${ESCAPED_SESSION_ID}\"]}"
   exit 0
 fi
 
@@ -40,7 +42,7 @@ jq -nc --argjson flags "$FLAGS" --arg wrapper "$WRAPPER" --arg session "$SESSION
     + (if str("agent") != "" then ["--agent", str("agent")] else [] end);
   def extra_args: str("extraArgs") | split(" ") | map(select(length > 0));
   (
-    ["OPENCODE_DISABLE_AUTOUPDATE=1"]
+    ["env", "OPENCODE_DISABLE_AUTOUPDATE=1"]
     + opencode_head
     + ["--session", $session]
     + model_agent_args
