@@ -122,6 +122,9 @@ jobs:
       - name: Validate codex, grok, cursor-agent and antigravity pane guards
         run: bash tests/hook-pane-guards.assert.sh
 
+      - name: Validate Windows hook commands for grok and claude-code
+        run: bash tests/windows-hook-commands.assert.sh
+
       - name: Validate symlinked hook configuration
         run: python3 tests/hook-config-symlinks.py
 

@@ -17,6 +17,7 @@ case "$ADAPTER_DIR" in
   *) SHARED_DIR="${ADAPTER_DIR%/*}/shared" ;;
 esac
 source "$SHARED_DIR/config-file.sh"
+source "$SHARED_DIR/windows-hook-command.sh"
 
 if ! command -v jq &>/dev/null; then
   echo '{"error": "jq is required for hook management"}' >&2
@@ -30,8 +31,21 @@ fi
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 # claude-hook-entry.sh is the post-1.19.2 emit path (Cursor dual-fire guard).
 # Legacy inline `hook emit` / inject-context tokens stay so uninstall still
-# strips pre-bump installs.
+# strips pre-bump installs. `atrium-runtime-hook` also matches the Windows
+# commands, which run atrium-runtime-hook.sh.
 ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|claude-hook-entry\.sh|atrium hook emit|skills resolve-manifest|skills resolve-prompt-sigils|atrium/hook-port|/resolve|pane-name-check\.sh|inject-context\.sh'
+
+# Grok runs this file's hooks too, through its Claude compatibility, and on
+# Windows it runs them through PowerShell, which cannot parse the POSIX
+# commands below. There every hook becomes a plain `<bash.exe>
+# atrium-runtime-hook.sh <mode> …` command instead; see
+# ../shared/windows-hook-command.sh. Empty off Windows, or when no plain path
+# exists, which keeps the POSIX commands.
+WINDOWS_HOOK=""
+if atrium_hooks_on_windows; then
+  WINDOWS_HOOK="$(atrium_windows_hook_launcher "${ATRIUM_DATA_DIR:-$HOME/.atrium}" claude-code)" \
+    || echo "atrium hooks: no space-free path to bash.exe or the atrium data dir; Claude Code hooks keep POSIX commands, which Grok cannot run on Windows" >&2
+fi
 
 # Cursor Agent also executes ~/.claude/settings.json hooks. Prefix every
 # non-entry atrium command with this so those hijacked invocations no-op
@@ -84,6 +98,10 @@ post-compact\tPostCompact\t.*'
 build_hook_command() {
   local event="$1"
   local entry
+  if [ -n "$WINDOWS_HOOK" ]; then
+    printf '%s entry %s' "$WINDOWS_HOOK" "$event"
+    return
+  fi
   entry="\"\${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/claude-hook-entry.sh\" $event"
   printf '%s; %s; %s; exit 0' "$ATRIUM_HOOK_MARKER_PREFIX" "$ATRIUM_GUARD" "$entry"
 }
@@ -122,8 +140,12 @@ build_all_hooks() {
   # guard because its SDK callback does fire.
   local ctx_section ctx_cmd ctx_entry
   for ctx_section in context agent skills; do
-    ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
-      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$ctx_section")"
+    if [ -n "$WINDOWS_HOOK" ]; then
+      ctx_cmd="$WINDOWS_HOOK manifest $ctx_section"
+    else
+      ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
+        "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$ctx_section")"
+    fi
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
       '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
@@ -137,8 +159,12 @@ build_all_hooks() {
   # `{}\n` (no-op envelope). The `|| true` trailer guarantees the hook
   # never blocks prompt submission (NFR8-style fail-open).
   local sigil_cmd sigil_entry
-  sigil_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
-    "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$CHAT_SDK_GUARD")"
+  if [ -n "$WINDOWS_HOOK" ]; then
+    sigil_cmd="$WINDOWS_HOOK sigils"
+  else
+    sigil_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-prompt-sigils --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$CHAT_SDK_GUARD")"
+  fi
   sigil_entry="$(jq -n --arg cmd "$sigil_cmd" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson s "$sigil_entry" '.UserPromptSubmit += $s' <<< "$hooks")"
@@ -170,6 +196,10 @@ build_all_hooks() {
   # entry the chat UI anchors its session-context marker to — guarded, chat
   # panes get the context but no marker.
   inject_ss_base="$CURSOR_GUARD; $ATRIUM_GUARD; \${ATRIUM_DATA_DIR:-\$HOME/.atrium}/adapters/claude-code/inject-context.sh"
+  if [ -n "$WINDOWS_HOOK" ]; then
+    inject_base="$WINDOWS_HOOK inject"
+    inject_ss_base="$inject_base"
+  fi
   inject_ss="$(jq -n --arg cmd "$inject_ss_base session-start" \
     '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
