@@ -14,7 +14,7 @@
         "windows"
       ],
       "official": true,
-      "version": "1.19.34",
+      "version": "1.19.35",
       "minAppVersion": "0.310.1",
       "models": [
         "fable",
@@ -37,7 +37,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "dbbcf107030c06c169feb1cd12c09603c1b464ac8b302f8c41a430db02feaae2",
+      "contentSha256": "161f9da9cde78e0043ad2fd83cf3dd7b35fb2724a0bd3fc09ba94f70b4bb5933",
       "maxAppVersion": null
     },
     {
@@ -261,7 +261,7 @@
         "windows"
       ],
       "official": true,
-      "version": "0.5.19",
+      "version": "0.5.20",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" fill-rule=\"evenodd\"><title>Grok</title><path d=\"M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815\"/></svg>",
       "install": {
@@ -279,7 +279,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "98fba95fc8c9081973ec2235ee5230a2ec77393808ddd3e6985dd823c7e6e6d1"
+      "contentSha256": "16ed58746007b7420c9cb1e4950b079a96ffe9384322941c45df51c0ae5915d9"
     },
     {
       "name": "hermes",
@@ -416,8 +416,8 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "5e5dbd5c4a2112378f441e6e6e3d505fba30aa74",
-    "sharedSha256": "d5945f8be5c873e7318c5ddf655100a001dd107aac5d7122c1150fab776d983c",
+    "commit": "6d8c789bae5718c445210abec6a5ea9913cd9006",
+    "sharedSha256": "c57ff679f74e3f1d0aea573ffc0a702dd8fef89b15fa1652a9ce45e033b77371",
     "schemaSha256": "39b50785d4720c5dde13c636acff9ea53b76fb1f99360cbbc3c47db4248d7eb4",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },

@@ -2,12 +2,12 @@
 name: atrium-bug-report
 description: "Investigate an atrium problem from the local artifacts on this machine, determine a root cause where the evidence supports one, and file a curated issue on the public tracker jonnyasmar/atrium-issues. Use when the user reports that atrium misbehaved, when a seeded atrium bug-report block is present, or when the user asks to file/report an atrium bug. Covers instance resolution, log correlation, benign-noise filtering, redaction, and the approval gate before posting."
 metadata:
-  version: "0.2.1"
+  version: "0.2.2"
 ---
 
 # atrium — bug report
 
-<!-- atrium-contract-reviewed-through: 7276fc44fb74e20bae77b4aecf503111f08bbbd6 -->
+<!-- atrium-contract-reviewed-through: e1fe64c63996a03f42f7b4ae9e9ba544b4dfdfad -->
 
 You are filing a bug on **atrium** to the public tracker `jonnyasmar/atrium-issues`.
 
@@ -62,12 +62,12 @@ Confirm you picked right before spending effort:
 
 ```bash
 D=<resolved data dir>
-ls "$D/logs" "$D/ipc"                                   # both must exist; if not, wrong dir
+ls "$D/logs" "$D/ipc"                                   # inspect presence; a startup failure may leave either absent
 cat "$D/ipc/"*.lock 2>/dev/null                         # channel + live daemon identity
 ls -lt "$D/logs" | head -5                              # is this instance's log fresh?
 ```
 
-`ipc/` names the channel: `stable.lock` / `stable.sock` → the installed app; `dev.lock` / `dev.sock` → a dev build. The lock file is JSON — `pid`, `executable`, and `runtimeFingerprint` identify the daemon that owns this data dir. If `logs/`'s newest file has not been touched since well before the reported time, **you are on the wrong instance** — go back and pick another.
+`ipc/` names the channel: `stable.lock` / `stable.sock` → the installed app; `dev.lock` / `dev.sock` → a dev build. The lock file is JSON — `pid`, `executable`, and `runtimeFingerprint` identify the daemon that owns this data dir. Windows uses a named-pipe endpoint, not an on-disk `.sock`; the home directory is normally `%USERPROFILE%`. A stale or absent log is a reason to recheck the instance, process identity, permissions, and logging availability, not proof that this is the wrong directory.
 
 Two or more instances present: state which one you investigated in the issue, and say so out loud to the user before you start.
 
@@ -80,10 +80,12 @@ CLI="${ATRIUM_CLI_PATH:-$D/bin/atrium}"     # dev instances name it bin/atrium-d
 
 `version --json` returns `{"app": …, "attachment": …, "attachmentSource": …, "channel": "...", "cli": "..."}`. **`app` is itself evidence**, and it says exactly one thing: whether an app WINDOW is attached to the daemon you dialled.
 
+The CLI binary path does not select the instance by itself. Verify that `$ATRIUM_SOCKET` and `$ATRIUM_DATA_DIR` target `D`; an agent launched in stable can inherit stable's endpoint while investigating a dev build. On Unix, pin the existing socket under `D/ipc/` for a call when necessary. On Windows preserve the instance's named-pipe endpoint. Do not replace a named worktree instance with a channel-derived path or hand-roll socket requests.
+
 - `"connected"` — a window on that daemon's own machine is attached.
 - `"daemon-only"` — the daemon answered and measured its attached shells: no window on that machine. Normal on a headless box. `attachment.remoteShellLinks` counts app windows linked in from other locations, so a non-zero count means someone's app has that box open without owning a window on it — the app-window gates still refuse there.
 - `"unknown"` — a daemon answered but is too old to report attached shells (`attachmentSource: "legacy-fallback"`, `attachment: null`). It is not evidence either way.
-- `null` — nothing answered at all. This is the only value that says the IPC socket is dead: if the user says the window is on screen and `app` is `null`, the UI is up while the socket is gone — that is not a failed command, that is the bug.
+- `null` — neither attachment nor legacy discovery produced a usable answer. The endpoint may be unavailable, unresponsive, refused, or misdirected; it does not prove the socket is gone. If the window is on screen, preserve that mismatch as evidence and verify routing before naming the cause.
 
 Record what you got and move on; do not retry in a loop. Give any app-dependent command a short timeout (`timeout 10 "$CLI" …`) so a wedged runtime does not wedge you.
 
@@ -105,7 +107,7 @@ Then convert `T` into each file's time base. Most atrium-owned logs use UTC, whi
 |---|---|---|
 | `logs/runtime.<date>.log` | **UTC**, ISO8601 with `Z` | `YYYY-MM-DDTHH:MM:SS.ffffffZ` — e.g. `2000-01-01T12:00:00.000000Z` |
 | `logs/app.<date>.log` | **UTC**, ISO8601 with `Z` | `YYYY-MM-DDTHH:MM:SS.ffffffZ` — e.g. `2000-01-01T12:00:00.000000Z` |
-| `logs/chat-runtime.<date>.log` | **UTC**, ISO8601 with `Z` | `YYYY-MM-DDTHH:MM:SS.fffZ` — e.g. `2000-01-01T12:00:00.000Z` |
+| `logs/chat-runtime.<date>.log` | **UTC** prefixes in mirrored mode; raw sidecar stderr when chat session survival is enabled | Mirrored: `YYYY-MM-DDTHH:MM:SS.fffZ [pid N]`; survival mode supplies no universal timestamp |
 | `logs/daemon-signals.log` | **UTC**, ISO8601 with `+00:00` | `YYYY-MM-DDTHH:MM:SS.ffffff+00:00` — e.g. `2000-01-01T12:00:00.000000+00:00` |
 | `logs/cef.log` | **local time**, `MMDD/HHMMSS.uuuuuu` | `MMDD/HHMMSS.ffffff` — e.g. `0101/080000.000000` (= the `12:00:00` UTC above, at UTC-4) |
 | `logs/webview-errors.ndjson` | ISO8601 `ts` field | per record |
@@ -117,6 +119,8 @@ The example column is **synthetic** — a made-up clock chosen to be unmistakabl
 Getting this wrong by a timezone offset makes the CEF log look like it has nothing to say. Compute the offset once (`date +%z`) and write both forms down.
 
 `runtime.<date>.log` rotates on the **UTC** date, so west of UTC an evening incident lands in the *next* day's file. When the expected file is missing or ends early, check the neighbouring day before concluding the app was idle.
+
+With chat session survival enabled, a sidecar holds its startup-day `chat-runtime` file open across midnight and writes raw stderr directly. Search that file by session identity as well as today's file; timestamp-only grep can miss the incident entirely.
 
 ---
 
@@ -141,9 +145,9 @@ ls -t ~/Library/Logs/DiagnosticReports/ | grep -iE 'atrium'   # crash reports, n
 
 Widen to the full hour if the minute window is empty. Then narrow the timeline down to the lines that changed your mind about something — a merged timeline of 200 lines is not a timeline.
 
-### Reading `atriumd.stderr.log` (the daemon's second stream), which has no timestamps
+### Reading `atriumd.stderr.log` (the daemon's second stream), which has no universal timestamp prefix
 
-This is the single most useful and most awkward artifact. It is the same **background daemon** that writes timestamped `tracing` events to `runtime.<date>.log`, but this file captures its untimestamped `eprintln!` output. It is the prime suspect for restore, session lifecycle, activity/fleet state, scheduling, chat sidecars, and indexing. It is also large (tens of MB), never rotated within a run, and its `[HOOK]` lines are truncated mid-JSON by the logger. It carries no timestamps, so:
+This is the same **background daemon** that writes timestamped `tracing` events to `runtime.<date>.log`, but this file captures its raw stderr, including `eprintln!`, panics, and loader failures. It is useful for restore, session lifecycle, activity/fleet state, scheduling, chat sidecars, and indexing. It is append-only across launches, with no atrium-managed rotation or retention, and can become large. It has no universal timestamp prefix, so:
 
 - **Never read it whole.** `tail -n 5000` for "what just happened", `grep -a` for a specific id.
 - **Correlate by identity, not by time.** Pane ids, session keys and run ids appear in both this file and `runtime.<date>.log`. Grep the daemon log for the id, then find the same id in the timestamped runtime log to place it.
@@ -151,7 +155,7 @@ This is the single most useful and most awkward artifact. It is the same **backg
 - **`grep -n` and use line numbers as your ordering axis** when you need to say "this happened before that".
 
 ```bash
-tail -5000 "$L/atriumd.stderr.log" | grep -av '^\[HOOK\]'      # signal, minus 90% of the volume
+tail -5000 "$L/atriumd.stderr.log" | grep -av '^\[HOOK\]'      # hide hook trace only when it is irrelevant
 grep -an "<pane-or-session-id>" "$L/atriumd.stderr.log" | tail -40
 grep -an '^\[fleet-hydrate\] seeded' "$L/atriumd.stderr.log" | tail -3   # where this run began
 ```
@@ -220,24 +224,9 @@ The body is **self-contained and tight**. Target under ~8 KB so the no-`gh` fall
 Two sections do disproportionate work, and both are easy to skip:
 
 - **`## Impact`** — a maintainer triages on consequence, not symptom. "Rooms come back empty" is a description; "every restart loses the session an agent was mid-way through, and it has happened on each of the last three updates" is a priority. Say who it hurts, how often, and what it blocks. If it bit the user once and cost them nothing, say that too — honest low impact is useful and keeps the tracker calibrated.
-- **`## What still works`** — the neighbouring behaviour you checked and found healthy. This narrows harder than the ruled-out list, because it draws the boundary of the break: if pane creation and splitting apply fine but room rename silently no-ops, the daemon↔UI path is sound and only room-level mutations are suspect. That one line can save a maintainer an afternoon. Check two or three adjacent operations deliberately — do not guess at them, and only list what you actually exercised. Nothing checked → drop the section.
+- **`## What still works`** — neighbouring behaviour supported by read-only checks or the user's observed actions. This helps draw the boundary of the break. Do not mutate the workspace just to fill this section, and do not infer that an entire subsystem is healthy because one operation succeeded. Nothing checked → drop the section.
 
-Build these sections **once** for the approved issue body. The public tracker's `bug.yml` form asks for the same information when a person files by hand:
-
-| Section | `bug.yml` field id |
-|---|---|
-| `## Environment` (composed) | `version`, `channel`, `os` — three separate fields in the form |
-| area label choice | `area` |
-| `## Summary` | `summary` |
-| `## Impact` | `impact` |
-| `## Steps / trigger` | `steps` |
-| `## Expected` | `expected` |
-| `## Observed` | `observed` |
-| `## What still works` | `still-works` |
-| `## Root cause` | `root-cause` |
-| `## Evidence` | `evidence` |
-| `## Ruled out` | `ruled-out` |
-| the trailing local-path line | `evidence-file` |
+Build these sections **once** for the approved issue body. As of the contract audit on 2026-10-11, the public repository has no `.github/ISSUE_TEMPLATE/bug.yml`, `feature.yml`, or `question.yml` (the live contents API returns 404), despite its README mentioning templates. These sections are the reporting format for this skill, not a claim about provisioned form fields. Put the affected area in the body.
 
 ```markdown
 ## Summary
@@ -378,7 +367,7 @@ rm -f -- "$ISSUE_DRAFT"
 
 The digest check must be in the same shell invocation as `gh issue create`. If it fails, do not restore or post the old content: read the changed file, show the full body again, and obtain fresh approval. Delete only this run's exact draft path, and only after a successful post or an explicit refusal to post.
 
-`gh issue create` bypasses the issue form — that is fine and expected, because your body already carries the same sections. Do not invent or silently attempt `source:`, `area:`, or `version:` labels: the public tracker does not provision that taxonomy, and reporters commonly lack label permissions. Classification belongs in the body. A maintainer can add the existing `bug` label during triage.
+`gh issue create` posts the body directly. Do not invent or silently attempt `source:`, `area:`, or `version:` labels: the public tracker does not provision that taxonomy, and reporters commonly lack label permissions. Classification belongs in the body. A maintainer can add the existing `bug` label during triage.
 
 **Fallback — no `gh`, or not authenticated.** Prefill GitHub's blank issue composer with the already-approved body and let the user submit it themselves. Open it in an atrium browser pane (the `atrium` skill covers browser panes; `pane create --type browser --url "<url>"`), or just hand them the URL if atrium is the thing that is broken.
 
@@ -386,7 +375,7 @@ The digest check must be in the same shell invocation as `gh issue create`. If i
 https://github.com/jonnyasmar/atrium-issues/issues/new?title=<urlencoded-title>&body=<urlencoded-approved-body>
 ```
 
-GitHub's issue-form controls are not custom URL-prefill fields: parameters such as `version`, `area`, and `summary` are ignored even when their names match form ids. The blank composer does support `title` and `body`. URL-encode both. Browsers and intermediaries can truncate very long URLs — this is why the body is budgeted at ~8 KB. If it still will not fit, trim the `evidence` block first (it is the only section with a local copy in the evidence file) and note in the body that evidence was trimmed for length.
+GitHub's [documented blank-composer parameters](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue) support `title` and `body`; do not substitute imagined form fields such as `version`, `area`, or `summary`. URL-encode the approved title and the exact draft-file body, then decode the query locally to check both values match. Browsers and intermediaries can truncate long URLs, and percent encoding expands the body: ~8 KB is a writing budget, not a guaranteed URL limit. Before submission, compare the composer's title and body with the approved draft. If the URL is rejected or truncated, provide the unchanged title and body for the user to paste. Any trimming is a draft revision: show the complete revised body and obtain approval again before using it.
 
 Either way: **the user presses submit or you press it with their explicit yes. There is no third option.**
 
@@ -400,13 +389,13 @@ Everything is under the resolved data dir unless noted. Presence varies — a fr
 
 | Artifact | What it is | Answers | Does *not* answer |
 |---|---|---|---|
-| `logs/runtime.<YYYY-MM-DD>.log` | The background daemon (`atriumd`), daily rotation, `tracing` format, UTC | Boot hydration, persistence, PTY/websocket, adapter script calls, pane/room ops, daemon-side capture and task work | The desktop shell or frontend |
-| `logs/app.<YYYY-MM-DD>.log` | The desktop shell process (`atrium-desktop`), daily rotation, same `tracing` format, UTC, retained for 7 days. **Newer builds only** — absent on older installs, which is not itself a bug | Shell-side startup, window/CEF hosting, updater, native chrome, and explicitly enabled native lifecycle targets such as `capture::lifecycle` | The daemon; frontend code that does not cross an IPC/logging seam |
-| `logs/atriumd.stderr.log` | The same background daemon as `runtime.*`, but its unleveled `eprintln!` stream: **no timestamps**, huge, `[HOOK]`-dominated | Restore/session lifecycle, fleet & activity state, scheduler, chat sidecars, FTS/vault indexing, reapers | *When* anything happened without a cross-log identity |
-| `logs/chat-runtime.<YYYY-MM-DD>.log` | Raw chat-runtime sidecar stderr mirrored by `atriumd`, timestamped in UTC and retained for 7 days | `session.start`/resume/close lifecycle, transport, engine startup stderr, queue/latency outcomes | React rendering; non-chat daemon work |
-| `logs/cef.log` | Chromium/CEF — **browser panes only**, local time | Browser pane navigation, renderer/GPU errors, media, codec issues | Anything outside a browser pane |
-| `logs/daemon-signals.log` | One line per daemon lifecycle signal, UTC, small — **read it whole** | Clean quits vs. forced kills; update handoffs | Why the daemon was slow to exit |
-| `logs/webview-errors.ndjson` (+ `.1.ndjson` when rotated at 2 MB) | Frontend JS errors, one JSON object per line | Which React subtree threw, which IPC command failed | Anything the frontend caught and handled |
+| `logs/runtime.<YYYY-MM-DD>.log` | The background daemon (`atriumd`), daily rotation, `tracing` format, UTC; no age-based pruning configured | Boot hydration, persistence, PTY/websocket, adapter script calls, pane/room ops, daemon-side capture and task work | The desktop shell or frontend |
+| `logs/app.<YYYY-MM-DD>.log` | The desktop shell process (`atrium-desktop`), daily rotation, `tracing` format, UTC; files older than 7 days by modification time are pruned at shell startup | Shell startup failures, CEF renderer termination, updater, speech, native menu deliveries, and `capture::permissions` / `enumeration` / `region_picker` / `lifecycle` | Every native event: the default filter is WARN with selected INFO targets; `RUST_LOG` can override it |
+| `logs/atriumd.stderr.log` | The daemon's raw stderr, append-only across launches, no atrium-managed rotation or retention and no universal timestamp prefix | Restore/session lifecycle, fleet & activity state, scheduler, chat sidecars, FTS/vault indexing, reapers, panics and loader failures | *When* an unstamped line happened without a cross-log identity |
+| `logs/chat-runtime.<YYYY-MM-DD>.log` | Sidecar stderr: daemon-mirrored with UTC prefixes and daily rotation, or raw and pinned to the startup-day file when chat session survival is enabled; older files are pruned at writer creation after 7 days by modification time | `session.start`/resume/close lifecycle, transport, engine startup stderr, queue/latency outcomes | React rendering; non-chat daemon work; a timestamp on every line in survival mode |
+| `logs/cef.log` | Chromium/CEF — **browser panes only**, local time; no atrium-managed rotation or retention | Browser pane navigation, renderer/GPU errors, media, codec issues | All browser-host failures: also check `app.*` and `webview-errors.ndjson` |
+| `logs/daemon-signals.log` | Daemon-control callers' signal audit, UTC, append-only with no atrium-managed rotation or retention; tail or bound by time if large | Signals atrium attempted during quits, recovery, and update handoffs | External kills; proof that a signal completed; why the daemon was slow to exit |
+| `logs/webview-errors.ndjson` (+ `webview-errors.1.ndjson` when rotated at 2 MiB, one backup) | Frontend error records written and synced by the desktop shell, UTC `ts`, one JSON object per line | React boundaries, uncaught errors, rejected IPC calls, and explicitly reported chat-restore failures | Console-only catches; expected IPC rejections; records whose best-effort logging call failed |
 | `~/Library/Logs/DiagnosticReports/*.ips` (macOS, **outside the data dir**) | OS crash reports | Hard crashes, panics, signals, faulting stack | Hangs that never crashed |
 | `diagnostics/` | Perf `.ndjson` captures (only when diagnostics are enabled) and older support bundles | Frame/IPC timings for a perf report | Anything, if `config.json`'s `diagnostics.enabled` is `false` |
 | `chat/journals/<sessionKey>.jsonl` | Durable per-chat-pane journal | What an agent-chat pane actually received and emitted | The adapter's own internal transcript |
@@ -430,6 +419,9 @@ Everything is under the resolved data dir unless noted. Presence varies — a fr
 | `window-error` | Uncaught JS error |
 | `unhandled-rejection` | A promise rejected with no handler — often a failed IPC call one layer up |
 | `ipc-failure` | A Tauri command failed; `detail.command` names it, and that name usually names the subsystem |
+| `chat-restore-failure` | A handled chat restore exhausted a budget or failed; `detail.stage`, `reason`, and optional `code` preserve the cause even if the pane later heals |
+
+The shared invoke wrapper records rejected shell and daemon-route calls before rethrowing, so a caller's `catch` does not by itself make a failure nondurable. Explicitly expected rejections (such as browser-pane adoption) are excluded. A plain `console.error` is not automatically persisted; capture and chat-restore code have explicit reporting seams, whose own write failures are best-effort. Native `eprintln!` output from the desktop shell is not the daemon stderr file.
 
 ```bash
 tail -50 "$L/webview-errors.ndjson" | jq -c '{ts,kind,message,cmd:.detail.command}'
@@ -481,9 +473,11 @@ Use `--json` on everything you parse. Prefix with `timeout 10` when the app may 
 | `"$CLI" task list --json`, `"$CLI" run list --json` | task cards and runs (for scheduler / task-launch reports) |
 | `"$CLI" launch-profile list --json` | launch profiles — check here when a card references a missing profile |
 | `"$CLI" pane read <id> --lines 200` | **what the user actually sees** in a terminal pane, rendered. The only way to capture a wedged or garbled terminal |
-| `"$CLI" capture list --json` / `capture show CAP-N` | an existing recording of the failure |
+| `"$CLI" capture list --json` / `capture show CAP-N --json` | an existing recording of the failure |
 
 **Never, while investigating:** `pane create/write/close/focus/resize`, `agent message/dismiss/wake/stop`, `room switch/close/rename`, `workspace-command start/stop/restart`, `task create/update`, `config set`, `browser <anything>`. The single exception is opening a browser pane in Step 8 to post — after the user approved it.
+
+Capture screenshot/chunk extraction writes a derived file; it is not a read-only command. For evidence inspection on macOS, use a new output path under this investigation's temporary directory and pass an absolute `--out`, preserving the original bundle. The default output path is inside the bundle. Do not start, stop, flag, delete, or redact a capture while investigating.
 
 Run `"$CLI" <command> --help` for exact flags rather than guessing.
 
@@ -505,17 +499,17 @@ The lines in these tables — and in **Symptom → hypothesis** below — are **
 | `WARN …panes: resize_pane: pane <id> not found (benign close race)` | **[confirmed]** Self-labeled. | never |
 | `ERROR …pty::stream: WebSocket receive error: … Connection reset without closing handshake` | **[confirmed]** A webview reload or pane close dropped the PTY socket. Common. | it repeats in a tight burst *and* lines up 1:1 with the user's symptom |
 | `ERROR …runtime::build: Failed to load review schema validator: schemas directory not found` | **[confirmed]** The review-schema dir isn't present; non-fatal. | the report is about review comments |
-| `WARN …timeline::recording: timeline flush failed; batch dropped … database is locked` | **[confirmed]** present; **[inferred]** benign in isolation — SQLite contention, the next batch succeeds. | it appears in a sustained burst — then suspect **two runtimes on one data dir** |
+| `WARN …timeline::recording: timeline flush failed; batch dropped … database is locked` | A timeline batch was dropped under SQLite contention; later success does not recover that batch. | missing timeline entries or a sustained burst; multiple processes sharing the database are one hypothesis, not the only one |
 | `WARN …runtime::attach: attach session outbound flow overflowed beyond lossless coalescing — disconnecting` | **[confirmed]** present; **[inferred]** a pane produced output faster than the client drained it; the client reconnects and replays. | the symptom is a terminal that stopped updating |
-| `WARN …shell_dispatch: orphan shell-execute reply (likely timed out)` | **[confirmed]** Self-labeled. | never |
+| `WARN …shell_dispatch: orphan shell-execute reply (likely timed out)` | A reply arrived after its waiter was removed. | the matching shell command timed out or appeared to do nothing |
 
 ### `atriumd.stderr.log`
 
 | Line | Reading | Only relevant if |
 |---|---|---|
-| `[HOOK] Received <event> for '<adapter>': {…}` | **[confirmed]** Pure trace — roughly 90% of the file. Truncated mid-JSON by the logger; that truncation is not corruption. | you need to prove an adapter hook did or didn't fire |
+| `[HOOK] Received <event> for '<adapter>': {…}` | Legacy hook trace; format and volume vary with the release. Do not interpret a shortened diagnostic payload as on-disk state corruption. | correlating a particular hook; absence alone does not prove it never fired |
 | `[chat_runtime] intentional: …` | **[confirmed]** The literal word `intentional:` marks deliberate diagnostic output — **including lines whose JSON payload contains the words "failed" or "error"**. Never classify an `intentional:` line as an error by keyword. | you're reading the `outcome="…"` field on it |
-| `[notes] list: body unreadable at <path> (No such file…)` | **[confirmed]**, thousands of occurrences. Deleted note bodies still in the index. | the report is about a missing note |
+| `[notes] list: body unreadable at <path> (No such file…)` | The index points to a body the reader could not open. Check the actual error before assuming deletion. | the report is about a missing note |
 | `[snapshots] Interval failed: snapshot commit failed: file changed before we could read it; class=Filesystem` | **[confirmed]** A file moved mid-snapshot; retried on the next interval. | it never succeeds afterwards |
 | `[fts::watcher] no enumeration entry for <path>; skipping event` | **[confirmed]** Index enumeration lag. | the report is about vault/session search |
 | `[fts::extractor] timeout (Ns elapsed) — killed child for session <id>` | **[confirmed]** Bounded and intentional. | a specific session is missing from search |
@@ -553,7 +547,7 @@ The lines in these tables — and in **Symptom → hypothesis** below — are **
 | Line | Read it as |
 |---|---|
 | `ERROR …persistence: Failed to save metadata …: … Too many open files` | **[confirmed]** File-descriptor exhaustion (EMFILE). Layout and settings were not persisted → explains "my rooms/settings reverted". Correlates with very large workspaces. |
-| `ERROR …runtime::build: Failed to initialize task store: Failed to set pragmas: database is locked` | **[confirmed]** Two runtimes contending for one data dir. A leading cause of a dead or gray app. Check `ipc/<channel>.lock`'s pid against `ps` for stray `atriumd` processes. |
+| `ERROR …runtime::build: Failed to initialize task store: Failed to set pragmas: database is locked` | Task-store startup failed under database contention. Check the lock-file identity and other database users; two runtimes are a hypothesis, not a conclusion from this line alone. |
 | `[agent-framing] submit NOT confirmed for pane <id>: input residue still visible after 2 Enter retries` | **[confirmed]** An injected message was typed into a pane but never submitted. Near-conclusive for "I messaged an agent and nothing happened". |
 | `[scheduler] card <id> fire skipped: …` | **[confirmed]** A scheduled run did not fire; the reason is inline — `agent not running: pane <id>` (the target pane is dead) vs `invalid profile: card references launch profile …` (renamed or deleted profile). |
 | `[detached_launch] reconcile run <id> → <state> failed: invalid transition…` | **[confirmed]** A run-state machine rejected a transition; the run is stuck in the prior state. |
@@ -561,20 +555,20 @@ The lines in these tables — and in **Symptom → hypothesis** below — are **
 
 ## Symptom → hypothesis
 
-For each: what would confirm it, what would rule it out, and the matching `area` form value.
+For each: evidence that supports or weakens it, and an area to include in the body. Missing logs rarely rule out a hypothesis by themselves: filtering, rotation, version differences, failed writes, and the wrong instance all hide evidence.
 
 ### Blank / gray window at launch — area `daemon` or `ui`
-- **Main process crashed before the UI mounted.** Confirm: an `atrium-desktop-*.ips` timestamped at launch, Rust panic frames. Rule out: no crash report, and `runtime.<date>.log` keeps emitting INFO after boot.
-- **Two runtimes on one data dir.** Confirm: `Failed to initialize task store: … database is locked` at boot; two `atriumd` in `ps`; `ipc/<channel>.lock`'s pid not matching the live process. Rule out: one daemon, lock pid matches.
-- **CEF host died.** Confirm: `atrium Helper*.ips`; `cef.log` stops abruptly. Rule out: no browser panes open.
-- **Frontend crashed at the root.** Confirm: `webview-errors.ndjson` with `kind: react-root` at `T`. Rule out: no such record.
-- **Decisive split:** if `boot hydration: registry hydrated from disk (… N pane(s))` appears and INFO keeps flowing afterwards, the backend is alive and this is a render-side problem.
+- **Desktop shell failed before the UI mounted.** Check `app.<date>.log` for `startup_failure` (early Rust panics and returned startup errors), and macOS `atrium-desktop-*.ips` reports. The startup panic sink disarms after setup; it is not a record of every later panic. Continuing `runtime.*` output proves only that the separate daemon is alive.
+- **Two runtimes on one data dir.** Supporting evidence: task-store lock failures plus process identities showing both daemons use the same data directory. Two `atriumd` processes on different instances are expected; a stale lock file alone does not prove a second live daemon.
+- **A CEF child died.** Correlate `CEF renderer terminated` in `app.*`, macOS `atrium Helper*.ips`, and `cef.log` with the affected browser pane. A child crash does not establish that the whole desktop shell died.
+- **Frontend crashed at the root.** Supporting evidence: `webview-errors.ndjson` with `kind: react-root` at `T`. No record leaves the hypothesis open when logging could not run.
+- **Process split:** successful daemon hydration and later INFO prove daemon activity. Continue checking shell startup, attachment, and frontend errors before calling the failure render-side.
 
 ### Rooms / panes did not come back after a restart — area `persistence` or `daemon`
 - **Daemon killed hard mid-write.** Confirm: `SIGKILL(9) reason=update-daemon-stop-timeout` in `daemon-signals.log` before the restart.
 - **Layout was never saved.** Confirm: `ERROR …persistence: Failed to save metadata …` (especially `Too many open files`) in the *previous* session's log.
 - **Restore ran but reconciled entries away.** Confirm: `boot hydration: registry hydrated from disk (… N pane(s))` with `N` far below what the user expected, plus `[fleet-hydrate] evict …` lines.
-- Rule out for all three: `N` matches expectation and no evictions → the data restored and the problem is display-side.
+- A matching count and no evictions weaken incomplete hydration, but do not establish that every expected pane identity and session restored. Compare those identities with the persisted layout before calling the problem display-side.
 
 ### Terminal pane frozen, blank, or garbled — area `pty`
 - **PTY spawn/resize race.** Confirm: `pane read` shows output wrapping at 80 columns in a much wider pane.
@@ -584,21 +578,21 @@ For each: what would confirm it, what would rule it out, and the matching `area`
 
 ### An agent never received / never acted on a message — area `agents`
 - **The submit never landed.** Confirm: `[agent-framing] submit NOT confirmed for pane <id>`. Then check the recipient's state with `pane read` — a prompt left in a shell/bash mode, or a vi-mode keymap, changes how the injected Enter is interpreted.
-- Rule out: no framing warning and `pane read` shows the message text was submitted → the agent got it and chose not to act, which is not an atrium bug.
+- Submitted text proves that stage of terminal delivery, not that the provider consumed or acted on it. For chat panes, correlate the durable journal and sidecar lifecycle instead; `pane read` describes terminal output.
 
 ### A scheduled or recurring task did not run — area `tasks`
 - Read the inline reason on `[scheduler] card <id> fire skipped: …`. `agent not running: pane <id>` → the bound pane died; cross-check with `pane list --json`. `invalid profile: …` → cross-check `launch-profile list --json`.
-- Rule out: no `fire skipped` line at all → the schedule itself never fired; look at the card's recurrence config rather than the launch path.
+- If there is no `fire skipped` line, inspect the recurrence configuration, firing/run records, and logging availability; silence does not establish whether scheduling or launching failed.
 
 ### Agent-chat pane stuck, lost history, or "response interrupted" — area `chat`
 - **The sidecar died or its engine never started.** Confirm in `chat-runtime.<date>.log`: a lifecycle record whose `outcome` is not the expected success state, or captured engine stderr at `T`. `[chat-runtime-reaper] killed N orphaned runtime group(s)` in `atriumd.stderr.log` only proves cleanup; by itself it is a consequence, not the cause.
-- **The UI and the journal disagree.** The journal at `chat/journals/<sessionKey>.jsonl` is durable and authoritative — compare its last entries against what the user says the pane showed. A journal that has content the UI never rendered is a display bug; a journal that stops where the UI stops is a transport bug.
-- Rule out: journal and UI agree and the last `session.*` call succeeded → the adapter itself ended the turn.
+- **Restore failed.** Check `webview-errors.ndjson` for `chat-restore-failure`; its stage and reason survive later UI recovery.
+- **The UI and the journal disagree.** Compare `chat/journals/<sessionKey>.jsonl` with what the pane showed. Content present only in the journal supports a delivery/rendering problem; both stopping together leaves provider, transport, persistence, and lifecycle failures open. Correlate an explicit completion or failure event before deciding who ended the turn.
 
 ### Browser pane blank, media broken, or clicks do nothing — area `browser`
-- `cef.log` is the **only** place browser panes log; if it has nothing at `T`, the pane never got that far.
-- **Renderer crash.** Confirm: an `atrium Helper*.ips` at `T`.
-- **An overlay is eating clicks.** Symptom shape: a menu, dropdown or toast opens above a browser pane and clicking an item does nothing at all (no error anywhere). Confirm: `pane list --json` shows a `browser` pane in the room, and the user was clicking an overlay drawn over it. This leaves no log trace — the absence of evidence *is* the pattern.
+- Read Chromium's `cef.log`, desktop `app.*`, and `webview-errors.ndjson`. Browser-host failures and rejected commands can be durable outside `cef.log`; its silence does not establish how far the pane got.
+- **Renderer crash.** Correlate `CEF renderer terminated` in `app.*` and, on macOS, an `atrium Helper*.ips` at `T`.
+- **An overlay is losing clicks to CEF.** Supporting symptom: a menu, dropdown or toast opens over a browser pane and its controls do nothing. Check the pane layout and the user's observed clicks. This may leave no durable log; that silence does not distinguish a CEF hit-testing failure from other click-routing problems.
 
 ### Update failed, app reverted, or macOS says the app is damaged — area `updater`
 - Read `daemon-signals.log` around the update in full. `transactional-update-daemon-stop` and `newer-in-place-runtime-replacement` are the normal handoff; `SIGKILL(9) reason=update-daemon-stop-timeout` is not.
@@ -607,11 +601,11 @@ For each: what would confirm it, what would rule it out, and the matching `area`
 
 ### A model, effort, or adapter is missing from the launcher — area `adapters`
 - `"$CLI" adapter list` STATUS column first — a not-ready adapter explains itself.
-- Otherwise the `script_adapter … does not match the bundled schema (continuing anyway)` WARN names the exact method and prints the rejected JSON. For this symptom that line **is** the root cause; quote it.
+- A `script_adapter … does not match the bundled schema (continuing anyway)` WARN identifies a suspect method and payload. Compare the returned values with the missing option; the warning alone does not prove causation because atrium continues using the response.
 
 ### Vault or session search misses a session — area `memory-vault`
 - Confirm: `[fts::extractor] timeout … for session <id>`, `[fts::watcher] no enumeration entry`, or `[timeline::backfill] … extract <id>: fts: extractor failed` naming that session.
-- Rule out: no extractor line for that session id → it was never enqueued; that is a different (and more interesting) bug.
+- No extractor line is inconclusive; check the indexed/enumerated session state before deciding it was never enqueued.
 
 ### Everything is a flat opaque grey, or a pane is unreadable over a wallpaper — area `ui`
 - This leaves **no log trace**. Ask whether a wallpaper is set (`config.json` `theme`) — the bug is invisible without one. A pane surface that stacks two translucent layers reads as a near-opaque grey box.
@@ -620,8 +614,9 @@ For each: what would confirm it, what would rule it out, and the matching `area`
 ### A QA Capture failed to save, open, copy, or contains the wrong evidence — area `ui`
 - Check `app.<date>.log` for `capture::lifecycle` first. Newer builds record start/finalize outcomes plus capture-pane open routing and handled clipboard/open failures there. On older builds, its absence is expected; use `runtime.*`, `atriumd.stderr.log`, and the bundle itself.
 - Run `"$CLI" capture show CAP-N --json`, then read the small JSON/JSONL artifacts directly. A complete bundle can contain `video.mov`, `transcript.jsonl`, `events.jsonl`, `chapters.json`, and `annotations.json`; do not reduce the investigation to video existence.
-- Inspect a moment with `"$CLI" capture screenshot CAP-N --at <seconds> --out /tmp/capture.png`. Add `--crop x,y,w,h` and/or `--max-edge N` when useful. Use `capture chunk CAP-N --start <seconds> --end <seconds> --out /tmp/capture.mov` only when motion is load-bearing.
-- **Never shell out to `ffmpeg`, `ffprobe`, `sips`, or ImageMagick.** The capture CLI's screenshot/chunk/show paths are the supported native AVFoundation tools. Run `capture <verb> --help` rather than guessing flags.
+- On macOS, inspect a moment with `"$CLI" capture screenshot CAP-N --at <seconds> --out <new-absolute-temp-path.png>`. Add `--crop x,y,w,h` and/or `--max-edge N` when useful. Use `capture chunk CAP-N --start <seconds> --end <seconds> --out <new-absolute-temp-path.mov>` only when motion is load-bearing.
+- **Never shell out to `ffmpeg`, `ffprobe`, `sips`, or ImageMagick.** Screenshot/chunk extraction uses native AVFoundation and remains macOS-only; Windows can record and list/show bundles but returns an explicit unsupported error for those extraction commands. Preserve that limitation and inspect the small bundle artifacts instead. Run `capture <verb> --help` rather than guessing flags.
+- A daemon-side `capture start` refusal saying it cannot reach the app's recording session is a known routing limitation on every platform, not proof the build lacks recording support. Investigation should not start a new recording.
 
 ### Anything else
 Say so. Class the report by the subsystem the evidence points at, or use area `unknown` and let the maintainer route it.

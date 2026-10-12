@@ -26,7 +26,7 @@
       "remotePath": "skills/atrium/references/notes-interactive-ui.md",
       "target": "adapter-skill-reference",
       "destName": "notes-interactive-ui.md",
-      "sha256": "4a31feec2241626b1d200f40490e08693cf6e7fee4ab4b60785a1c9fe564ead6"
+      "sha256": "315c4b0ccb1d12a92b978640ca9b4e8e9af3b77d18e1408c727c4d8d1b872092"
     },
     {
       "id": "atrium-skill-chat-canvas-fence",
@@ -96,12 +96,12 @@
       "remotePath": "skills/atrium-bug-report/SKILL.md",
       "target": "bundled-skill",
       "skillName": "atrium-bug-report",
-      "sha256": "ba5d0478272f90d084917b885834e8d11011c3228f9ac0d51bc26fc76bb03ba0"
+      "sha256": "d26545021b29d4638cb015bc21aa8c34d0a351f0cb13750cf04752aabcda0ba7"
     }
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "5e5dbd5c4a2112378f441e6e6e3d505fba30aa74",
-    "generation": 79
+    "commit": "6d8c789bae5718c445210abec6a5ea9913cd9006",
+    "generation": 81
   }
 }
