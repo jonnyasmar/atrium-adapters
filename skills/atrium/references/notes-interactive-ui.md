@@ -8,7 +8,8 @@ Every note is file-backed under `$ATRIUM_DATA_DIR/notes/$ATRIUM_WORKSPACE_ID/[<f
 
 - `meta.json` — title, type, tags, folder, timestamps, source.
 - one body file per type — `note.md` (markdown), `note.excalidraw` (sketch), `note.canvas.json` (canvas), `note.html` (html).
-- `state.json` — canvas form-state (atrium-managed; **do not hand-edit**).
+- `state.json` — the canvas answers someone chose (atrium-managed; read it, **never write it**). See **Canvas form state** below.
+- `state.meta.json` — the version atrium keeps for `state.json` (atrium-managed; **never touch**: don't edit, delete or copy it).
 - `viewport.json` — pane-local scroll/cursor (atrium-managed; **do not hand-edit**).
 
 This gives you **two ways to mutate a note** — pick by what you're doing:
@@ -29,7 +30,7 @@ Rules:
 - **`workspaceId` ≠ `sessionId` ≠ `paneId`.** All three are UUIDs that appear near notes. The path segment after `/notes/` is `workspaceId` (= `$ATRIUM_WORKSPACE_ID`), **never** the `originSessionId` / `originAgentPaneId` from `meta.json`. Mixing them up writes a 0-byte phantom no app reads.
 - **Find a note's directory** via `atrium note list --json` (returns `id`, `folder`, `type`). Compose `$ATRIUM_DATA_DIR/notes/$ATRIUM_WORKSPACE_ID/<folder>/<noteId>/<body-filename>` (omit `<folder>/` when empty).
 - **When in doubt, use `atrium note write`** — it resolves root + workspace from the CLI binary path, so it can't be misrouted.
-- **Never touch `state.json` or `viewport.json`** — they back atrium UI contracts.
+- **Never write `state.json`, `state.meta.json` or `viewport.json`** — they back atrium UI contracts. Reading `state.json` is fine.
 - **Don't change `id`, `folder`, or `createdAt` in `meta.json`** — the directory layout is the truth for `folder` (a rename is a directory move). Editing `title`, `tags`, or `source` is fine; the watcher picks it up.
 
 ## Canvas & html interactive UIs
@@ -47,6 +48,15 @@ The bidirectional model:
 2. atrium auto-opens a notepad pane in the user's current room showing the UI (when you pass `--open`).
 3. The user interacts (fills fields, clicks buttons).
 4. **You MUST include a submit affordance in your spec** — atrium does not render a default "Send to agent" footer. For canvas: a `Button` with `on.press: { action: "send_to_agent", params: { payload: { "$state": "" } } }`. For html: a `<button onclick="parent.postMessage({type:'send', payload:{...}}, '*')">`. Without one, the user has no way to send the form state back. Including multiple submit buttons (e.g. "Approve" vs "Reject" with different payloads) is fine — each fires its own `send_to_agent` with its own params.
+
+## Canvas form state
+
+What the user enters in a canvas note is saved in the note's `state.json` and shared live between the Mac and a paired phone. Edits from each device merge field by field, so one device never overwrites what the other just changed.
+
+- **`state.json` holds only values someone chose.** The spec's `state` defaults (and `/state/...` patches) appear in the form, but each device fills them in locally and never writes them. A field the user never touched is absent from `state.json`. A `send_to_agent` payload reads the live form, so it does include defaults.
+- **`state.meta.json` is atrium's.** It records which version of `state.json` the devices are syncing from. Changing, deleting or copying it can make open forms miss a change or re-read the whole state.
+- **Don't write `state.json` yourself.** Open forms won't see a direct edit, and the next edit from a device can undo it. To put a value in front of the user, make it a spec default.
+- **A whole-state write (the `note_state_write` route, used by integrations and older atrium desktops) is merged as the diff from the current state.** It has three limits. `state` must be a JSON object; anything else is refused. `null` clears the state to `{}`. A key path deeper than 32 levels, or a value nested deeper than 32 levels, is refused and nothing is written.
 
 ## Choosing canvas vs html
 
@@ -169,7 +179,7 @@ A canvas spec is a single JSON object stored as the note body in `note.canvas.js
 
 - `root` — the key of the root element in the `elements` map.
 - `elements` — a flat map of element key → element. Each element has `type` (one of the components below), `props` (the component's prop shape), optional `children` (an array of element keys), and optional `on` event bindings.
-- `state` — optional object that seeds the renderer's state model.
+- `state` — optional object of defaults: the form shows them until the user changes a field. They are filled in on each device and never saved, so an untouched field is absent from `state.json` (see **Canvas form state**).
 - **`repeat`**: render children once per item in a state array. Inside repeated children, use `{"$item": "field"}` to read a field of the current item, `{"$index": true}` for the index, and `{"$bindItem": "field"}` for two-way binding to an item field.
 
 ### Reading state — two different directives
@@ -246,7 +256,7 @@ EOF
   - `atrium note canvas-patch <id> --op '<json>'` — single op, one-shot. Use for scripted edits to an existing canvas.
   - `atrium note canvas-patch <id> --from-file <path>` — JSONL file, single batch. Use for prebuilt patch sets.
 - atrium **throttles disk writes server-side to ~50ms** (20 Hz). Emit patches as fast as you generate them — the throttle protects the FTS index and event channel from flooding, without making the experience feel laggy (well below human flicker threshold).
-- Patches target the **flat element map** form documented in **Canvas spec format** above (`root` + `elements: { id: {type, props, children: ["id"]} }` + optional `state`). Patches against `/state/foo` seed the form state — useful for setting initial Select values, etc., mid-stream.
+- Patches target the **flat element map** form documented in **Canvas spec format** above (`root` + `elements: { id: {type, props, children: ["id"]} }` + optional `state`). Patches against `/state/foo` set a form default — useful for setting initial Select values, etc., mid-stream.
 
 ### Order tolerance
 
