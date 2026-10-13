@@ -96,7 +96,7 @@
         "windows"
       ],
       "official": true,
-      "version": "0.6.8",
+      "version": "0.6.9",
       "minAppVersion": "0.156.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" fill-rule=\"evenodd\"><title>Antigravity</title><path d=\"M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z\"/></svg>",
       "install": {
@@ -113,7 +113,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "bfbc2c230ce76363d25e041bb1ee90baeb8833d321e569c18e3ab6650594f737",
+      "contentSha256": "dc4741e86b3ec9b3472056a07501bd4130b4d30319388cdd5393ae833830c43c",
       "maxAppVersion": null
     },
     {
@@ -416,7 +416,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "929b9979ec3c33e2b017f5d3047d4f2de05d55f9",
+    "commit": "98a8139d11249f96ddc5e8e9048534596a55225d",
     "sharedSha256": "c57ff679f74e3f1d0aea573ffc0a702dd8fef89b15fa1652a9ce45e033b77371",
     "schemaSha256": "39b50785d4720c5dde13c636acff9ea53b76fb1f99360cbbc3c47db4248d7eb4",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
