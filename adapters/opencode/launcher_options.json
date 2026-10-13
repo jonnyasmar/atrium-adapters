@@ -27,6 +27,14 @@
       ]
     },
     {
+      "key": "effort",
+      "label": "effort",
+      "description": "Reasoning variant. Levels are provider-specific; atrium offers the ones the selected model lists in `opencode models --verbose`",
+      "type": "select",
+      "default": "",
+      "choices": ["none", "minimal", "low", "medium", "high", "xhigh", "max"]
+    },
+    {
       "key": "agent",
       "label": "agent",
       "description": "Launch with a specific agent profile",
