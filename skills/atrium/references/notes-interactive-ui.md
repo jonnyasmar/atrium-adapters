@@ -430,6 +430,8 @@ type IframeMessage =
 
 atrium's parent listener validates every message against the Zod schema and **drops malformed messages silently** (one-line `console.warn` in the host devtools). The parent also verifies `event.source === iframe.contentWindow` before processing, so other iframes / windows can't spoof messages.
 
+**Theme tokens.** HTML notes get atrium's theme as CSS custom properties, injected ahead of your markup and updated live when the user switches theme: `--text`, `--text-muted`, `--accent`, `--accent-fill` + `--accent-foreground` (solid accent buttons), `--surface`, `--border`, `--hover`, `--success` / `--warning` / `--error`, `--chart-1`…`--chart-8`, `--bg`, `--font-sans`, `--font-mono`, `--text-size`, `--radius` / `--radius-sm`. Use `var(--text)` and friends instead of hard-coded colours so the note matches every theme. Unlike chat pages, notes get no base typography (your own styles decide), so set `color: var(--text); font-family: var(--font-sans)` yourself. The full table is in `chat-html-pages.md`; `atrium html tokens` prints the current values. `asset://` and `ipc://` URLs are blocked inside notes; ordinary https resources load.
+
 Example HTML body (single self-contained file):
 
 ```html

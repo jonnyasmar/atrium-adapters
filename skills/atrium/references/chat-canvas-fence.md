@@ -18,7 +18,7 @@ It is **not** a tool call and **not** a note. No CLI invocation, no file on disk
 
 - **Backticks**, and the info string is a language tag plus optional space-separated flags. `canvas` needs no flag.
 - The body is **one JSON object — a whole canvas `Spec`** (`{ root, elements, state? }`), the same JSON that lives in a note's `note.canvas.json`. Not patch ops, not JSONL.
-- **`canvas` is the only language that renders.** `ts`, `json`, `html`, `bash` and everything else stay ordinary code blocks, unchanged.
+- **`canvas` is the only language you write inline.** The one other rendered fence, ` ```html render `, shows a *published* HTML page and is printed for you by `atrium html publish` (see `chat-html-pages.md`); never write HTML inline. `ts`, `json`, plain `html`, `bash` and everything else stay ordinary code blocks, unchanged.
 - Several canvas fences in one message are fine. Each is independent and owns its own state.
 - Prose before and after the fence renders as normal markdown. Keep narrating around it.
 - A canvas fence **nested inside a larger fence is not extracted**. To show a spec as source instead of rendering it, wrap it in a four-backtick fence.
@@ -174,9 +174,9 @@ The same two custom actions as notes (`send_to_agent`, `atrium_command`), with o
 
 The info string carries space-separated flags after the language (`` ```canvas ``, `` ```html render ``). One flag is reserved:
 
-- **`render`** — the future opt-in for languages that collide with ordinary code blocks. Agents emit HTML code blocks constantly and expect a code block, so a language like `html` will have to ask for rendering explicitly rather than get it by default.
+- **`render`** — the opt-in for languages that collide with ordinary code blocks. Agents emit HTML code blocks constantly and expect a code block, so `html` asks for rendering explicitly: `` ```html render `` renders a published page. Its body is the small JSON reference `atrium html publish` prints, never HTML (see `chat-html-pages.md`).
 
-It parses today and nothing consumes it. **`` ```html render `` renders nothing right now** — it's an HTML code block like any other. Don't put `render` on a canvas fence; it's unnecessary and it will read as a mistake.
+Don't put `render` on a canvas fence; it's unnecessary and it will read as a mistake.
 
 ## When it comes out as a plain code block
 
@@ -187,7 +187,7 @@ Work down this list before assuming the feature is broken:
 - **Not the main transcript.** Only the pane's own transcript renders artifacts. A reply read back inside a task drill-in or the task viewer stays a code block, so a fence you emit as a subagent won't render where the user reads your work.
 - **Not a chat pane.** A terminal pane renders no markdown at all.
 - **Nested in an outer fence.** Four-backtick wrappers suppress it deliberately.
-- **Inline artifact rendering is switched off.** It's on by default and there is no toggle in Settings yet, so this is unlikely — but the preference exists and a support instruction could have flipped it.
+- **Inline artifact rendering is switched off.** It's on by default; the user can turn it off in Settings › Appearance › Chat ("Inline canvases and pages"), and the phone has its own "Inline canvases" switch.
 
 A spec whose JSON never parses is a different failure: you get an error in the artifact frame, not a code block. Use the frame's **Show source** toggle to read back exactly what you emitted.
 
