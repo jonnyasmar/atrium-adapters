@@ -120,6 +120,8 @@ have to know about, because the default answers are scoped to this machine:
 
 **Browser snapshot → ref → action loop.** Before you click/fill/type/select on a browser pane, run `browser snapshot <pane-id>` for an accessibility tree where each interactable has a short ref (`e1`, `e2`, …). Pass refs to `browser click`/`fill`/etc. Re-snapshot after the DOM changes — refs aren't stable across navigations.
 
+**Opening a page: `browser open <url>`.** It keeps the page in your room. If a browser there already shows the URL, it hands back that pane (`reused: true`, nothing reloads). Otherwise the page opens as a subtab on your room's browser, or, if your room has none, in a new browser to your right. `placed` says which (`reused` / `subtab` / `split` / `new-room`). So re-opening a URL you lost track of is free and gives back the same pane id. A reused page is whatever it last loaded, so after changing the code behind it run `browser reload <pane-id>` before you look. Don't hand-place browsers with `pane create --split`, and only pass `--new-room` when the user asked for a separate room.
+
 **Never take the user's focus.** Focusing a pane switches the user's room and takes their keyboard mid-sentence — they're usually typing to you while you work. It is opt-in everywhere for that reason: `pane create --focus`, `browser open --focus`, `agent launch --focus`, plus the explicit `pane focus` and `room switch`. Pass one of those ONLY when the user asked to be shown something.
 
 Nothing about driving a pane requires focus, so there's never an incidental reason to take it. Browser panes in particular: screenshots render from Chromium's own content model and a pane in another room is force-mounted offscreen on first use, so `snapshot` / `click` / `fill` / `screenshot` all work on a pane that was never visible. Don't focus a browser pane, or switch to its room, to drive it.
@@ -145,9 +147,8 @@ More generally: **never background an atrium CLI call.** Run it in the foregroun
 "$ATRIUM_CLI_PATH" task create --title "Investigate flaky test" \
   --priority high --source "adapter:claude-code"
 
-# Split the current pane, open a browser in it (background — no --focus)
-"$ATRIUM_CLI_PATH" pane create --type browser \
-  --url "https://example.com" --split "$ATRIUM_PANE_ID"
+# Open a page in your room: reuses, stacks as a subtab, or splits beside you
+"$ATRIUM_CLI_PATH" browser open "https://example.com"
 
 # Start another agent beside you — no --type, so it opens as chat
 "$ATRIUM_CLI_PATH" pane create --adapter claude-code --split "$ATRIUM_PANE_ID"
