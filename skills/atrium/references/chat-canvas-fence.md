@@ -96,13 +96,15 @@ The user gets a card, picks a radio, optionally types a note, hits the button �
 
 *To get something back:* the interaction belongs to this turn — a three-way choice you need answered before you continue, a config you want tweaked before you apply it, a plan you want approved.
 
-*To show something:* the information has a shape markdown can't carry. Markdown is one column of text, so it has no chart, it can't put two things side by side, and it reveals every section at once. A canvas can. Reach for it when the reader would **lose** something otherwise — the trend they'd have to reconstruct from a column of numbers, the two screenshots they'd have to scroll between to compare, the six sections they'd have to wade through to reach the one that matters. If the only gain is that it looks nicer, that's not a reason.
+*To show something:* the information has a shape markdown can't carry. Markdown is one column of text, so it has no chart, it can't put two things side by side, and it reveals every section at once. A canvas can. Reach for it when the reader would **lose** something otherwise — the trend they'd have to reconstruct from a column of numbers, the two screenshots they'd have to scroll between to compare, the six sections they'd have to wade through to reach the one that matters. Lean toward showing: if the reader would grasp it faster as a chart, a grid of metrics or tabs, that alone is reason enough.
 
 Either way its value is that it costs the user nothing — no pane appears, no file lands in their notes, and it scrolls away with the rest of the conversation when it's spent.
 
 **Reach for a canvas note** when the artifact needs to outlive the conversation or leave it: the user wants it open in a pane beside their work, you'll mutate it across several turns with `canvas-patch`, another agent has to read it, or it belongs in their notes as a thing they keep. Durability alone is no longer the reason — a fence keeps what the user typed too — so the question is whether the artifact needs its own home.
 
 **Reach for plain markdown** when markdown can already carry the shape — prose, a plain table, a code block, a single image. Read-only is *not* the test: a chart is read-only and still belongs in a canvas. The test is whether anything is lost in the translation. A `Card` full of `Text` is markdown with extra steps.
+
+**Reach for an HTML page** (`chat-html-pages.md`) when a custom page would make a better visual than the catalog's components — an architecture or flow diagram, a timeline, a UI mockup, a scatter plot or heatmap, an annotated layout, anything animated. Neither medium is the default: pick whichever shows this content best, and use both in one reply when that helps.
 
 The failure mode in each direction: a fence where a note belonged leaves the artifact stranded in a transcript nobody scrolls back to, and gone when the pane closes; a note where a fence belonged litters their workspace with panes and files they have to clean up.
 
@@ -125,6 +127,9 @@ The failure mode in each direction: a fence where a note belonged leaves the art
 | Progress you're narrating as you work | **markdown** | Prose is lighter and doesn't imply an interaction |
 | One screenshot with a caption | **markdown** | Nothing to compare; a canvas adds a frame and no meaning |
 | A "form" with one yes/no question | **markdown** | Just ask. A canvas for a question you could type is ceremony |
+| How a request flows through the daemon, the sidecar and the app | **HTML page** | A diagram with arrows and lanes; the catalog has no diagram component |
+| The last month of releases as a timeline | **HTML page** | A custom timeline reads better than a table of dates |
+| A mockup of the settings screen you're proposing | **HTML page** | Layout is the point; build it with the theme tokens so it looks native |
 
 ## Write it so it streams well
 

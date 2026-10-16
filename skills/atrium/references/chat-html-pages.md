@@ -1,12 +1,12 @@
 # HTML pages in chat
 
-Read this when a reply needs a visual that a `canvas` fence can't draw, such as a custom diagram, a bespoke mockup, a rich comparison or an animation. You write an HTML file, check it, publish it, and paste the short fence that publishing prints. The chat transcript then shows the page inline in the user's own theme, on the Mac and on the phone.
+Read this when a custom page is the best way to show something: a diagram, a flow, a timeline, a mockup, a custom chart, an animation — anything where full control of layout and drawing makes a better visual than canvas components. You write an HTML file, check it, publish it, and paste the short fence that publishing prints. The chat transcript then shows the page inline in the user's own theme, on the Mac and on the phone.
 
-**Canvas first.** If the canvas catalog can express it (charts, tables, forms, choices, tabs), use a ` ```canvas ` fence: it streams, it's native on every device, and it's cheaper. A page is the escape hatch.
+**Choosing the medium.** Pick whatever makes the best visual for this content; neither is the default. A ` ```canvas ` fence streams as you write and is native on every device: strong for metrics, standard bar and line graphs, tables, tabs, and anything that asks the user for input (choices, forms, values that come back to you). A page gives you full control: custom diagrams and charts, timelines, mockups, annotated layouts, animation. Use both in one reply when that helps. Either way, lean toward showing: when an answer has shape, a visual beats a paragraph.
 
 **Where it renders:** agent chat panes (`agent-chat`), on desktop and the iPhone/iPad app. A terminal pane renders no markdown; there, make an HTML note instead (`notes-interactive-ui.md`).
 
-**Requires a current atrium.** Run `"$ATRIUM_CLI_PATH" html --help` once. If the command doesn't exist, this atrium is too old: use a canvas.
+**Requires a current atrium.** Run `"$ATRIUM_CLI_PATH" html --help` once. If the command doesn't exist, this atrium is too old: use a canvas instead.
 
 ## The flow
 

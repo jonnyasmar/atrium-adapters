@@ -270,7 +270,7 @@ A note isn't the only way to hand the user a UI. In an agent chat pane you can r
 
 **Before emitting a `canvas` fence, read `references/chat-canvas-fence.md`.** It covers the fence grammar and reserved flags, a worked example, how to order a spec so it builds well while streaming, how actions route back to your pane, and — the decision worth getting right — when to reach for a fence vs. a canvas note vs. plain markdown. The spec format and component catalog are shared with canvas notes, so `references/notes-interactive-ui.md` remains the reference for both.
 
-When the canvas catalog can't draw what you need (a custom diagram, a mockup, an animation), publish an **HTML page** instead: write an HTML file styled with atrium's theme tokens, check it with `atrium html preview <file>` (look at the PNG), then `atrium html publish <file> --title "…"` and paste the ` ```html render ` fence it prints. **Read `references/chat-html-pages.md` first** — it has the flow, the full token table (`atrium html tokens` prints it with current values), layout rules, and how a page sends an answer back.
+When a custom page would show it better (a diagram, a flow, a timeline, a mockup, a custom chart, an animation), publish an **HTML page** — pick whichever medium makes the best visual, neither is the default: write an HTML file styled with atrium's theme tokens, check it with `atrium html preview <file>` (look at the PNG), then `atrium html publish <file> --title "…"` and paste the ` ```html render ` fence it prints. **Read `references/chat-html-pages.md` first** — it has the flow, the full token table (`atrium html tokens` prints it with current values), layout rules, and how a page sends an answer back.
 
 ## QA Capture bundles (CAP-#)
 
