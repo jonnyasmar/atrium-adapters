@@ -1,0 +1,2486 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-25",
+  "logoSource": {
+    "package": "simple-icons",
+    "version": "16.36.0",
+    "license": "CC0-1.0",
+    "url": "https://simpleicons.org"
+  },
+  "presets": [
+    {
+      "id": "github",
+      "revision": 1,
+      "name": "GitHub",
+      "category": "developer",
+      "description": "Work with GitHub repositories, issues, pull requests and Actions.",
+      "docsUrl": "https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md",
+      "logo": {
+        "slug": "github",
+        "title": "GitHub",
+        "hex": "#181717",
+        "viewBox": "0 0 24 24",
+        "path": "M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "headers": {},
+        "auth": {
+          "kind": "bearer",
+          "token": {
+            "input": "token"
+          },
+          "tokenHelpUrl": "https://github.com/settings/personal-access-tokens/new",
+          "scopes": [
+            "repo",
+            "read:org",
+            "read:packages"
+          ]
+        }
+      },
+      "inputs": [
+        {
+          "name": "token",
+          "label": "Personal access token",
+          "secret": true,
+          "required": true,
+          "help": "A fine-grained token limited to the repositories agents should reach, or a classic token with repo, read:org and read:packages.",
+          "helpUrl": "https://github.com/settings/personal-access-tokens/new",
+          "placeholder": "github_pat_..."
+        }
+      ],
+      "toolPolicyDefaults": {
+        "delete_*": "ask",
+        "merge_*": "ask",
+        "push_files": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://api.githubcopilot.com/.well-known/oauth-protected-resource/mcp/",
+          "authorizationServers": [
+            "https://github.com/login/oauth"
+          ],
+          "authorizationServerMetadataUrl": "https://github.com/.well-known/oauth-authorization-server/login/oauth",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": null,
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://raw.githubusercontent.com/github/github-mcp-server/main/README.md (Tools section)",
+        "registryName": "io.github.github/github-mcp-server",
+        "notes": [
+          "github.com/login/oauth advertises neither a client ID metadata document nor a registration endpoint, so sign-in uses a personal access token (contract D19).",
+          "Read-only variant: https://api.githubcopilot.com/mcp/readonly (same 401 and discovery chain), or the X-MCP-Readonly: true header."
+        ]
+      }
+    },
+    {
+      "id": "gitlab",
+      "revision": 1,
+      "name": "GitLab",
+      "category": "developer",
+      "description": "Search and update GitLab projects, merge requests, work items and pipelines.",
+      "setupNote": "On GitLab.com, the MCP server must be allowed for your top-level group first.",
+      "docsUrl": "https://docs.gitlab.com/user/model_context_protocol/mcp_server/",
+      "logo": {
+        "slug": "gitlab",
+        "title": "GitLab",
+        "hex": "#FC6D26",
+        "viewBox": "0 0 24 24",
+        "path": "m23.6004 9.5927-.0337-.0862L20.3.9814a.851.851 0 0 0-.3362-.405.8748.8748 0 0 0-.9997.0539.8748.8748 0 0 0-.29.4399l-2.2055 6.748H7.5375l-2.2057-6.748a.8573.8573 0 0 0-.29-.4412.8748.8748 0 0 0-.9997-.0537.8585.8585 0 0 0-.3362.4049L.4332 9.5015l-.0325.0862a6.0657 6.0657 0 0 0 2.0119 7.0105l.0113.0087.03.0213 4.976 3.7264 2.462 1.8633 1.4995 1.1321a1.0085 1.0085 0 0 0 1.2197 0l1.4995-1.1321 2.4619-1.8633 5.006-3.7489.0125-.01a6.0682 6.0682 0 0 0 2.0094-7.003z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://gitlab.com/api/v4/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": false,
+            "dcr": true
+          },
+          "scopes": [
+            "mcp"
+          ]
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "accept_merge_request": "ask",
+        "manage_pipeline": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://gitlab.com/.well-known/oauth-protected-resource/api/v4/mcp",
+          "authorizationServers": [
+            "https://gitlab.com"
+          ],
+          "authorizationServerMetadataUrl": "https://gitlab.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": "https://gitlab.com/oauth/register",
+          "codeChallengeMethodsSupported": [
+            "plain",
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/",
+        "registryName": "com.gitlab/mcp",
+        "notes": [
+          "WWW-Authenticate names scope=\"mcp\". The authorization server advertises plain and S256 PKCE; atrium requires S256.",
+          "GitLab documents a dynamic registration limit of 10 per hour per IP, and admins can turn registration off."
+        ]
+      }
+    },
+    {
+      "id": "sentry",
+      "revision": 1,
+      "name": "Sentry",
+      "category": "developer",
+      "description": "Look up Sentry issues, events and traces, and help triage errors.",
+      "docsUrl": "https://mcp.sentry.dev/",
+      "logo": {
+        "slug": "sentry",
+        "title": "Sentry",
+        "hex": "#362D59",
+        "viewBox": "0 0 24 24",
+        "path": "M13.91 2.505c-.873-1.448-2.972-1.448-3.844 0L6.904 7.92a15.478 15.478 0 0 1 8.53 12.811h-2.221A13.301 13.301 0 0 0 5.784 9.814l-2.926 5.06a7.65 7.65 0 0 1 4.435 5.848H2.194a.365.365 0 0 1-.298-.534l1.413-2.402a5.16 5.16 0 0 0-1.614-.913L.296 19.275a2.182 2.182 0 0 0 .812 2.999 2.24 2.24 0 0 0 1.086.288h6.983a9.322 9.322 0 0 0-3.845-8.318l1.11-1.922a11.47 11.47 0 0 1 4.95 10.24h5.915a17.242 17.242 0 0 0-7.885-15.28l2.244-3.845a.37.37 0 0 1 .504-.13c.255.14 9.75 16.708 9.928 16.9a.365.365 0 0 1-.327.543h-2.287c.029.612.029 1.223 0 1.831h2.297a2.206 2.206 0 0 0 1.922-3.31z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.sentry.dev/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "delete_*": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.sentry.dev/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://mcp.sentry.dev"
+          ],
+          "authorizationServerMetadataUrl": "https://mcp.sentry.dev/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://mcp.sentry.dev/oauth/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://github.com/getsentry/sentry-mcp/tree/main/packages/mcp-core/src/tools/catalog",
+        "registryName": "io.github.getsentry/sentry-mcp",
+        "notes": [
+          "docs.sentry.io/product/sentry-mcp/ redirects to https://mcp.sentry.dev/."
+        ]
+      }
+    },
+    {
+      "id": "vercel",
+      "revision": 1,
+      "name": "Vercel",
+      "category": "developer",
+      "description": "Inspect Vercel projects, deployments and logs, and search Vercel's docs.",
+      "docsUrl": "https://vercel.com/docs/agent-resources/vercel-mcp",
+      "logo": {
+        "slug": "vercel",
+        "title": "Vercel",
+        "hex": "#000000",
+        "viewBox": "0 0 24 24",
+        "path": "m12 1.608 12 20.784H0Z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.vercel.com",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "buy_*": "ask",
+        "cancel_deployment": "ask",
+        "request_promote": "ask",
+        "request_rollback": "ask",
+        "replace_domain_dns_records": "ask",
+        "pause_project": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "flagged",
+        "flagReason": "client-approval-required",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.vercel.com/.well-known/oauth-protected-resource",
+          "authorizationServers": [
+            "https://vercel.com"
+          ],
+          "authorizationServerMetadataUrl": "https://vercel.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://api.vercel.com/login/oauth/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://vercel.com/docs/agent-resources/vercel-mcp/tools",
+        "registryName": "com.vercel/vercel-mcp",
+        "notes": [
+          "Vercel's docs: \"Vercel MCP only supports AI clients that have been reviewed and approved by Vercel.\" atrium is not on the supported-clients list. To apply, use the client review form: https://forms.gle/FQ3nYPbovoHvbfmz9",
+          "Vercel's changelog says the server supports the 2026-07-28 specification; the era was not observable before sign-in."
+        ]
+      }
+    },
+    {
+      "id": "netlify",
+      "revision": 1,
+      "name": "Netlify",
+      "category": "developer",
+      "description": "Create, deploy and configure Netlify sites and their settings.",
+      "docsUrl": "https://docs.netlify.com/build/build-with-ai/agent-setup-guides/agent-setup-overview/#mcp-server-support",
+      "logo": {
+        "slug": "netlify",
+        "title": "Netlify",
+        "hex": "#00C7B7",
+        "viewBox": "0 0 24 24",
+        "path": "M6.49 19.04h-.23L5.13 17.9v-.23l1.73-1.71h1.2l.15.15v1.2L6.5 19.04ZM5.13 6.31V6.1l1.13-1.13h.23L8.2 6.68v1.2l-.15.15h-1.2L5.13 6.31Zm9.96 9.09h-1.65l-.14-.13v-3.83c0-.68-.27-1.2-1.1-1.23-.42 0-.9 0-1.43.02l-.07.08v4.96l-.14.14H8.9l-.13-.14V8.73l.13-.14h3.7a2.6 2.6 0 0 1 2.61 2.6v4.08l-.13.14Zm-8.37-2.44H.14L0 12.82v-1.64l.14-.14h6.58l.14.14v1.64l-.14.14Zm17.14 0h-6.58l-.14-.14v-1.64l.14-.14h6.58l.14.14v1.64l-.14.14ZM11.05 6.55V1.64l.14-.14h1.65l.14.14v4.9l-.14.14h-1.65l-.14-.13Zm0 15.81v-4.9l.14-.14h1.65l.14.13v4.91l-.14.14h-1.65l-.14-.14Z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://netlify-mcp.netlify.app/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": false,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "netlify-*-services-updater": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "unauthenticated"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "unauthenticated"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://netlify-mcp.netlify.app/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://netlify-mcp.netlify.app/"
+          ],
+          "authorizationServerMetadataUrl": "https://netlify-mcp.netlify.app/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": "https://netlify-mcp.netlify.app/oauth-server/reg",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://github.com/netlify/netlify-mcp/blob/main/src/tools/index.ts (names built as netlify-<domain>-services-<reader|updater>)",
+        "notes": [
+          "No MCP Registry entry from Netlify; the endpoint is the one Netlify's docs and the netlify/netlify-mcp repo name.",
+          "Writes go through the grouped *-services-updater tools, so the policy targets those."
+        ]
+      }
+    },
+    {
+      "id": "cloudflare",
+      "revision": 1,
+      "name": "Cloudflare",
+      "category": "developer",
+      "description": "Work with your Cloudflare account through its API: Workers, DNS, R2, D1 and more.",
+      "docsUrl": "https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/",
+      "logo": {
+        "slug": "cloudflare",
+        "title": "Cloudflare",
+        "hex": "#F38020",
+        "viewBox": "0 0 24 24",
+        "path": "M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.cloudflare.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "execute": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.cloudflare.com/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://mcp.cloudflare.com"
+          ],
+          "authorizationServerMetadataUrl": "https://mcp.cloudflare.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://mcp.cloudflare.com/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://github.com/cloudflare/mcp/blob/main/README.md (code-mode tools docs, search, execute, whoami)",
+        "notes": [
+          "The consolidated Cloudflare API server. Every API write goes through the execute tool, so execute asks by default.",
+          "WWW-Authenticate names scope=\"user:read account:read\"; more permissions are requested by scope challenge.",
+          "The Cloudflare MCP Registry entry (com.cloudflare.mcp/mcp) lists the per-product servers, not this one."
+        ]
+      }
+    },
+    {
+      "id": "stripe",
+      "revision": 1,
+      "name": "Stripe",
+      "category": "developer",
+      "description": "Query Stripe customers, payments and subscriptions, and search Stripe's docs.",
+      "docsUrl": "https://docs.stripe.com/mcp",
+      "logo": {
+        "slug": "stripe",
+        "title": "Stripe",
+        "hex": "#635BFF",
+        "viewBox": "0 0 24 24",
+        "path": "M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.stripe.com",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": false,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "stripe_api_write": "ask",
+        "send_money": "ask",
+        "transfer_money": "ask",
+        "convert_currency": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "Unauthorized. See https://docs.stripe.com/mcp for usage instructions."
+          },
+          "initialize": {
+            "status": 401,
+            "error": "Unauthorized. See https://docs.stripe.com/mcp for usage instructions."
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.stripe.com/.well-known/oauth-protected-resource",
+          "authorizationServers": [
+            "https://access.stripe.com/mcp"
+          ],
+          "authorizationServerMetadataUrl": "https://access.stripe.com/.well-known/oauth-authorization-server/mcp",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": "https://access.stripe.com/mcp/oauth2/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://docs.stripe.com/mcp (Tools table)",
+        "registryName": "com.stripe/mcp",
+        "notes": [
+          "From 2026-11-30 Stripe MCP refuses full-access secret keys and restricted keys without the Agent tag; OAuth is unaffected.",
+          "Stripe asks for human approval through its own approval URL for some writes, such as refunds and payouts."
+        ]
+      }
+    },
+    {
+      "id": "figma",
+      "revision": 1,
+      "name": "Figma",
+      "category": "developer",
+      "description": "Bring Figma design context, components and variables into your code.",
+      "docsUrl": "https://developers.figma.com/docs/figma-mcp-server/",
+      "logo": {
+        "slug": "figma",
+        "title": "Figma",
+        "hex": "#F24E1E",
+        "viewBox": "0 0 24 24",
+        "path": "M15.852 8.981h-4.588V0h4.588c2.476 0 4.49 2.014 4.49 4.49s-2.014 4.491-4.49 4.491zM12.735 7.51h3.117c1.665 0 3.019-1.355 3.019-3.019s-1.355-3.019-3.019-3.019h-3.117V7.51zm0 1.471H8.148c-2.476 0-4.49-2.014-4.49-4.49S5.672 0 8.148 0h4.588v8.981zm-4.587-7.51c-1.665 0-3.019 1.355-3.019 3.019s1.354 3.02 3.019 3.02h3.117V1.471H8.148zm4.587 15.019H8.148c-2.476 0-4.49-2.014-4.49-4.49s2.014-4.49 4.49-4.49h4.588v8.98zM8.148 8.981c-1.665 0-3.019 1.355-3.019 3.019s1.355 3.019 3.019 3.019h3.117V8.981H8.148zM8.172 24c-2.489 0-4.515-2.014-4.515-4.49s2.014-4.49 4.49-4.49h4.588v4.441c0 2.503-2.047 4.539-4.563 4.539zm-.024-7.51a3.023 3.023 0 0 0-3.019 3.019c0 1.665 1.365 3.019 3.044 3.019 1.705 0 3.093-1.376 3.093-3.068v-2.97H8.148zm7.704 0h-.098c-2.476 0-4.49-2.014-4.49-4.49s2.014-4.49 4.49-4.49h.098c2.476 0 4.49 2.014 4.49 4.49s-2.014 4.49-4.49 4.49zm-.097-7.509c-1.665 0-3.019 1.355-3.019 3.019s1.355 3.019 3.019 3.019h.098c1.665 0 3.019-1.355 3.019-3.019s-1.355-3.019-3.019-3.019h-.098z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.figma.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": false,
+            "dcr": true
+          },
+          "scopes": [
+            "mcp:connect"
+          ]
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "use_figma": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "flagged",
+        "flagReason": "client-approval-required",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.figma.com/.well-known/oauth-protected-resource",
+          "authorizationServers": [
+            "https://api.figma.com"
+          ],
+          "authorizationServerMetadataUrl": "https://api.figma.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": "https://api.figma.com/v1/oauth/mcp/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/",
+        "registryName": "com.figma.mcp/mcp",
+        "notes": [
+          "Figma's docs point to a catalog of supported clients and a waitlist for new ones; registration from unlisted clients is refused. atrium is not in the catalog.",
+          "Figma's desktop server (http://127.0.0.1:3845/mcp, enabled from Dev Mode, paid Dev or Full seat) avoids the catalog, but it was not running here and was not probed."
+        ]
+      }
+    },
+    {
+      "id": "huggingface",
+      "revision": 1,
+      "name": "Hugging Face",
+      "category": "developer",
+      "description": "Search models, datasets, Spaces and papers on the Hugging Face Hub.",
+      "docsUrl": "https://huggingface.co/docs/hub/agents-mcp",
+      "logo": {
+        "slug": "huggingface",
+        "title": "Hugging Face",
+        "hex": "#FFD21E",
+        "viewBox": "0 0 24 24",
+        "path": "M12.025 1.13c-5.77 0-10.449 4.647-10.449 10.378 0 1.112.178 2.181.503 3.185.064-.222.203-.444.416-.577a.96.96 0 0 1 .524-.15c.293 0 .584.124.84.284.278.173.48.408.71.694.226.282.458.611.684.951v-.014c.017-.324.106-.622.264-.874s.403-.487.762-.543c.3-.047.596.06.787.203s.31.313.4.467c.15.257.212.468.233.542.01.026.653 1.552 1.657 2.54.616.605 1.01 1.223 1.082 1.912.055.537-.096 1.059-.38 1.572.637.121 1.294.187 1.967.187.657 0 1.298-.063 1.921-.178-.287-.517-.44-1.041-.384-1.581.07-.69.465-1.307 1.081-1.913 1.004-.987 1.647-2.513 1.657-2.539.021-.074.083-.285.233-.542.09-.154.208-.323.4-.467a1.08 1.08 0 0 1 .787-.203c.359.056.604.29.762.543s.247.55.265.874v.015c.225-.34.457-.67.683-.952.23-.286.432-.52.71-.694.257-.16.547-.284.84-.285a.97.97 0 0 1 .524.151c.228.143.373.388.43.625l.006.04a10.3 10.3 0 0 0 .534-3.273c0-5.731-4.678-10.378-10.449-10.378M8.327 6.583a1.5 1.5 0 0 1 .713.174 1.487 1.487 0 0 1 .617 2.013c-.183.343-.762-.214-1.102-.094-.38.134-.532.914-.917.71a1.487 1.487 0 0 1 .69-2.803m7.486 0a1.487 1.487 0 0 1 .689 2.803c-.385.204-.536-.576-.916-.71-.34-.12-.92.437-1.103.094a1.487 1.487 0 0 1 .617-2.013 1.5 1.5 0 0 1 .713-.174m-10.68 1.55a.96.96 0 1 1 0 1.921.96.96 0 0 1 0-1.92m13.838 0a.96.96 0 1 1 0 1.92.96.96 0 0 1 0-1.92M8.489 11.458c.588.01 1.965 1.157 3.572 1.164 1.607-.007 2.984-1.155 3.572-1.164.196-.003.305.12.305.454 0 .886-.424 2.328-1.563 3.202-.22-.756-1.396-1.366-1.63-1.32q-.011.001-.02.006l-.044.026-.01.008-.03.024q-.018.017-.035.036l-.032.04a1 1 0 0 0-.058.09l-.014.025q-.049.088-.11.19a1 1 0 0 1-.083.116 1.2 1.2 0 0 1-.173.18q-.035.029-.075.058a1.3 1.3 0 0 1-.251-.243 1 1 0 0 1-.076-.107c-.124-.193-.177-.363-.337-.444-.034-.016-.104-.008-.2.022q-.094.03-.216.087-.06.028-.125.063l-.13.074q-.067.04-.136.086a3 3 0 0 0-.135.096 3 3 0 0 0-.26.219 2 2 0 0 0-.12.121 2 2 0 0 0-.106.128l-.002.002a2 2 0 0 0-.09.132l-.001.001a1.2 1.2 0 0 0-.105.212q-.013.036-.024.073c-1.139-.875-1.563-2.317-1.563-3.203 0-.334.109-.457.305-.454m.836 10.354c.824-1.19.766-2.082-.365-3.194-1.13-1.112-1.789-2.738-1.789-2.738s-.246-.945-.806-.858-.97 1.499.202 2.362c1.173.864-.233 1.45-.685.64-.45-.812-1.683-2.896-2.322-3.295s-1.089-.175-.938.647 2.822 2.813 2.562 3.244-1.176-.506-1.176-.506-2.866-2.567-3.49-1.898.473 1.23 2.037 2.16c1.564.932 1.686 1.178 1.464 1.53s-3.675-2.511-4-1.297c-.323 1.214 3.524 1.567 3.287 2.405-.238.839-2.71-1.587-3.216-.642-.506.946 3.49 2.056 3.522 2.064 1.29.33 4.568 1.028 5.713-.624m5.349 0c-.824-1.19-.766-2.082.365-3.194 1.13-1.112 1.789-2.738 1.789-2.738s.246-.945.806-.858.97 1.499-.202 2.362c-1.173.864.233 1.45.685.64.451-.812 1.683-2.896 2.322-3.295s1.089-.175.938.647-2.822 2.813-2.562 3.244 1.176-.506 1.176-.506 2.866-2.567 3.49-1.898-.473 1.23-2.037 2.16c-1.564.932-1.686 1.178-1.464 1.53s3.675-2.511 4-1.297c.323 1.214-3.524 1.567-3.287 2.405.238.839 2.71-1.587 3.216-.642.506.946-3.49 2.056-3.522 2.064-1.29.33-4.568 1.028-5.713-.624"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://huggingface.co/mcp?login",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "hf_fs_write": "ask",
+        "hf_jobs": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://huggingface.co/.well-known/oauth-protected-resource/mcp?login",
+          "authorizationServers": [
+            "https://huggingface.co"
+          ],
+          "authorizationServerMetadataUrl": "https://huggingface.co/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://huggingface.co/oauth/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://github.com/huggingface/hf-mcp-server (packages/mcp/src: hf-fs-write.ts, jobs/jobs-tool.ts)",
+        "registryName": "co.huggingface/hf-mcp-server",
+        "notes": [
+          "Without ?login the same server answers anonymously in both eras (2026-07-28 and 2025-11-25) with four read-only tools: hf_whoami, hub_repo_search, hub_repo_details, hf_fs.",
+          "Which tools a signed-in user gets is set at https://huggingface.co/settings/mcp; the write and Jobs tools are opt-in there."
+        ]
+      }
+    },
+    {
+      "id": "linear",
+      "revision": 1,
+      "name": "Linear",
+      "category": "productivity",
+      "description": "Find, create and update Linear issues, projects and comments.",
+      "docsUrl": "https://linear.app/docs/mcp",
+      "logo": {
+        "slug": "linear",
+        "title": "Linear",
+        "hex": "#5E6AD2",
+        "viewBox": "0 0 24 24",
+        "path": "M2.886 4.18A11.982 11.982 0 0 1 11.99 0C18.624 0 24 5.376 24 12.009c0 3.64-1.62 6.903-4.18 9.105L2.887 4.18ZM1.817 5.626l16.556 16.556c-.524.33-1.075.62-1.65.866L.951 7.277c.247-.575.537-1.126.866-1.65ZM.322 9.163l14.515 14.515c-.71.172-1.443.282-2.195.322L0 11.358a12 12 0 0 1 .322-2.195Zm-.17 4.862 9.823 9.824a12.02 12.02 0 0 1-9.824-9.824Z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.linear.app/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.linear.app/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://mcp.linear.app"
+          ],
+          "authorizationServerMetadataUrl": "https://mcp.linear.app/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://mcp.linear.app/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "registryName": "app.linear/linear",
+        "notes": [
+          "Linear publishes no tool list, so no tool-name defaults; annotation defaults apply.",
+          "Read-only variant: https://mcp.linear.app/mcp/readonly (same 401 and discovery chain)."
+        ]
+      }
+    },
+    {
+      "id": "atlassian",
+      "revision": 1,
+      "name": "Atlassian",
+      "category": "productivity",
+      "description": "Search and edit Jira issues and Confluence pages on your Atlassian sites.",
+      "setupNote": "Your Atlassian organization admin controls which apps may connect. If sign-in is refused, ask them to allow atrium.",
+      "docsUrl": "https://support.atlassian.com/atlassian-ai-gateway/docs/get-started-with-the-atlassian-remote-mcp-server/",
+      "logo": {
+        "slug": "atlassian",
+        "title": "Atlassian",
+        "hex": "#0052CC",
+        "viewBox": "0 0 24 24",
+        "path": "M7.12 11.084a.683.683 0 00-1.16.126L.075 22.974a.703.703 0 00.63 1.018h8.19a.678.678 0 00.63-.39c1.767-3.65.696-9.203-2.406-12.52zM11.434.386a15.515 15.515 0 00-.906 15.317l3.95 7.9a.703.703 0 00.628.388h8.19a.703.703 0 00.63-1.017L12.63.38a.664.664 0 00-1.196.006z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.atlassian.com/v2/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "delete*": "ask",
+        "merge*": "ask",
+        "executeDestructive": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.atlassian.com/.well-known/oauth-protected-resource/v2/mcp",
+          "authorizationServers": [
+            "https://auth.atlassian.com/VCeDsk8ZHncYF1g234fKtc4lNipbBhu3"
+          ],
+          "authorizationServerMetadataUrl": "https://auth.atlassian.com/.well-known/oauth-authorization-server/VCeDsk8ZHncYF1g234fKtc4lNipbBhu3",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://auth.atlassian.com/VCeDsk8ZHncYF1g234fKtc4lNipbBhu3/dcr/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/",
+        "registryName": "com.atlassian/atlassian-mcp-server",
+        "notes": [
+          "v2 is Atlassian's recommended endpoint. The older https://mcp.atlassian.com/v1/mcp answers 401 without resource_metadata and advertises DCR only; v1 credentials do not carry over to v2.",
+          "Delete and project-admin tools are off until an org admin enables them."
+        ]
+      }
+    },
+    {
+      "id": "notion",
+      "revision": 1,
+      "name": "Notion",
+      "category": "productivity",
+      "description": "Search, read and edit the pages and databases in your Notion workspace.",
+      "docsUrl": "https://developers.notion.com/guides/mcp/get-started-with-mcp",
+      "logo": {
+        "slug": "notion",
+        "title": "Notion",
+        "hex": "#000000",
+        "viewBox": "0 0 24 24",
+        "path": "M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.notion.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "notion-delete-*": "ask",
+        "notion-move-pages": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.notion.com/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://mcp.notion.com"
+          ],
+          "authorizationServerMetadataUrl": "https://mcp.notion.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://mcp.notion.com/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://developers.notion.com/guides/mcp/mcp-supported-tools.md",
+        "registryName": "com.notion/mcp"
+      }
+    },
+    {
+      "id": "slack",
+      "revision": 1,
+      "name": "Slack",
+      "category": "productivity",
+      "description": "Search Slack messages and channels, and post or react on your behalf.",
+      "setupNote": "Slack only accepts its own registered apps: create an internal app in your workspace, then paste its client ID and secret.",
+      "docsUrl": "https://docs.slack.dev/ai/slack-mcp-server/",
+      "logo": null,
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.slack.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "static",
+          "advertised": {
+            "cimd": false,
+            "dcr": false
+          },
+          "clientId": {
+            "input": "clientId"
+          },
+          "clientSecret": {
+            "input": "clientSecret"
+          }
+        }
+      },
+      "inputs": [
+        {
+          "name": "clientId",
+          "label": "Slack app client ID",
+          "secret": false,
+          "required": true,
+          "help": "From the Basic Information page of an internal Slack app you create in your workspace. Register atrium's redirect URLs in the app, then paste the app's credentials here. atrium lists the redirect URLs when you add the connector.",
+          "helpUrl": "https://api.slack.com/apps"
+        },
+        {
+          "name": "clientSecret",
+          "label": "Slack app client secret",
+          "secret": true,
+          "required": true,
+          "help": "From the same Basic Information page.",
+          "helpUrl": "https://api.slack.com/apps"
+        }
+      ],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "-32001: missing_token"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "-32001: missing_token"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.slack.com/.well-known/oauth-protected-resource",
+          "authorizationServers": [
+            "https://mcp.slack.com"
+          ],
+          "authorizationServerMetadataUrl": "https://mcp.slack.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": null,
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "notes": [
+          "The authorization server advertises neither a client ID metadata document nor a registration endpoint, and Slack's docs say dynamic registration is unsupported. It requires client_secret_post.",
+          "Slack's docs list capabilities but not tool names, so no tool-name defaults.",
+          "simple-icons has no Slack icon."
+        ]
+      }
+    },
+    {
+      "id": "asana",
+      "revision": 1,
+      "name": "Asana",
+      "category": "productivity",
+      "description": "Find and update Asana tasks, projects and goals.",
+      "setupNote": "Asana needs an MCP app you create in its developer console; paste that app's client ID and secret.",
+      "docsUrl": "https://developers.asana.com/docs/integrating-with-asanas-mcp-server",
+      "logo": {
+        "slug": "asana",
+        "title": "Asana",
+        "hex": "#F06A6A",
+        "viewBox": "0 0 24 24",
+        "path": "M18.78 12.653c-2.882 0-5.22 2.336-5.22 5.22s2.338 5.22 5.22 5.22 5.22-2.34 5.22-5.22-2.336-5.22-5.22-5.22zm-13.56 0c-2.88 0-5.22 2.337-5.22 5.22s2.338 5.22 5.22 5.22 5.22-2.338 5.22-5.22-2.336-5.22-5.22-5.22zm12-6.525c0 2.883-2.337 5.22-5.22 5.22-2.882 0-5.22-2.337-5.22-5.22 0-2.88 2.338-5.22 5.22-5.22 2.883 0 5.22 2.34 5.22 5.22z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.asana.com/v2/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "static",
+          "advertised": {
+            "cimd": false,
+            "dcr": false
+          },
+          "clientId": {
+            "input": "clientId"
+          },
+          "clientSecret": {
+            "input": "clientSecret"
+          }
+        }
+      },
+      "inputs": [
+        {
+          "name": "clientId",
+          "label": "Asana MCP app client ID",
+          "secret": false,
+          "required": true,
+          "help": "Create an app of type MCP app in the Asana developer console and make it available to your workspace. Register atrium's redirect URLs in the app, then paste the app's credentials here. atrium lists the redirect URLs when you add the connector.",
+          "helpUrl": "https://app.asana.com/0/my-apps"
+        },
+        {
+          "name": "clientSecret",
+          "label": "Asana MCP app client secret",
+          "secret": true,
+          "required": true,
+          "help": "From the same app's OAuth settings.",
+          "helpUrl": "https://app.asana.com/0/my-apps"
+        }
+      ],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "invalid_request"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "invalid_request"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.asana.com/.well-known/oauth-protected-resource/v2",
+          "authorizationServers": [
+            "https://app.asana.com"
+          ],
+          "authorizationServerMetadataUrl": "https://app.asana.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": null,
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "notes": [
+          "The authorization server (app.asana.com) advertises neither a client ID metadata document nor a registration endpoint.",
+          "Asana's docs: send no scope parameter, or authorization fails with invalid scope. Use resource=https://mcp.asana.com/v2.",
+          "Asana deprecated the V1 endpoint (mcp.asana.com/sse) on 2026-02-03 and announced its shutdown for 2026-08-05; it still answered 401 here."
+        ]
+      }
+    },
+    {
+      "id": "todoist",
+      "revision": 1,
+      "name": "Todoist",
+      "category": "productivity",
+      "description": "Add, find, reschedule and complete Todoist tasks and projects.",
+      "docsUrl": "https://github.com/Doist/todoist-ai",
+      "logo": {
+        "slug": "todoist",
+        "title": "Todoist",
+        "hex": "#E44332",
+        "viewBox": "0 0 24 24",
+        "path": "M21 0H3C1.35 0 0 1.35 0 3v3.858s3.854 2.24 4.098 2.38c.31.18.694.177 1.004 0 .26-.147 8.02-4.608 8.136-4.675.279-.161.58-.107.748-.01.164.097.606.348.84.48.232.134.221.502.013.622l-9.712 5.59c-.346.2-.69.204-1.048.002C3.478 10.907.998 9.463 0 8.882v2.02l4.098 2.38c.31.18.694.177 1.004 0 .26-.147 8.02-4.609 8.136-4.676.279-.16.58-.106.748-.008.164.096.606.347.84.48.232.133.221.5.013.62-.208.121-9.288 5.346-9.712 5.59-.346.2-.69.205-1.048.002C3.478 14.951.998 13.506 0 12.926v2.02l4.098 2.38c.31.18.694.177 1.004 0 .26-.147 8.02-4.609 8.136-4.676.279-.16.58-.106.748-.009.164.097.606.348.84.48.232.133.221.502.013.622l-9.712 5.59c-.346.199-.69.204-1.048.001C3.478 18.994.998 17.55 0 16.97V21c0 1.65 1.35 3 3 3h18c1.65 0 3-1.35 3-3V3c0-1.65-1.35-3-3-3z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://ai.todoist.net/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "delete-object": "ask",
+        "project-management": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "Unauthorized"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "Unauthorized"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://ai.todoist.net/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://todoist.com"
+          ],
+          "authorizationServerMetadataUrl": "https://todoist.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://todoist.com/oauth/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://github.com/Doist/todoist-ai/blob/main/src/utils/tool-names.ts",
+        "registryName": "net.todoist/mcp"
+      }
+    },
+    {
+      "id": "hubspot",
+      "revision": 1,
+      "name": "HubSpot",
+      "category": "productivity",
+      "description": "Read and update HubSpot CRM records, deals and marketing content.",
+      "setupNote": "HubSpot needs an MCP connector you create in your HubSpot account; paste its client ID and secret.",
+      "docsUrl": "https://developers.hubspot.com/docs/apps/developer-platform/build-apps/integrate-with-the-remote-hubspot-mcp-server",
+      "logo": {
+        "slug": "hubspot",
+        "title": "HubSpot",
+        "hex": "#FF7A59",
+        "viewBox": "0 0 24 24",
+        "path": "M18.164 7.93V5.084a2.198 2.198 0 001.267-1.978v-.067A2.2 2.2 0 0017.238.845h-.067a2.2 2.2 0 00-2.193 2.193v.067a2.196 2.196 0 001.252 1.973l.013.006v2.852a6.22 6.22 0 00-2.969 1.31l.012-.01-7.828-6.095A2.497 2.497 0 104.3 4.656l-.012.006 7.697 5.991a6.176 6.176 0 00-1.038 3.446c0 1.343.425 2.588 1.147 3.607l-.013-.02-2.342 2.343a1.968 1.968 0 00-.58-.095h-.002a2.033 2.033 0 102.033 2.033 1.978 1.978 0 00-.1-.595l.005.014 2.317-2.317a6.247 6.247 0 104.782-11.134l-.036-.005zm-.964 9.378a3.206 3.206 0 113.215-3.207v.002a3.206 3.206 0 01-3.207 3.207z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.hubspot.com/",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "static",
+          "advertised": {
+            "cimd": false,
+            "dcr": false
+          },
+          "clientId": {
+            "input": "clientId"
+          },
+          "clientSecret": {
+            "input": "clientSecret"
+          }
+        }
+      },
+      "inputs": [
+        {
+          "name": "clientId",
+          "label": "HubSpot MCP connector client ID",
+          "secret": false,
+          "required": true,
+          "help": "Create an MCP connector in HubSpot under Development > MCP Connectors. Register atrium's redirect URLs in the app, then paste the app's credentials here. atrium lists the redirect URLs when you add the connector.",
+          "helpUrl": "https://app.hubspot.com/l/mcp-auth-apps/"
+        },
+        {
+          "name": "clientSecret",
+          "label": "HubSpot MCP connector client secret",
+          "secret": true,
+          "required": true,
+          "help": "From the same MCP connector.",
+          "helpUrl": "https://app.hubspot.com/l/mcp-auth-apps/"
+        }
+      ],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.hubspot.com/.well-known/oauth-protected-resource",
+          "authorizationServers": [
+            "https://mcp.hubspot.com"
+          ],
+          "authorizationServerMetadataUrl": "https://mcp.hubspot.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": null,
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "notes": [
+          "The authorization server advertises neither a client ID metadata document nor a registration endpoint, and it requires client_secret_post.",
+          "HubSpot's tools are create/update/publish writes with no delete tools, so no tool-name defaults; annotation defaults apply."
+        ]
+      }
+    },
+    {
+      "id": "monday",
+      "revision": 1,
+      "name": "monday.com",
+      "category": "productivity",
+      "description": "Work with monday.com boards, items, updates and automations.",
+      "setupNote": "Your monday.com account admin may need to approve atrium the first time anyone connects.",
+      "docsUrl": "https://developer.monday.com/api-reference/docs/integrate-with-monday-mcp",
+      "logo": null,
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.monday.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "all_monday_api": "ask",
+        "manage_automations": "ask",
+        "manage_agent": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.monday.com/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://auth.monday.com/mcp"
+          ],
+          "authorizationServerMetadataUrl": "https://auth.monday.com/.well-known/oauth-authorization-server/mcp",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://auth.monday.com/oauth_ms/oauth/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://developer.monday.com/api-reference/docs/platform-mcp-tools.md",
+        "registryName": "com.monday/monday.com",
+        "notes": [
+          "Clients not on monday.com's pre-approved list need account-admin approval of the connection and its redirect URLs (dynamic connectors).",
+          "simple-icons has no monday.com icon."
+        ]
+      }
+    },
+    {
+      "id": "supabase",
+      "revision": 1,
+      "name": "Supabase",
+      "category": "data",
+      "description": "Manage Supabase projects: query and migrate Postgres, branches, functions and logs.",
+      "docsUrl": "https://supabase.com/docs/guides/ai-tools/mcp",
+      "logo": {
+        "slug": "supabase",
+        "title": "Supabase",
+        "hex": "#3FCF8E",
+        "viewBox": "0 0 24 24",
+        "path": "M11.9 1.036c-.015-.986-1.26-1.41-1.874-.637L.764 12.05C-.33 13.427.65 15.455 2.409 15.455h9.579l.113 7.51c.014.985 1.259 1.408 1.873.636l9.262-11.653c1.093-1.375.113-3.403-1.645-3.403h-9.642z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.supabase.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": false,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "execute_sql": "ask",
+        "apply_migration": "ask",
+        "delete_*": "ask",
+        "merge_*": "ask",
+        "reset_*": "ask",
+        "rebase_branch": "ask",
+        "pause_project": "ask",
+        "deploy_edge_function": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.supabase.com/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://api.supabase.com"
+          ],
+          "authorizationServerMetadataUrl": "https://api.supabase.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": "https://api.supabase.com/platform/oauth/apps/register",
+          "codeChallengeMethodsSupported": [
+            "S256",
+            "plain"
+          ]
+        },
+        "toolNamesSource": "https://github.com/supabase-community/supabase-mcp/tree/main/packages/mcp-server-supabase/src/tools",
+        "registryName": "com.supabase/mcp",
+        "notes": [
+          "Supports URL options project_ref=<id>, read_only=true and features=<groups> for narrower access.",
+          "The authorization server advertises plain and S256 PKCE; atrium requires S256."
+        ]
+      }
+    },
+    {
+      "id": "neon",
+      "revision": 1,
+      "name": "Neon",
+      "category": "data",
+      "description": "Create Neon Postgres projects and branches, and run SQL against them.",
+      "docsUrl": "https://neon.com/docs/ai/neon-mcp-server",
+      "logo": {
+        "slug": "neon",
+        "title": "Neon",
+        "hex": "#34D59A",
+        "viewBox": "0 0 24 24",
+        "path": "M24 0V24l-9.365-8.045V24H0V0ZM2.942 21.087h8.751V9.563l9.365 8.204V2.919L2.942 2.914Z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.neon.tech/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": false,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "delete_*": "ask",
+        "run_sql*": "ask",
+        "reset_from_parent": "ask",
+        "restore_snapshot": "ask",
+        "complete_database_migration": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.neon.tech/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://mcp.neon.tech"
+          ],
+          "authorizationServerMetadataUrl": "https://mcp.neon.tech/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": "https://mcp.neon.tech/api/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://raw.githubusercontent.com/neondatabase/mcp-server-neon/main/README.md (Supported Tools)",
+        "registryName": "com.neon/mcp"
+      }
+    },
+    {
+      "id": "prisma",
+      "revision": 1,
+      "name": "Prisma",
+      "category": "data",
+      "description": "Provision and manage Prisma Postgres databases and run queries against them.",
+      "docsUrl": "https://www.prisma.io/docs/ai/tools/mcp-server",
+      "logo": {
+        "slug": "prisma",
+        "title": "Prisma",
+        "hex": "#2D3748",
+        "viewBox": "0 0 24 24",
+        "path": "M21.8068 18.2848L13.5528.7565c-.207-.4382-.639-.7273-1.1286-.7541-.5023-.0293-.9523.213-1.2062.6253L2.266 15.1271c-.2773.4518-.2718 1.0091.0158 1.4555l4.3759 6.7786c.2608.4046.7127.6388 1.1823.6388.1332 0 .267-.0188.3987-.0577l12.7019-3.7568c.3891-.1151.7072-.3904.8737-.7553s.1633-.7828-.0075-1.1454zm-1.8481.7519L9.1814 22.2242c-.3292.0975-.6448-.1873-.5756-.5194l3.8501-18.4386c.072-.3448.5486-.3996.699-.0803l7.1288 15.138c.1344.2856-.019.6224-.325.7128z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.prisma.io/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": false,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "delete_*": "ask",
+        "execute_sql_query": "ask",
+        "execute_prisma_postgres_schema_update": "ask",
+        "rollback_*": "ask",
+        "stop_*": "ask",
+        "promote_*": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "invalid_token"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.prisma.io/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://auth.prisma.io"
+          ],
+          "authorizationServerMetadataUrl": "https://auth.prisma.io/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": false,
+          "registrationEndpoint": "https://auth.prisma.io/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://www.prisma.io/docs/ai/mcp-tools",
+        "registryName": "io.prisma/mcp"
+      }
+    },
+    {
+      "id": "posthog",
+      "revision": 1,
+      "name": "PostHog",
+      "category": "data",
+      "description": "Query PostHog analytics, feature flags, experiments and error tracking.",
+      "docsUrl": "https://posthog.com/docs/model-context-protocol",
+      "logo": {
+        "slug": "posthog",
+        "title": "PostHog",
+        "hex": "#000000",
+        "viewBox": "0 0 24 24",
+        "path": "M9.854 14.5 5 9.647.854 5.5A.5.5 0 0 0 0 5.854V8.44a.5.5 0 0 0 .146.353L5 13.647l.147.146L9.854 18.5l.146.147v-.049c.065.03.134.049.207.049h2.586a.5.5 0 0 0 .353-.854L9.854 14.5zm0-5-4-4a.487.487 0 0 0-.409-.144.515.515 0 0 0-.356.21.493.493 0 0 0-.089.288V8.44a.5.5 0 0 0 .147.353l9 9a.5.5 0 0 0 .853-.354v-2.585a.5.5 0 0 0-.146-.354l-5-5zm1-4a.5.5 0 0 0-.854.354V8.44a.5.5 0 0 0 .147.353l4 4a.5.5 0 0 0 .853-.354V9.854a.5.5 0 0 0-.146-.354l-4-4zm12.647 11.515a3.863 3.863 0 0 1-2.232-1.1l-4.708-4.707a.5.5 0 0 0-.854.354v6.585a.5.5 0 0 0 .5.5H23.5a.5.5 0 0 0 .5-.5v-.6c0-.276-.225-.497-.499-.532zm-5.394.032a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zM.854 15.5a.5.5 0 0 0-.854.354v2.293a.5.5 0 0 0 .5.5h2.293c.222 0 .39-.135.462-.309a.493.493 0 0 0-.109-.545L.854 15.501zM5 14.647.854 10.5a.5.5 0 0 0-.854.353v2.586a.5.5 0 0 0 .146.353L4.854 18.5l.146.147h2.793a.5.5 0 0 0 .353-.854L5 14.647z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.posthog.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "delete-*": "ask",
+        "*-delete*": "ask",
+        "*-destroy*": "ask",
+        "*-merge*": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401
+          },
+          "initialize": {
+            "status": 401
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.posthog.com/.well-known/oauth-protected-resource/mcp",
+          "authorizationServers": [
+            "https://oauth.posthog.com"
+          ],
+          "authorizationServerMetadataUrl": "https://oauth.posthog.com/.well-known/oauth-authorization-server",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://oauth.posthog.com/oauth/register/",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://posthog.com/docs/model-context-protocol/tools.md",
+        "registryName": "io.github.PostHog/mcp",
+        "notes": [
+          "In PostHog's CLI mode, which it picks for many clients, the server exposes a single exec tool and these name defaults do not match; annotation defaults still apply.",
+          "x-posthog-read-only: true (or ?readonly=true) removes create, update and delete tools."
+        ]
+      }
+    },
+    {
+      "id": "airtable",
+      "revision": 1,
+      "name": "Airtable",
+      "category": "data",
+      "description": "Read and edit Airtable bases, tables and records.",
+      "docsUrl": "https://airtable.com/developers/agents/mcp/getting-started",
+      "logo": {
+        "slug": "airtable",
+        "title": "Airtable",
+        "hex": "#18BFFF",
+        "viewBox": "0 0 24 24",
+        "path": "M11.992 1.966c-.434 0-.87.086-1.28.257L1.779 5.917c-.503.208-.49.908.012 1.116l8.982 3.558a3.266 3.266 0 0 0 2.454 0l8.982-3.558c.503-.196.503-.908.012-1.116l-8.957-3.694a3.255 3.255 0 0 0-1.272-.257zM23.4 8.056a.589.589 0 0 0-.222.045l-10.012 3.877a.612.612 0 0 0-.38.564v8.896a.6.6 0 0 0 .821.552L23.62 18.1a.583.583 0 0 0 .38-.551V8.653a.6.6 0 0 0-.6-.596zM.676 8.095a.644.644 0 0 0-.48.19C.086 8.396 0 8.53 0 8.69v8.355c0 .442.515.737.908.54l6.27-3.006.307-.147 2.969-1.436c.466-.22.43-.908-.061-1.092L.883 8.138a.57.57 0 0 0-.207-.044z"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.airtable.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "oauth",
+          "registration": "auto",
+          "advertised": {
+            "cimd": true,
+            "dcr": true
+          }
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "delete_*": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
+          "Fetched the authorization server metadata (RFC 8414)",
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 401,
+            "error": "UNAUTHORIZED"
+          },
+          "initialize": {
+            "status": 401,
+            "error": "UNAUTHORIZED"
+          },
+          "eras": []
+        },
+        "oauth": {
+          "wwwAuthenticateResourceMetadata": true,
+          "resourceMetadataUrl": "https://mcp.airtable.com/.well-known/oauth-protected-resource",
+          "authorizationServers": [
+            "https://airtable.com/oauth2/v1"
+          ],
+          "authorizationServerMetadataUrl": "https://airtable.com/.well-known/oauth-authorization-server/oauth2/v1",
+          "clientIdMetadataDocumentSupported": true,
+          "registrationEndpoint": "https://airtable.com/oauth2/v1/register",
+          "codeChallengeMethodsSupported": [
+            "S256"
+          ]
+        },
+        "toolNamesSource": "https://airtable.com/developers/agents/mcp/tools.md",
+        "registryName": "com.airtable/mcp"
+      }
+    },
+    {
+      "id": "context7",
+      "revision": 1,
+      "name": "Context7",
+      "category": "docs",
+      "description": "Pull current, version-specific library docs and code examples into a chat.",
+      "docsUrl": "https://context7.com/docs/resources/all-clients",
+      "logo": null,
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.context7.com/mcp",
+        "headers": {
+          "X-Context7-API-Key": {
+            "input": "apiKey"
+          }
+        },
+        "auth": {
+          "kind": "none"
+        }
+      },
+      "inputs": [
+        {
+          "name": "apiKey",
+          "label": "API key (optional)",
+          "secret": true,
+          "required": false,
+          "help": "Works without a key. A free key from your Context7 dashboard raises the rate limits.",
+          "helpUrl": "https://context7.com/dashboard"
+        }
+      ],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Listed tools without signing in (tools/list)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 200,
+            "supportedVersions": [
+              "2026-07-28"
+            ]
+          },
+          "initialize": {
+            "status": 200,
+            "protocolVersion": "2025-11-25"
+          },
+          "eras": [
+            "2026-07-28",
+            "2025"
+          ]
+        },
+        "registryName": "io.github.upstash/context7",
+        "notes": [
+          "Tools: resolve-library-id and query-docs, both annotated read-only.",
+          "The server reads the key from Authorization: Bearer, X-Context7-API-Key, Context7-API-Key or X-API-Key (packages/mcp/src/index.ts).",
+          "simple-icons has no Context7 icon."
+        ]
+      }
+    },
+    {
+      "id": "deepwiki",
+      "revision": 1,
+      "name": "DeepWiki",
+      "category": "docs",
+      "description": "Ask questions about public GitHub repositories using DeepWiki's generated docs.",
+      "docsUrl": "https://docs.devin.ai/work-with-devin/deepwiki-mcp",
+      "logo": null,
+      "server": {
+        "transport": "http",
+        "url": "https://mcp.deepwiki.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "none"
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Listed tools without signing in (tools/list)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 400,
+            "error": "-32600: Bad Request: Unsupported protocol version: 2026-07-28. Supported versions: 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25"
+          },
+          "initialize": {
+            "status": 200,
+            "protocolVersion": "2025-11-25"
+          },
+          "eras": [
+            "2025"
+          ]
+        },
+        "notes": [
+          "2025-era only: server/discover is refused with HTTP 400 (unsupported protocol version); initialize negotiates 2025-11-25.",
+          "Tools: read_wiki_structure, read_wiki_contents, ask_wiki_question (no annotations; all read or question-answering).",
+          "simple-icons has no DeepWiki icon."
+        ]
+      }
+    },
+    {
+      "id": "microsoft-learn",
+      "revision": 1,
+      "name": "Microsoft Learn",
+      "category": "docs",
+      "description": "Search and read Microsoft's official documentation and code samples.",
+      "docsUrl": "https://learn.microsoft.com/en-us/training/support/mcp",
+      "logo": null,
+      "server": {
+        "transport": "http",
+        "url": "https://learn.microsoft.com/api/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "none"
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Listed tools without signing in (tools/list)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 200,
+            "error": "-32601: Method 'server/discover' is not available."
+          },
+          "initialize": {
+            "status": 200,
+            "protocolVersion": "2025-06-18"
+          },
+          "eras": [
+            "2025"
+          ]
+        },
+        "registryName": "com.microsoft/microsoft-learn-mcp",
+        "notes": [
+          "2025-era only: server/discover returns JSON-RPC -32601 (method not available); initialize negotiates 2025-06-18.",
+          "Tools: microsoft_docs_search, microsoft_docs_fetch, microsoft_code_sample_search, all annotated read-only.",
+          "simple-icons has no Microsoft icon."
+        ]
+      }
+    },
+    {
+      "id": "cloudflare-docs",
+      "revision": 1,
+      "name": "Cloudflare Docs",
+      "category": "docs",
+      "description": "Search Cloudflare's developer documentation.",
+      "docsUrl": "https://github.com/cloudflare/mcp-server-cloudflare/tree/main/apps/docs-ai-search",
+      "logo": {
+        "slug": "cloudflare",
+        "title": "Cloudflare",
+        "hex": "#F38020",
+        "viewBox": "0 0 24 24",
+        "path": "M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727"
+      },
+      "server": {
+        "transport": "http",
+        "url": "https://docs.mcp.cloudflare.com/mcp",
+        "headers": {},
+        "auth": {
+          "kind": "none"
+        }
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
+          "POST initialize with protocolVersion 2025-11-25",
+          "Listed tools without signing in (tools/list)"
+        ],
+        "mcp": {
+          "discover": {
+            "status": 200,
+            "supportedVersions": [
+              "2026-07-28"
+            ]
+          },
+          "initialize": {
+            "status": 200,
+            "protocolVersion": "2025-11-25"
+          },
+          "eras": [
+            "2026-07-28",
+            "2025"
+          ]
+        },
+        "registryName": "com.cloudflare.mcp/mcp",
+        "notes": [
+          "Tools: search_cloudflare_documentation and migrate_pages_to_workers_guide, both annotated read-only."
+        ]
+      }
+    },
+    {
+      "id": "firebase",
+      "revision": 1,
+      "name": "Firebase",
+      "category": "developer",
+      "description": "Manage Firebase projects, Firestore, Auth, Remote Config and deploys for this project.",
+      "setupNote": "Uses your Firebase CLI sign-in; run firebase login once if you haven't.",
+      "docsUrl": "https://firebase.google.com/docs/ai-assistance/mcp-server",
+      "logo": {
+        "slug": "firebase",
+        "title": "Firebase",
+        "hex": "#DD2C00",
+        "viewBox": "0 0 24 24",
+        "path": "M19.455 8.369c-.538-.748-1.778-2.285-3.681-4.569-.826-.991-1.535-1.832-1.884-2.245a146 146 0 0 0-.488-.576l-.207-.245-.113-.133-.022-.032-.01-.005L12.57 0l-.609.488c-1.555 1.246-2.828 2.851-3.681 4.64-.523 1.064-.864 2.105-1.043 3.176-.047.241-.088.489-.121.738-.209-.017-.421-.028-.632-.033-.018-.001-.035-.002-.059-.003a7.46 7.46 0 0 0-2.28.274l-.317.089-.163.286c-.765 1.342-1.198 2.869-1.252 4.416-.07 2.01.477 3.954 1.583 5.625 1.082 1.633 2.61 2.882 4.42 3.611l.236.095.071.025.003-.001a9.59 9.59 0 0 0 2.941.568q.171.006.342.006c1.273 0 2.513-.249 3.69-.742l.008.004.313-.145a9.63 9.63 0 0 0 3.927-3.335c1.01-1.49 1.577-3.234 1.641-5.042.075-2.161-.643-4.304-2.133-6.371m-7.083 6.695c.328 1.244.264 2.44-.191 3.558-1.135-1.12-1.967-2.352-2.475-3.665-.543-1.404-.87-2.74-.974-3.975.48.157.922.366 1.315.622 1.132.737 1.914 1.902 2.325 3.461zm.207 6.022c.482.368.99.712 1.513 1.028-.771.21-1.565.302-2.369.273a8 8 0 0 1-.373-.022c.458-.394.869-.823 1.228-1.279zm1.347-6.431c-.516-1.957-1.527-3.437-3.002-4.398-.647-.421-1.385-.741-2.194-.95.011-.134.026-.268.043-.4.014-.113.03-.216.046-.313.133-.689.332-1.37.589-2.025.099-.25.206-.499.321-.74l.004-.008c.177-.358.376-.719.61-1.105l.092-.152-.003-.001c.544-.851 1.197-1.627 1.942-2.311l.288.341c.672.796 1.304 1.548 1.878 2.237 1.291 1.549 2.966 3.583 3.612 4.48 1.277 1.771 1.893 3.579 1.83 5.375-.049 1.395-.461 2.755-1.195 3.933-.694 1.116-1.661 2.05-2.8 2.708-.636-.318-1.559-.839-2.539-1.599.79-1.575.952-3.28.479-5.072zm-2.575 5.397c-.725.939-1.587 1.55-2.09 1.856-.081-.029-.163-.06-.243-.093l-.065-.026c-1.49-.616-2.747-1.656-3.635-3.01-.907-1.384-1.356-2.993-1.298-4.653.041-1.19.338-2.327.882-3.379.316-.07.638-.114.96-.131l.084-.002c.162-.003.324-.003.478 0 .227.011.454.035.677.07.073 1.513.445 3.145 1.105 4.852.637 1.644 1.694 3.162 3.144 4.515z"
+      },
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "npm",
+          "package": "firebase-tools",
+          "version": "15.34.1",
+          "bin": "firebase",
+          "args": [
+            "mcp"
+          ]
+        },
+        "env": {},
+        "cwd": "session"
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "firebase_deploy": "ask",
+        "realtimedatabase_set_data": "ask",
+        "auth_update_user": "ask",
+        "auth_set_sms_region_policy": "ask",
+        "messaging_send_message": "ask",
+        "remoteconfig_update_template": "ask",
+        "crashlytics_delete_note": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current npm version from the registry (not installed or run)",
+          "Confirmed the toolPolicyDefaults tool names in the published package or source"
+        ],
+        "package": {
+          "registry": "npm",
+          "version": "15.34.1",
+          "publishedAt": "2026-10-21T22:18:15.918Z",
+          "latest": true,
+          "license": "MIT",
+          "runtime": "node >=20"
+        },
+        "registryName": "io.github.firebase/firebase-mcp",
+        "toolNamesSource": "firebase-tools@15.34.1 tarball, lib/mcp/tools (names are <feature>_<tool>, firebase_ for core)",
+        "notes": [
+          "Built on @modelcontextprotocol/sdk ^1.24.0, so expect 2025-era only.",
+          "The MCP Registry entry still lists firebase-tools 14.27.0."
+        ]
+      }
+    },
+    {
+      "id": "terraform",
+      "revision": 1,
+      "name": "Terraform",
+      "category": "developer",
+      "description": "Look up Terraform providers and modules, and manage HCP Terraform workspaces and runs.",
+      "setupNote": "Needs Docker.",
+      "docsUrl": "https://developer.hashicorp.com/terraform/mcp-server",
+      "logo": {
+        "slug": "terraform",
+        "title": "Terraform",
+        "hex": "#844FBA",
+        "viewBox": "0 0 24 24",
+        "path": "M1.44 0v7.575l6.561 3.79V3.787zm21.12 4.227l-6.561 3.791v7.574l6.56-3.787zM8.72 4.23v7.575l6.561 3.787V8.018zm0 8.405v7.575L15.28 24v-7.578z"
+      },
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "docker",
+          "image": "hashicorp/terraform-mcp-server:1.4.1",
+          "digest": "sha256:11dd418bba6003dd5777e9d0979b68de59929a155b355f338f407947e00e9d80",
+          "args": []
+        },
+        "env": {
+          "TFE_TOKEN": {
+            "input": "token"
+          },
+          "TFE_ADDRESS": {
+            "input": "address"
+          }
+        },
+        "cwd": "session"
+      },
+      "inputs": [
+        {
+          "name": "token",
+          "label": "HCP Terraform token (optional)",
+          "secret": true,
+          "required": false,
+          "help": "Only needed for workspace, run and private registry tools. Public registry lookups work without it.",
+          "helpUrl": "https://app.terraform.io/app/settings/tokens"
+        },
+        {
+          "name": "address",
+          "label": "Terraform Enterprise address (optional)",
+          "secret": false,
+          "required": false,
+          "help": "Leave empty for HCP Terraform. For Terraform Enterprise, the full URL including https://.",
+          "placeholder": "https://app.terraform.io"
+        }
+      ],
+      "toolPolicyDefaults": {
+        "delete_*": "ask",
+        "action_run": "ask",
+        "create_run": "ask",
+        "force_unlock_workspace": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the tag's digest from the registry manifest (not pulled or run)",
+          "Confirmed the toolPolicyDefaults tool names in the published package or source"
+        ],
+        "image": {
+          "registry": "docker.io",
+          "tag": "1.4.1",
+          "digest": "sha256:11dd418bba6003dd5777e9d0979b68de59929a155b355f338f407947e00e9d80",
+          "platforms": [
+            "linux/amd64",
+            "linux/arm64",
+            "linux/386",
+            "linux/arm"
+          ]
+        },
+        "registryName": "io.github.hashicorp/terraform-mcp-server",
+        "toolNamesSource": "https://github.com/hashicorp/terraform-mcp-server/tree/v1.4.1/pkg/toolsets",
+        "notes": [
+          "Digest is the multi-platform manifest list, read from registry-1.docker.io (Docker-Content-Digest) and matching Docker Hub's tag API; 1.4.1 is the latest GitHub release (2026-10-23).",
+          "The image serves stdio by default. ENABLE_TF_OPERATIONS (default false) gates the tools that apply runs."
+        ]
+      }
+    },
+    {
+      "id": "playwright",
+      "revision": 1,
+      "name": "Playwright",
+      "category": "local",
+      "description": "Drive a real browser: open pages, click, fill forms and read page snapshots.",
+      "docsUrl": "https://github.com/microsoft/playwright-mcp",
+      "logo": null,
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "npm",
+          "package": "@playwright/mcp",
+          "version": "0.0.83",
+          "bin": "playwright-mcp",
+          "args": []
+        },
+        "env": {},
+        "cwd": "session"
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current npm version from the registry (not installed or run)"
+        ],
+        "package": {
+          "registry": "npm",
+          "version": "0.0.83",
+          "publishedAt": "2026-09-28T23:19:13.609Z",
+          "latest": true,
+          "license": "Apache-2.0",
+          "runtime": "node >=18"
+        },
+        "registryName": "io.github.microsoft/playwright-mcp",
+        "notes": [
+          "No destructive tool families; annotation defaults apply.",
+          "The MCP Registry entry lists 0.0.82; npm latest is 0.0.83.",
+          "simple-icons has no Playwright icon."
+        ]
+      }
+    },
+    {
+      "id": "chrome-devtools",
+      "revision": 1,
+      "name": "Chrome DevTools",
+      "category": "local",
+      "description": "Debug pages in Chrome with DevTools: console, network, performance traces.",
+      "setupNote": "Needs Google Chrome installed.",
+      "docsUrl": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+      "logo": {
+        "slug": "googlechrome",
+        "title": "Google Chrome",
+        "hex": "#4285F4",
+        "viewBox": "0 0 24 24",
+        "path": "M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0 1 12 6.545h10.691A12 12 0 0 0 12 0zM1.931 5.47A11.943 11.943 0 0 0 0 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 0 1-6.865-2.29zm13.342 2.166a5.446 5.446 0 0 1 1.45 7.09l.002.001h-.002l-5.344 9.257c.206.01.413.016.621.016 6.627 0 12-5.373 12-12 0-1.54-.29-3.011-.818-4.364zM12 16.364a4.364 4.364 0 1 1 0-8.728 4.364 4.364 0 0 1 0 8.728Z"
+      },
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "npm",
+          "package": "chrome-devtools-mcp",
+          "version": "1.12.0",
+          "bin": "chrome-devtools-mcp",
+          "args": []
+        },
+        "env": {},
+        "cwd": "session"
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {},
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current npm version from the registry (not installed or run)"
+        ],
+        "package": {
+          "registry": "npm",
+          "version": "1.12.0",
+          "publishedAt": "2026-10-22T13:50:03.784Z",
+          "latest": true,
+          "license": "Apache-2.0",
+          "runtime": "node ^20.19.0 || ^22.12.0 || >=23"
+        },
+        "registryName": "io.github.ChromeDevTools/chrome-devtools-mcp",
+        "notes": [
+          "No destructive tool families; annotation defaults apply."
+        ]
+      }
+    },
+    {
+      "id": "filesystem",
+      "revision": 1,
+      "name": "Filesystem",
+      "category": "local",
+      "description": "Read, search and edit files in the session's project folder.",
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
+      "logo": null,
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "npm",
+          "package": "@modelcontextprotocol/server-filesystem",
+          "version": "2.0.1",
+          "bin": "mcp-server-filesystem",
+          "args": [
+            "."
+          ]
+        },
+        "env": {},
+        "cwd": "session"
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "write_file": "ask",
+        "edit_file": "ask",
+        "move_file": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current npm version from the registry (not installed or run)",
+          "Confirmed the toolPolicyDefaults tool names in the published package or source"
+        ],
+        "package": {
+          "registry": "npm",
+          "version": "2.0.1",
+          "publishedAt": "2026-10-25T00:05:17.843Z",
+          "latest": true,
+          "license": "SEE LICENSE IN LICENSE",
+          "runtime": "node >=24"
+        },
+        "toolNamesSource": "@modelcontextprotocol/server-filesystem@2.0.1 tarball, dist/server.js registerTool calls",
+        "notes": [
+          "The \".\" argument is the allowed directory; the server runs in the pane's cwd (D3), so it is the session's project.",
+          "2.0.1 requires Node 24 or later and was published the day this catalog was verified.",
+          "Its entry point serves both eras from one factory (serveStdio, per dist/index.js).",
+          "simple-icons has no generic filesystem icon."
+        ]
+      }
+    },
+    {
+      "id": "git",
+      "revision": 1,
+      "name": "Git",
+      "category": "local",
+      "description": "Inspect and commit to the session's Git repository: status, diffs, log, branches.",
+      "docsUrl": "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
+      "logo": null,
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "pypi",
+          "package": "mcp-server-git",
+          "version": "2026.10.19",
+          "bin": "mcp-server-git",
+          "args": [
+            "--repository",
+            "."
+          ]
+        },
+        "env": {},
+        "cwd": "session"
+      },
+      "inputs": [],
+      "toolPolicyDefaults": {
+        "git_commit": "ask",
+        "git_reset": "ask",
+        "git_checkout": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current pypi version from the registry (not installed or run)",
+          "Confirmed the toolPolicyDefaults tool names in the published package or source"
+        ],
+        "package": {
+          "registry": "pypi",
+          "version": "2026.10.19",
+          "publishedAt": "2026-10-19T06:48:45Z",
+          "latest": true,
+          "license": "MIT",
+          "runtime": "python >=3.10"
+        },
+        "toolNamesSource": "mcp-server-git 2026.10.19 wheel, mcp_server_git/server.py",
+        "notes": [
+          "--repository . confines the server to the session's repository (validate_repo_path).",
+          "Its serve() handles both eras (server.py header comment); built on mcp >=2.3,<3.",
+          "simple-icons' Git icon is CC-BY-3.0, not CC0, so it is not used."
+        ]
+      }
+    },
+    {
+      "id": "postgres",
+      "revision": 1,
+      "name": "PostgreSQL",
+      "category": "data",
+      "description": "Query and inspect a PostgreSQL database: tables, SQL, locks and query plans.",
+      "docsUrl": "https://mcp-toolbox.dev/documentation/configuration/prebuilt-configs/",
+      "logo": {
+        "slug": "postgresql",
+        "title": "PostgreSQL",
+        "hex": "#4169E1",
+        "viewBox": "0 0 24 24",
+        "path": "M23.5594 14.7228a.5269.5269 0 0 0-.0563-.1191c-.139-.2632-.4768-.3418-1.0074-.2321-1.6533.3411-2.2935.1312-2.5256-.0191 1.342-2.0482 2.445-4.522 3.0411-6.8297.2714-1.0507.7982-3.5237.1222-4.7316a1.5641 1.5641 0 0 0-.1509-.235C21.6931.9086 19.8007.0248 17.5099.0005c-1.4947-.0158-2.7705.3461-3.1161.4794a9.449 9.449 0 0 0-.5159-.0816 8.044 8.044 0 0 0-1.3114-.1278c-1.1822-.0184-2.2038.2642-3.0498.8406-.8573-.3211-4.7888-1.645-7.2219.0788C.9359 2.1526.3086 3.8733.4302 6.3043c.0409.818.5069 3.334 1.2423 5.7436.4598 1.5065.9387 2.7019 1.4334 3.582.553.9942 1.1259 1.5933 1.7143 1.7895.4474.1491 1.1327.1441 1.8581-.7279.8012-.9635 1.5903-1.8258 1.9446-2.2069.4351.2355.9064.3625 1.39.3772a.0569.0569 0 0 0 .0004.0041 11.0312 11.0312 0 0 0-.2472.3054c-.3389.4302-.4094.5197-1.5002.7443-.3102.064-1.1344.2339-1.1464.8115-.0025.1224.0329.2309.0919.3268.2269.4231.9216.6097 1.015.6331 1.3345.3335 2.5044.092 3.3714-.6787-.017 2.231.0775 4.4174.3454 5.0874.2212.5529.7618 1.9045 2.4692 1.9043.2505 0 .5263-.0291.8296-.0941 1.7819-.3821 2.5557-1.1696 2.855-2.9059.1503-.8707.4016-2.8753.5388-4.1012.0169-.0703.0357-.1207.057-.1362.0007-.0005.0697-.0471.4272.0307a.3673.3673 0 0 0 .0443.0068l.2539.0223.0149.001c.8468.0384 1.9114-.1426 2.5312-.4308.6438-.2988 1.8057-1.0323 1.5951-1.6698zM2.371 11.8765c-.7435-2.4358-1.1779-4.8851-1.2123-5.5719-.1086-2.1714.4171-3.6829 1.5623-4.4927 1.8367-1.2986 4.8398-.5408 6.108-.13-.0032.0032-.0066.0061-.0098.0094-2.0238 2.044-1.9758 5.536-1.9708 5.7495-.0002.0823.0066.1989.0162.3593.0348.5873.0996 1.6804-.0735 2.9184-.1609 1.1504.1937 2.2764.9728 3.0892.0806.0841.1648.1631.2518.2374-.3468.3714-1.1004 1.1926-1.9025 2.1576-.5677.6825-.9597.5517-1.0886.5087-.3919-.1307-.813-.5871-1.2381-1.3223-.4796-.839-.9635-2.0317-1.4155-3.5126zm6.0072 5.0871c-.1711-.0428-.3271-.1132-.4322-.1772.0889-.0394.2374-.0902.4833-.1409 1.2833-.2641 1.4815-.4506 1.9143-1.0002.0992-.126.2116-.2687.3673-.4426a.3549.3549 0 0 0 .0737-.1298c.1708-.1513.2724-.1099.4369-.0417.156.0646.3078.26.3695.4752.0291.1016.0619.2945-.0452.4444-.9043 1.2658-2.2216 1.2494-3.1676 1.0128zm2.094-3.988-.0525.141c-.133.3566-.2567.6881-.3334 1.003-.6674-.0021-1.3168-.2872-1.8105-.8024-.6279-.6551-.9131-1.5664-.7825-2.5004.1828-1.3079.1153-2.4468.079-3.0586-.005-.0857-.0095-.1607-.0122-.2199.2957-.2621 1.6659-.9962 2.6429-.7724.4459.1022.7176.4057.8305.928.5846 2.7038.0774 3.8307-.3302 4.7363-.084.1866-.1633.3629-.2311.5454zm7.3637 4.5725c-.0169.1768-.0358.376-.0618.5959l-.146.4383a.3547.3547 0 0 0-.0182.1077c-.0059.4747-.054.6489-.115.8693-.0634.2292-.1353.4891-.1794 1.0575-.11 1.4143-.8782 2.2267-2.4172 2.5565-1.5155.3251-1.7843-.4968-2.0212-1.2217a6.5824 6.5824 0 0 0-.0769-.2266c-.2154-.5858-.1911-1.4119-.1574-2.5551.0165-.5612-.0249-1.9013-.3302-2.6462.0044-.2932.0106-.5909.019-.8918a.3529.3529 0 0 0-.0153-.1126 1.4927 1.4927 0 0 0-.0439-.208c-.1226-.4283-.4213-.7866-.7797-.9351-.1424-.059-.4038-.1672-.7178-.0869.067-.276.1831-.5875.309-.9249l.0529-.142c.0595-.16.134-.3257.213-.5012.4265-.9476 1.0106-2.2453.3766-5.1772-.2374-1.0981-1.0304-1.6343-2.2324-1.5098-.7207.0746-1.3799.3654-1.7088.5321a5.6716 5.6716 0 0 0-.1958.1041c.0918-1.1064.4386-3.1741 1.7357-4.4823a4.0306 4.0306 0 0 1 .3033-.276.3532.3532 0 0 0 .1447-.0644c.7524-.5706 1.6945-.8506 2.802-.8325.4091.0067.8017.0339 1.1742.081 1.939.3544 3.2439 1.4468 4.0359 2.3827.8143.9623 1.2552 1.9315 1.4312 2.4543-1.3232-.1346-2.2234.1268-2.6797.779-.9926 1.4189.543 4.1729 1.2811 5.4964.1353.2426.2522.4522.2889.5413.2403.5825.5515.9713.7787 1.2552.0696.087.1372.1714.1885.245-.4008.1155-1.1208.3825-1.0552 1.717-.0123.1563-.0423.4469-.0834.8148-.0461.2077-.0702.4603-.0994.7662zm.8905-1.6211c-.0405-.8316.2691-.9185.5967-1.0105a2.8566 2.8566 0 0 0 .135-.0406 1.202 1.202 0 0 0 .1342.103c.5703.3765 1.5823.4213 3.0068.1344-.2016.1769-.5189.3994-.9533.6011-.4098.1903-1.0957.333-1.7473.3636-.7197.0336-1.0859-.0807-1.1721-.151zm.5695-9.2712c-.0059.3508-.0542.6692-.1054 1.0017-.055.3576-.112.7274-.1264 1.1762-.0142.4368.0404.8909.0932 1.3301.1066.887.216 1.8003-.2075 2.7014a3.5272 3.5272 0 0 1-.1876-.3856c-.0527-.1276-.1669-.3326-.3251-.6162-.6156-1.1041-2.0574-3.6896-1.3193-4.7446.3795-.5427 1.3408-.5661 2.1781-.463zm.2284 7.0137a12.3762 12.3762 0 0 0-.0853-.1074l-.0355-.0444c.7262-1.1995.5842-2.3862.4578-3.4385-.0519-.4318-.1009-.8396-.0885-1.2226.0129-.4061.0666-.7543.1185-1.0911.0639-.415.1288-.8443.1109-1.3505.0134-.0531.0188-.1158.0118-.1902-.0457-.4855-.5999-1.938-1.7294-3.253-.6076-.7073-1.4896-1.4972-2.6889-2.0395.5251-.1066 1.2328-.2035 2.0244-.1859 2.0515.0456 3.6746.8135 4.8242 2.2824a.908.908 0 0 1 .0667.1002c.7231 1.3556-.2762 6.2751-2.9867 10.5405zm-8.8166-6.1162c-.025.1794-.3089.4225-.6211.4225a.5821.5821 0 0 1-.0809-.0056c-.1873-.026-.3765-.144-.5059-.3156-.0458-.0605-.1203-.178-.1055-.2844.0055-.0401.0261-.0985.0925-.1488.1182-.0894.3518-.1226.6096-.0867.3163.0441.6426.1938.6113.4186zm7.9305-.4114c.0111.0792-.049.201-.1531.3102-.0683.0717-.212.1961-.4079.2232a.5456.5456 0 0 1-.075.0052c-.2935 0-.5414-.2344-.5607-.3717-.024-.1765.2641-.3106.5611-.352.297-.0414.6111.0088.6356.1851z"
+      },
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "npm",
+          "package": "@toolbox-sdk/server",
+          "version": "1.15.0",
+          "bin": "toolbox",
+          "args": [
+            "--prebuilt=postgres",
+            "--stdio"
+          ]
+        },
+        "env": {
+          "POSTGRES_HOST": {
+            "input": "host"
+          },
+          "POSTGRES_PORT": {
+            "input": "port"
+          },
+          "POSTGRES_DATABASE": {
+            "input": "database"
+          },
+          "POSTGRES_USER": {
+            "input": "user"
+          },
+          "POSTGRES_PASSWORD": {
+            "input": "password"
+          }
+        },
+        "cwd": "session"
+      },
+      "inputs": [
+        {
+          "name": "host",
+          "label": "Host",
+          "secret": false,
+          "required": false,
+          "help": "Database host. Empty means localhost.",
+          "placeholder": "localhost"
+        },
+        {
+          "name": "port",
+          "label": "Port",
+          "secret": false,
+          "required": false,
+          "help": "Empty means 5432.",
+          "placeholder": "5432"
+        },
+        {
+          "name": "database",
+          "label": "Database",
+          "secret": false,
+          "required": true,
+          "help": "The database to connect to."
+        },
+        {
+          "name": "user",
+          "label": "User",
+          "secret": false,
+          "required": true,
+          "help": "A role with only the access agents should have; a read-only role is safest."
+        },
+        {
+          "name": "password",
+          "label": "Password",
+          "secret": true,
+          "required": false,
+          "help": "The role's password. Leave empty for passwordless local auth."
+        }
+      ],
+      "toolPolicyDefaults": {
+        "execute_sql": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current npm version from the registry (not installed or run)",
+          "Confirmed the toolPolicyDefaults tool names in the published package or source"
+        ],
+        "package": {
+          "registry": "npm",
+          "version": "1.15.0",
+          "publishedAt": "2026-10-23T01:28:23.219Z",
+          "latest": true,
+          "license": "Apache-2.0"
+        },
+        "registryName": "io.github.googleapis/mcp-toolbox",
+        "toolNamesSource": "https://github.com/googleapis/mcp-toolbox/blob/v1.15.0/internal/prebuiltconfigs/tools/postgres.yaml",
+        "notes": [
+          "Google's MCP Toolbox for Databases. The npm package ships platform binaries for macOS (arm64, x64), Linux x64 and Windows (arm64, x64); there is no Linux arm64 build.",
+          "The npm package is a launcher with no install scripts; the binary comes from a per-platform optional dependency."
+        ]
+      }
+    },
+    {
+      "id": "sqlite",
+      "revision": 1,
+      "name": "SQLite",
+      "category": "local",
+      "description": "Query a SQLite database file.",
+      "docsUrl": "https://mcp-toolbox.dev/documentation/configuration/prebuilt-configs/",
+      "logo": {
+        "slug": "sqlite",
+        "title": "SQLite",
+        "hex": "#003B57",
+        "viewBox": "0 0 24 24",
+        "path": "M21.678.521c-1.032-.92-2.28-.55-3.513.544a8.71 8.71 0 0 0-.547.535c-2.109 2.237-4.066 6.38-4.674 9.544.237.48.422 1.093.544 1.561a13.044 13.044 0 0 1 .164.703s-.019-.071-.096-.296l-.05-.146a1.689 1.689 0 0 0-.033-.08c-.138-.32-.518-.995-.686-1.289-.143.423-.27.818-.376 1.176.484.884.778 2.4.778 2.4s-.025-.099-.147-.442c-.107-.303-.644-1.244-.772-1.464-.217.804-.304 1.346-.226 1.478.152.256.296.698.422 1.186.286 1.1.485 2.44.485 2.44l.017.224a22.41 22.41 0 0 0 .056 2.748c.095 1.146.273 2.13.5 2.657l.155-.084c-.334-1.038-.47-2.399-.41-3.967.09-2.398.642-5.29 1.661-8.304 1.723-4.55 4.113-8.201 6.3-9.945-1.993 1.8-4.692 7.63-5.5 9.788-.904 2.416-1.545 4.684-1.931 6.857.666-2.037 2.821-2.912 2.821-2.912s1.057-1.304 2.292-3.166c-.74.169-1.955.458-2.362.629-.6.251-.762.337-.762.337s1.945-1.184 3.613-1.72C21.695 7.9 24.195 2.767 21.678.521m-18.573.543A1.842 1.842 0 0 0 1.27 2.9v16.608a1.84 1.84 0 0 0 1.835 1.834h9.418a22.953 22.953 0 0 1-.052-2.707c-.006-.062-.011-.141-.016-.2a27.01 27.01 0 0 0-.473-2.378c-.121-.47-.275-.898-.369-1.057-.116-.197-.098-.31-.097-.432 0-.12.015-.245.037-.386a9.98 9.98 0 0 1 .234-1.045l.217-.028c-.017-.035-.014-.065-.031-.097l-.041-.381a32.8 32.8 0 0 1 .382-1.194l.2-.019c-.008-.016-.01-.038-.018-.053l-.043-.316c.63-3.28 2.587-7.443 4.8-9.791.066-.069.133-.128.198-.194Z"
+      },
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "npm",
+          "package": "@toolbox-sdk/server",
+          "version": "1.15.0",
+          "bin": "toolbox",
+          "args": [
+            "--prebuilt=sqlite",
+            "--stdio"
+          ]
+        },
+        "env": {
+          "SQLITE_DATABASE": {
+            "input": "database"
+          }
+        },
+        "cwd": "session"
+      },
+      "inputs": [
+        {
+          "name": "database",
+          "label": "Database file",
+          "secret": false,
+          "required": true,
+          "help": "Path to the .db file. A relative path is resolved from the session's project folder.",
+          "placeholder": "./data/app.db"
+        }
+      ],
+      "toolPolicyDefaults": {
+        "execute_sql": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current npm version from the registry (not installed or run)",
+          "Confirmed the toolPolicyDefaults tool names in the published package or source"
+        ],
+        "package": {
+          "registry": "npm",
+          "version": "1.15.0",
+          "publishedAt": "2026-10-23T01:28:23.219Z",
+          "latest": true,
+          "license": "Apache-2.0"
+        },
+        "registryName": "io.github.googleapis/mcp-toolbox",
+        "toolNamesSource": "https://github.com/googleapis/mcp-toolbox/blob/v1.15.0/internal/prebuiltconfigs/tools/sqlite.yaml",
+        "notes": [
+          "Google's MCP Toolbox for Databases. The npm package ships platform binaries for macOS (arm64, x64), Linux x64 and Windows (arm64, x64); there is no Linux arm64 build.",
+          "Chosen over the reference mcp-server-sqlite, whose last release (2025.4.25) predates the server's archival."
+        ]
+      }
+    },
+    {
+      "id": "mongodb",
+      "revision": 1,
+      "name": "MongoDB",
+      "category": "data",
+      "description": "Query and manage MongoDB databases, collections and indexes.",
+      "docsUrl": "https://www.mongodb.com/docs/mcp-server/overview/",
+      "logo": {
+        "slug": "mongodb",
+        "title": "MongoDB",
+        "hex": "#47A248",
+        "viewBox": "0 0 24 24",
+        "path": "M17.193 9.555c-1.264-5.58-4.252-7.414-4.573-8.115-.28-.394-.53-.954-.735-1.44-.036.495-.055.685-.523 1.184-.723.566-4.438 3.682-4.74 10.02-.282 5.912 4.27 9.435 4.888 9.884l.07.05A73.49 73.49 0 0111.91 24h.481c.114-1.032.284-2.056.51-3.07.417-.296.604-.463.85-.693a11.342 11.342 0 003.639-8.464c.01-.814-.103-1.662-.197-2.218zm-5.336 8.195s0-8.291.275-8.29c.213 0 .49 10.695.49 10.695-.381-.045-.765-1.76-.765-2.405z"
+      },
+      "server": {
+        "transport": "stdio",
+        "launch": {
+          "kind": "package",
+          "ecosystem": "npm",
+          "package": "mongodb-mcp-server",
+          "version": "3.1.0",
+          "bin": "mongodb-mcp-server",
+          "args": []
+        },
+        "env": {
+          "MDB_MCP_CONNECTION_STRING": {
+            "input": "connectionString"
+          }
+        },
+        "cwd": "session"
+      },
+      "inputs": [
+        {
+          "name": "connectionString",
+          "label": "Connection string",
+          "secret": true,
+          "required": true,
+          "help": "A mongodb:// or mongodb+srv:// connection string. Use a user with only the access agents should have.",
+          "helpUrl": "https://www.mongodb.com/docs/manual/reference/connection-string/",
+          "placeholder": "mongodb+srv://..."
+        }
+      ],
+      "toolPolicyDefaults": {
+        "delete-*": "ask",
+        "drop-*": "ask",
+        "update-*": "ask",
+        "rename-*": "ask"
+      },
+      "verified": {
+        "date": "2026-10-25",
+        "status": "verified",
+        "checks": [
+          "Resolved the current npm version from the registry (not installed or run)",
+          "Confirmed the toolPolicyDefaults tool names in the published package or source"
+        ],
+        "package": {
+          "registry": "npm",
+          "version": "3.1.0",
+          "publishedAt": "2026-10-15T08:26:39.023Z",
+          "latest": true,
+          "license": "Apache-2.0",
+          "runtime": "node ^20.19.0 || ^22.13.0 || >=24.0.0"
+        },
+        "registryName": "io.github.mongodb-js/mongodb-mcp-server",
+        "toolNamesSource": "@mongodb-js/mcp-tools-mongodb@3.1.0 tarball (toolName and operationType per tool)",
+        "notes": [
+          "MDB_MCP_READ_ONLY=true disables the write tools; not set by default.",
+          "The MCP Registry entry still lists 2.1.0."
+        ]
+      }
+    }
+  ]
+}

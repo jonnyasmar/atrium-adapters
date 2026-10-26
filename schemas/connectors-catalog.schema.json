@@ -1,0 +1,451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "atrium connectors catalog",
+  "description": "Curated connector presets (MCP servers) that atrium offers in Settings > Connectors > Browse. Each preset is a template for the daemon's Connector record: inputs the user supplies are referenced as {\"input\": name} and become literal or secret ValueRefs when the connector is created. A header or env entry whose input is optional and left empty is omitted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "updatedAt", "logoSource", "presets"],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/date",
+      "description": "Date the catalog content last changed."
+    },
+    "logoSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "version", "license", "url"],
+      "description": "Every logo is copied from this one package version.",
+      "properties": {
+        "package": { "const": "simple-icons" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "license": { "const": "CC0-1.0" },
+        "url": { "type": "string", "pattern": "^https://" }
+      }
+    },
+    "presets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/preset" }
+    }
+  },
+  "$defs": {
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "httpsUrl": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$"
+    },
+    "connectorId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]{1,32}$",
+      "not": {
+        "anyOf": [
+          { "enum": ["atrium", "computer-use"] },
+          { "pattern": "^(claude_ai_|plugin_)" },
+          { "pattern": "_atrium$" }
+        ]
+      },
+      "description": "Becomes the connector id and the mounted server name (contract D15): unique, 32 characters at most, never a reserved name."
+    },
+    "inputName": {
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9]*$"
+    },
+    "valueTemplate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["literal"],
+          "properties": { "literal": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input"],
+          "properties": { "input": { "$ref": "#/$defs/inputName" } }
+        }
+      ]
+    },
+    "preset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "name",
+        "category",
+        "description",
+        "docsUrl",
+        "logo",
+        "server",
+        "inputs",
+        "toolPolicyDefaults",
+        "verified"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/connectorId" },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Bump when anything a created connector copies from this preset changes (server, inputs, toolPolicyDefaults). Stored as the connector's origin.catalogVersion."
+        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "category": {
+          "enum": ["developer", "productivity", "data", "docs", "local"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 120,
+          "pattern": "^[^\\n]+$",
+          "description": "One short plain-English line."
+        },
+        "setupNote": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 200,
+          "description": "Shown before adding: a prerequisite or one-time setup step."
+        },
+        "docsUrl": { "$ref": "#/$defs/httpsUrl" },
+        "logo": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/logo" }
+          ],
+          "description": "null when simple-icons has no CC0 icon for the brand; the UI falls back to a letter."
+        },
+        "server": { "$ref": "#/$defs/server" },
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/input" }
+        },
+        "toolPolicyDefaults": {
+          "type": "object",
+          "description": "Tool name or glob -> policy, applied on top of the annotation defaults (D16). Only tightens: every value is ask.",
+          "propertyNames": { "pattern": "^[A-Za-z0-9_.*-]+$" },
+          "additionalProperties": { "const": "ask" }
+        },
+        "verified": { "$ref": "#/$defs/verified" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "category": { "const": "local" } } },
+          "then": { "properties": { "server": { "properties": { "transport": { "const": "stdio" } } } } }
+        }
+      ]
+    },
+    "logo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "title", "hex", "viewBox", "path"],
+      "properties": {
+        "slug": { "type": "string", "pattern": "^[a-z0-9]+$" },
+        "title": { "type": "string", "minLength": 1 },
+        "hex": { "type": "string", "pattern": "^#[0-9A-F]{6}$" },
+        "viewBox": { "const": "0 0 24 24" },
+        "path": { "type": "string", "pattern": "^[Mm][-0-9.,MmLlHhVvCcSsQqTtAaZz\\s]+$" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "label", "secret", "required", "help"],
+      "properties": {
+        "name": { "$ref": "#/$defs/inputName" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "secret": { "type": "boolean" },
+        "required": { "type": "boolean" },
+        "help": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "helpUrl": { "$ref": "#/$defs/httpsUrl" },
+        "placeholder": { "type": "string" },
+        "default": { "type": "string" }
+      },
+      "if": { "properties": { "secret": { "const": true } } },
+      "then": { "not": { "required": ["default"] } }
+    },
+    "server": {
+      "oneOf": [
+        { "$ref": "#/$defs/httpServer" },
+        { "$ref": "#/$defs/stdioServer" }
+      ]
+    },
+    "httpServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "url", "headers", "auth"],
+      "properties": {
+        "transport": { "const": "http" },
+        "url": {
+          "$ref": "#/$defs/httpsUrl",
+          "not": { "pattern": "/sse(/|\\?|$)" },
+          "description": "Streamable HTTP endpoint. Deprecated HTTP+SSE (/sse) endpoints are refused."
+        },
+        "headers": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Za-z0-9-]+$" },
+          "additionalProperties": { "$ref": "#/$defs/valueTemplate" }
+        },
+        "auth": { "$ref": "#/$defs/auth" }
+      }
+    },
+    "auth": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "none" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "registration", "advertised"],
+          "properties": {
+            "kind": { "const": "oauth" },
+            "registration": {
+              "enum": ["auto", "static"],
+              "description": "auto: the D9 chain (CIMD, then DCR). static: the authorization server offers neither, so the user brings a client id (and secret) from an app they register with the vendor."
+            },
+            "advertised": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["cimd", "dcr"],
+              "description": "What the authorization server metadata advertised when verified: client_id_metadata_document_supported, and a registration_endpoint.",
+              "properties": {
+                "cimd": { "type": "boolean" },
+                "dcr": { "type": "boolean" }
+              }
+            },
+            "scopes": { "type": "array", "items": { "type": "string" } },
+            "clientId": { "$ref": "#/$defs/valueTemplate" },
+            "clientSecret": { "$ref": "#/$defs/valueTemplate" }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "registration": { "const": "static" } } },
+              "then": { "required": ["clientId"] },
+              "else": { "not": { "anyOf": [{ "required": ["clientId"] }, { "required": ["clientSecret"] }] } }
+            },
+            {
+              "if": { "properties": { "registration": { "const": "auto" } } },
+              "then": {
+                "properties": {
+                  "advertised": {
+                    "anyOf": [
+                      { "properties": { "cimd": { "const": true } } },
+                      { "properties": { "dcr": { "const": true } } }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "token", "tokenHelpUrl", "scopes"],
+          "properties": {
+            "kind": { "const": "bearer" },
+            "token": { "$ref": "#/$defs/valueTemplate" },
+            "tokenHelpUrl": { "$ref": "#/$defs/httpsUrl" },
+            "scopes": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name", "value", "tokenHelpUrl", "scopes"],
+          "properties": {
+            "kind": { "const": "header" },
+            "name": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+            "value": { "$ref": "#/$defs/valueTemplate" },
+            "tokenHelpUrl": { "$ref": "#/$defs/httpsUrl" },
+            "scopes": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "stdioServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "launch", "env", "cwd"],
+      "properties": {
+        "transport": { "const": "stdio" },
+        "launch": {
+          "oneOf": [
+            { "$ref": "#/$defs/packageLaunch" },
+            { "$ref": "#/$defs/dockerLaunch" }
+          ]
+        },
+        "env": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+          "additionalProperties": { "$ref": "#/$defs/valueTemplate" }
+        },
+        "cwd": {
+          "const": "session",
+          "description": "Local servers run in the pane's current working directory (D3), so relative args such as \".\" mean the session's project."
+        }
+      }
+    },
+    "packageLaunch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ecosystem", "package", "version", "bin", "args"],
+      "properties": {
+        "kind": { "const": "package" },
+        "ecosystem": { "enum": ["npm", "pypi"] },
+        "package": { "type": "string", "pattern": "^(@[a-z0-9][a-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*$" },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)*([-.+]?[0-9A-Za-z.]+)?$",
+          "description": "An exact published version, never a range or tag."
+        },
+        "bin": { "type": "string", "minLength": 1 },
+        "args": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "dockerLaunch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "image", "digest", "args"],
+      "properties": {
+        "kind": { "const": "docker" },
+        "image": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([._/-][a-z0-9]+)*:[A-Za-z0-9._-]+$",
+          "description": "Repository and the human-readable tag the digest was resolved from."
+        },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "args": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verified": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "status", "checks"],
+      "if": { "properties": { "status": { "const": "flagged" } } },
+      "then": { "required": ["flagReason", "notes"] },
+      "else": { "not": { "required": ["flagReason"] } },
+      "description": "Evidence from the last verification. Remote presets: an unauthenticated, read-only MCP probe (scripts/probe-connector.py). Local presets: a registry lookup of the pinned version.",
+      "properties": {
+        "date": { "$ref": "#/$defs/date" },
+        "status": {
+          "enum": ["verified", "flagged"],
+          "description": "flagged: listed for completeness, but adding it is expected to fail for the reason in flagReason; the UI should not offer one-click add."
+        },
+        "flagReason": {
+          "enum": ["client-approval-required"],
+          "description": "client-approval-required: the vendor only accepts MCP clients it has reviewed, and atrium is not on its list yet."
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "What was checked, in plain words."
+        },
+        "mcp": { "$ref": "#/$defs/mcpEvidence" },
+        "oauth": { "$ref": "#/$defs/oauthEvidence" },
+        "package": { "$ref": "#/$defs/packageEvidence" },
+        "image": { "$ref": "#/$defs/imageEvidence" },
+        "registryName": {
+          "type": "string",
+          "description": "The matching official MCP Registry server name, when one exists."
+        },
+        "toolNamesSource": {
+          "type": "string",
+          "description": "Where the toolPolicyDefaults names were confirmed."
+        },
+        "notes": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "httpOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "integer" },
+        "protocolVersion": { "type": "string" },
+        "supportedVersions": { "type": "array", "items": { "type": "string" } },
+        "error": { "type": "string" }
+      }
+    },
+    "mcpEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["discover", "initialize", "eras"],
+      "properties": {
+        "discover": {
+          "$ref": "#/$defs/httpOutcome",
+          "description": "POST server/discover with MCP-Protocol-Version 2026-07-28."
+        },
+        "initialize": {
+          "$ref": "#/$defs/httpOutcome",
+          "description": "POST initialize with protocolVersion 2025-11-25."
+        },
+        "eras": {
+          "type": "array",
+          "items": { "enum": ["2026-07-28", "2025"] },
+          "uniqueItems": true,
+          "description": "Eras that answered. Empty when both requests were refused with 401 before the server dispatched them; the daemon probes the era after sign-in."
+        }
+      }
+    },
+    "oauthEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wwwAuthenticateResourceMetadata",
+        "resourceMetadataUrl",
+        "authorizationServers",
+        "authorizationServerMetadataUrl",
+        "clientIdMetadataDocumentSupported",
+        "registrationEndpoint",
+        "codeChallengeMethodsSupported"
+      ],
+      "properties": {
+        "wwwAuthenticateResourceMetadata": {
+          "type": "boolean",
+          "description": "The 401 carried WWW-Authenticate with resource_metadata (RFC 9728)."
+        },
+        "resourceMetadataUrl": { "type": ["string", "null"] },
+        "authorizationServers": { "type": "array", "items": { "type": "string" } },
+        "authorizationServerMetadataUrl": { "type": "string" },
+        "clientIdMetadataDocumentSupported": { "type": "boolean" },
+        "registrationEndpoint": { "type": ["string", "null"] },
+        "codeChallengeMethodsSupported": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "packageEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry", "version", "publishedAt", "latest", "license"],
+      "properties": {
+        "registry": { "enum": ["npm", "pypi"] },
+        "version": { "type": "string" },
+        "publishedAt": { "type": "string" },
+        "latest": { "type": "boolean" },
+        "license": { "type": "string" },
+        "runtime": { "type": "string", "description": "Engine or interpreter requirement declared by the package." }
+      }
+    },
+    "imageEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry", "tag", "digest", "platforms"],
+      "properties": {
+        "registry": { "type": "string" },
+        "tag": { "type": "string" },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "platforms": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

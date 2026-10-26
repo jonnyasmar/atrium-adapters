@@ -48,7 +48,7 @@ jobs:
           python3 -c 'import jsonschema, yaml'
           python3 tests/validation_workflow_test.py
 
-      - name: Validate manifests against JSON schema
+      - name: Validate manifests and the connectors catalog against JSON schema
         run: |
           python3 check-schemas.py
 
