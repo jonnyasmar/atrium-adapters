@@ -1,0 +1,65 @@
+{
+  "sdkVersion": 2,
+  "name": "copilot",
+  "displayName": "GitHub Copilot",
+  "description": "GitHub's terminal coding agent",
+  "accent": "#8957e5",
+  "binary": "copilot",
+  "version": "0.1.0",
+  "icon": "icon.svg",
+  "updateCommand": ["copilot", "update"],
+  "skillInstallPath": "~/.copilot/skills/atrium/SKILL.md",
+  "skillsDir": "~/.copilot/skills",
+  "binaryDiscovery": {
+    "commands": ["copilot"],
+    "wellKnownPaths": ["/opt/homebrew/bin/copilot", "/usr/local/bin/copilot", "~/.local/bin/copilot", "~/AppData/Local/Microsoft/WinGet/Links/copilot.exe"]
+  },
+  "install": {
+    "macos": {"cmd": "brew install --cask copilot-cli", "postInstallAuth": true},
+    "linux": {"cmd": "curl -fsSL https://gh.io/copilot-install | bash", "postInstallAuth": true},
+    "windows": {"cmd": "winget install --id GitHub.Copilot --exact", "postInstallAuth": true}
+  },
+  "hooks": {
+    "session-start": "atrium://hooks/copilot/session-start",
+    "session-end": "atrium://hooks/copilot/session-end",
+    "user-prompt-submit": "atrium://hooks/copilot/user-prompt-submit",
+    "pre-tool-use": "atrium://hooks/copilot/pre-tool-use",
+    "post-tool-use": "atrium://hooks/copilot/post-tool-use",
+    "stop": "atrium://hooks/copilot/stop",
+    "stop-failure": "atrium://hooks/copilot/stop-failure",
+    "subagent-start": "atrium://hooks/copilot/subagent-start",
+    "subagent-stop": "atrium://hooks/copilot/subagent-stop"
+  },
+  "methods": {
+    "build_launch_command": {"script": "build_launch_command.sh"},
+    "build_resume_command": {"script": "build_resume_command.sh"},
+    "list_recent_sessions": {"script": "list_recent_sessions.sh"},
+    "hooks": {"script": "hooks.sh"},
+    "launcher_options": {"static": "launcher_options.json"}
+  },
+  "sessionExtractor": {"script": "extract_session.sh", "schemaVersion": 1, "supportsDepths": ["quick", "standard", "deep"]},
+  "hookEnvelopes": {
+    "sessionStartManifest": {"kind": "identity"},
+    "userPromptSubmit": {"kind": "hookSpecificOutput", "hookEventName": "UserPromptSubmit", "includeSystemMessage": false},
+    "preToolUse": {"kind": "none"},
+    "postToolUse": {"kind": "none"}
+  },
+  "chatTransport": {
+    "kind": "acp",
+    "args": ["--acp"],
+    "capabilities": {
+      "resume": true,
+      "setModel": false,
+      "thinking": false,
+      "permissionCallback": true,
+      "commandDiscovery": true,
+      "planMode": false,
+      "contextUsage": true,
+      "imageInput": true,
+      "checkpointing": false,
+      "subagentEvents": false,
+      "steering": false,
+      "backgroundTasks": false
+    }
+  }
+}

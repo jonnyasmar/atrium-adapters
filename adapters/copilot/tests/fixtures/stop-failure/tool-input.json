@@ -1,0 +1,7 @@
+{
+  "sessionId": "copilot-fixture",
+  "error": {
+    "message": "Authentication required"
+  },
+  "recoverable": false
+}

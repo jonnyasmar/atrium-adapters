@@ -98,6 +98,9 @@ jobs:
       - name: Validate Codex launch and resume argument boundaries
         run: python3 adapters/codex/tests/launcher_test.py
 
+      - name: Validate Copilot hooks, launch commands, and session history
+        run: python3 -m unittest discover -s adapters/copilot/tests -p '*_test.py'
+
       - name: Validate goose launch-profile flag plumbing
         run: bash tests/goose-launch-profile-flags.assert.sh
 
