@@ -100,6 +100,23 @@ class AdapterTests(unittest.TestCase):
             hooks.manage("uninstall")
         self.assertTrue(hooks.manage("status")["installed"])
 
+    def test_status_without_instance_is_read_only(self):
+        hooks.manage("install")
+        target = self.home / "hooks/atrium.json"
+        installed = target.read_bytes()
+        env = {key: value for key, value in os.environ.items() if key != "ATRIUM_DATA_DIR"}
+        result = self.script("hooks.sh", "status", env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        status = json.loads(result.stdout)
+        self.assertEqual(status["subcommand"], "status")
+        self.assertFalse(status["installed"])
+        self.assertEqual(target.read_bytes(), installed)
+        for command in ("install", "uninstall"):
+            with self.subTest(command=command):
+                result = self.script("hooks.sh", command, env=env)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(target.read_bytes(), installed)
+
     def test_no_hooks_outside_atrium_or_in_chat(self):
         with patch.dict(os.environ, {}, clear=True), patch.object(hooks, "post_event") as post:
             self.assertEqual(hooks.emit("preToolUse", {}), {})

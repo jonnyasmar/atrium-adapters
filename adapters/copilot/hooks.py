@@ -98,6 +98,8 @@ def manage(command):
     target = home() / "hooks/atrium.json"
     data_dir = os.environ.get("ATRIUM_DATA_DIR")
     if not data_dir:
+        if command == "status":
+            return {"subcommand": command, "installed": False, "reason": "No atrium instance selected"}
         raise ValueError("ATRIUM_DATA_DIR is required to manage Copilot hooks")
     expected = hook_config(data_dir)
     if command == "install":
