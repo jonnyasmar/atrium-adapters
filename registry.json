@@ -350,7 +350,7 @@
     {
       "name": "omp",
       "displayName": "Oh My Pi",
-      "description": "Oh My Pi \u2014 extended pi-fork coding agent by can1357 (omp.sh)",
+      "description": "Oh My Pi — extended pi-fork coding agent by can1357 (omp.sh)",
       "accent": "#f97316",
       "binary": "omp",
       "sdkVersion": 2,
