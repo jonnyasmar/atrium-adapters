@@ -101,9 +101,8 @@ def list_sessions(cwd):
     return {"sessions": entries[:20]}
 
 
-def last_assistant(path):
-    # Bound stop-hook work even for very large histories and ignore a reply
-    # from a preceding turn if the current turn failed before producing one.
+def tail_records(path):
+    # Bound hook work even when a transcript contains large opaque model blobs.
     with Path(path).open("rb") as stream:
         stream.seek(0, 2)
         start = max(0, stream.tell() - 262144)
@@ -116,13 +115,41 @@ def last_assistant(path):
             event = json.loads(line)
         except ValueError:
             continue
-        if not isinstance(event, dict):
-            continue
+        if isinstance(event, dict) and isinstance(event.get("data"), dict):
+            yield event
+
+
+def last_assistant(path):
+    for event in tail_records(path):
         if event.get("type") == "user.message":
             break
         if event.get("type") == "assistant.message":
             return text((event.get("data") or {}).get("content"))
     return ""
+
+
+def stop_snapshot(path, timestamp):
+    try:
+        events = list(tail_records(path))
+    except OSError:
+        return False, False, ""
+    found = False
+    newer_user = False
+    for event in events:
+        data = event["data"]
+        if not found:
+            if event.get("type") == "user.message":
+                newer_user = True
+            hook_input = data.get("input") or {}
+            if event.get("type") == "hook.start" and data.get("hookType") == "agentStop" and isinstance(hook_input, dict) and hook_input.get("timestamp") == timestamp:
+                if newer_user:
+                    return True, True, ""
+                found = True
+        elif event.get("type") == "assistant.message":
+            return True, False, text(data.get("content"))
+        elif event.get("type") == "user.message":
+            break
+    return found, False, ""
 
 
 def extract(session_id, cwd, depth):

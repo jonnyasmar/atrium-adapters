@@ -88,7 +88,7 @@ class AdapterTests(unittest.TestCase):
         config = json.loads(installed)
         self.assertEqual(set(config["hooks"]), set(hooks.EVENTS))
         for event, entries in config["hooks"].items():
-            self.assertEqual(entries[0]["args"], [str(self.data / "adapters/copilot/copilot-hook.sh"), event, str(self.data)])
+            self.assertEqual(entries[0]["args"], [str(self.data / "adapters/copilot/copilot-hook.sh"), event, str(self.data), os.environ.get("ATRIUM_CLI_PATH", "atrium")])
         hooks.manage("uninstall")
         self.assertFalse((other.parent / "atrium.json").exists())
         self.assertTrue(other.exists())
@@ -181,6 +181,15 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             sessions.session_path("../../secrets")
 
+    def test_lister_without_python_returns_empty_sessions_and_a_reason(self):
+        binary_dir = self.root / "bin"
+        binary_dir.mkdir()
+        (binary_dir / "bash").symlink_to(shutil.which("bash"))
+        result = self.script("list_recent_sessions.sh", "/work/proj", env={**os.environ, "PATH": str(binary_dir)})
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stdout), {"sessions": []})
+        self.assertIn("list_recent_sessions: no runnable Python 3", result.stderr)
+
     def test_stop_reads_current_reply_but_never_previous_turn(self):
         path = self.fixture()
         self.assertEqual(sessions.last_assistant(path), "Changed the greeting to hi.")
@@ -188,6 +197,33 @@ class AdapterTests(unittest.TestCase):
             stream.write(json.dumps({"type": "user.message", "data": {"content": "Next turn"}}) + "\n")
             stream.write('{"partial":')
         self.assertEqual(sessions.last_assistant(path), "")
+
+    def test_stop_waits_for_its_flush_marker_and_rejects_a_newer_turn(self):
+        path = self.fixture()
+        self.assertEqual(sessions.stop_snapshot(path, 123), (False, False, ""))
+        with path.open("a") as stream:
+            stream.write(json.dumps({"type": "hook.start", "data": {"hookType": "agentStop", "input": {"timestamp": 123}}}) + "\n")
+        self.assertEqual(sessions.stop_snapshot(path, 123), (True, False, "Changed the greeting to hi."))
+        with path.open("a") as stream:
+            stream.write(json.dumps({"type": "user.message", "data": {"content": "Next turn"}}) + "\n")
+        self.assertEqual(sessions.stop_snapshot(path, 123), (True, True, ""))
+
+    def test_deferred_stop_sends_one_current_reply_and_no_stale_stop(self):
+        payload = {"transcriptPath": "/missing", "timestamp": 123, "sessionId": "s"}
+        with patch.object(sessions, "stop_snapshot", side_effect=[(False, False, ""), (True, False, "current")]), \
+             patch("time.sleep"), patch.object(hooks, "post_event") as post:
+            hooks.deliver_stop(payload)
+            post.assert_called_once()
+            self.assertEqual(post.call_args.args[1]["last_assistant_message"], "current")
+        with patch.object(sessions, "stop_snapshot", return_value=(True, True, "")), patch.object(hooks, "post_event") as post:
+            hooks.deliver_stop(payload)
+            post.assert_not_called()
+
+    def test_stop_worker_timeout_never_uses_a_previous_reply(self):
+        with patch.object(sessions, "stop_snapshot", return_value=(False, False, "")), patch("time.sleep"), \
+             patch.object(hooks, "last_assistant", return_value="previous"), patch.object(hooks, "post_event") as post:
+            hooks.deliver_stop({"transcriptPath": "/missing", "timestamp": 123})
+            self.assertNotIn("last_assistant_message", post.call_args.args[1])
 
     def test_extractor_depths_and_private_context(self):
         self.fixture()

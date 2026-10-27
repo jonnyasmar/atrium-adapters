@@ -82,13 +82,14 @@ def hook_config(data_dir):
     import shutil
     import subprocess
     script = Path(data_dir) / "adapters/copilot/copilot-hook.sh"
+    cli = os.environ.get("ATRIUM_CLI_PATH", "atrium")
     bash = shutil.which("bash") or "/bin/bash"
     if os.name == "nt":
         converted = subprocess.run(["cygpath", "-w", bash], capture_output=True, text=True, check=True)
         bash = converted.stdout.strip()
     return {"version": 1, "hooks": {
         event: [{"type": "command", "exec": bash,
-                 "args": [script.as_posix(), event, Path(data_dir).as_posix()], "timeoutSec": 5}]
+                 "args": [script.as_posix(), event, Path(data_dir).as_posix(), cli], "timeoutSec": 5}]
         for event in EVENTS
     }}
 
@@ -171,6 +172,13 @@ def emit(native, payload):
         return {}
     if native == "errorOccurred" and payload.get("recoverable"):
         return {}
+    if native == "agentStop" and payload.get("transcriptPath") and isinstance(payload.get("timestamp"), int):
+        import subprocess
+        # Copilot flushes the final response only after this hook returns.
+        options = {"creationflags": subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+        subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "stop", json.dumps(payload)],
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **options)
+        return {}
     normalized = normalize("post-tool-use-failure" if native == "postToolUseFailure" else event, payload)
     try:
         live_context = post_event(event, normalized)
@@ -187,9 +195,30 @@ def emit(native, payload):
     return {}
 
 
+def deliver_stop(payload):
+    import time
+    from sessions import stop_snapshot
+    message = ""
+    for _ in range(20):
+        ready, stale, message = stop_snapshot(payload["transcriptPath"], payload["timestamp"])
+        if stale:
+            return
+        if ready:
+            break
+        time.sleep(0.05)
+    normalized = normalize("stop", payload)
+    normalized.pop("last_assistant_message", None)
+    if message:
+        normalized["last_assistant_message"] = message
+    post_event("stop", normalized)
+
+
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else ""
     try:
+        if command == "stop":
+            deliver_stop(json.loads(sys.argv[2]))
+            return 0
         if command in ("install", "status", "uninstall"):
             result = manage(command)
         elif command in ("normalize", "emit"):

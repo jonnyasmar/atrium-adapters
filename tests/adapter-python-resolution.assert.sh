@@ -100,7 +100,7 @@ mkdir -p "$TMP/home"
 
 # Extractors with a fixture: python-only and alias-stub PATHs must reach
 # `python` and print exactly what python3 prints.
-for adapter in antigravity claude-code codex cursor-agent goose grok omp opencode pi; do
+for adapter in antigravity claude-code codex copilot cursor-agent goose grok omp opencode pi; do
   base="$TMP/$adapter"
   expected_code="$(run_extract "$adapter" "$PATH_PYTHON3" "$base.expected")"
   if [ "$expected_code" != 0 ] || [ ! -s "$base.expected.stdout" ]; then
