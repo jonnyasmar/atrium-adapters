@@ -31,7 +31,9 @@
           "cmd": "winget install --id GitHub.Copilot --exact",
           "postInstallAuth": true
         }
-      }
+      },
+      "contentSha256": "b1ad3600431ff5cdcd43783b949a6278668b7c611b73fbab6d6c0256acf06573",
+      "maxAppVersion": null
     },
     {
       "name": "claude-code",
@@ -449,7 +451,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "f07cdb4893fe752af69554d2df17f99944286149",
+    "commit": "e50aae28dd772988af978b584512334796e1ce5d",
     "sharedSha256": "5a9f5e9947b883086a66148fb49d6581b8252d82ff5fee5fe247aaa48bb86321",
     "schemaSha256": "39b50785d4720c5dde13c636acff9ea53b76fb1f99360cbbc3c47db4248d7eb4",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
