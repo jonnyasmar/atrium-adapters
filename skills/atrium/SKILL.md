@@ -120,7 +120,15 @@ have to know about, because the default answers are scoped to this machine:
 
 **Browser snapshot → ref → action loop.** Before you click/fill/type/select on a browser pane, run `browser snapshot <pane-id>` for an accessibility tree where each interactable has a short ref (`e1`, `e2`, …). Pass refs to `browser click`/`fill`/etc. Re-snapshot after the DOM changes — refs aren't stable across navigations.
 
-**Opening a page: `browser open <url>`.** It keeps the page in your room. If a browser there already shows the URL, it hands back that pane (`reused: true`, nothing reloads). Otherwise the page opens as a subtab on your room's browser, or, if your room has none, in a new browser to your right. `placed` says which (`reused` / `subtab` / `split` / `new-room`). So re-opening a URL you lost track of is free and gives back the same pane id. A reused page is whatever it last loaded, so after changing the code behind it run `browser reload <pane-id>` before you look. Don't hand-place browsers with `pane create --split`, and only pass `--new-room` when the user asked for a separate room.
+**Browsers: open one per task, then navigate it.** Every page you open is a live browser in the user's room, and a room full of them slows atrium down and can freeze it on launch. So:
+
+1. Open the first page with `browser open <url>` and keep the `paneId` it returns. For every page after that, move the same pane: `browser navigate <pane-id> <url>`.
+2. Run `browser open` again only to get back a page you lost track of. If a browser in your room already shows that URL, you get that pane back (`reused: true`, nothing reloads).
+3. Never open `about:blank` as a placeholder. Open the page itself once you know its URL.
+4. Close each browser you opened once you're done with it: `pane close <pane-id>`. At the end of a QA or verification pass, close every one you opened unless the user asked to keep it.
+5. Navigate and close only browsers you opened. A `reused: true` answer can hand back the user's own page: use it, but don't move it somewhere else or close it.
+
+A new page stays in your room: it opens as a subtab on your room's browser or, if your room has none, in a new browser to your right. `placed` says which (`reused` / `subtab` / `split` / `new-room`). Once a page leaves your room with 6 or more browsers, the answer adds `roomBrowserCount` and a line saying so. Treat that as a signal to navigate or close a browser instead of opening another. A reused page is whatever it last loaded, so after changing the code behind it run `browser reload <pane-id>` before you look. Don't hand-place browsers with `pane create --split`, and only pass `--new-room` when the user asked for a separate room.
 
 **Never take the user's focus.** Focusing a pane switches the user's room and takes their keyboard mid-sentence — they're usually typing to you while you work. It is opt-in everywhere for that reason: `pane create --focus`, `browser open --focus`, `agent launch --focus`, plus the explicit `pane focus` and `room switch`. Pass one of those ONLY when the user asked to be shown something.
 
@@ -147,8 +155,10 @@ More generally: **never background an atrium CLI call.** Run it in the foregroun
 "$ATRIUM_CLI_PATH" task create --title "Investigate flaky test" \
   --priority high --source "adapter:claude-code"
 
-# Open a page in your room: reuses, stacks as a subtab, or splits beside you
-"$ATRIUM_CLI_PATH" browser open "https://example.com"
+# One browser per task: open the first page, navigate it after that, close it when done
+"$ATRIUM_CLI_PATH" browser open "http://localhost:3000"          # → paneId
+"$ATRIUM_CLI_PATH" browser navigate <pane-id> "http://localhost:3000/settings"
+"$ATRIUM_CLI_PATH" pane close <pane-id>
 
 # Start another agent beside you — no --type, so it opens as chat
 "$ATRIUM_CLI_PATH" pane create --adapter claude-code --split "$ATRIUM_PANE_ID"

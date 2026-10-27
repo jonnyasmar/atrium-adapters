@@ -48,7 +48,7 @@ jobs:
           python3 -c 'import jsonschema, yaml'
           python3 tests/validation_workflow_test.py
 
-      - name: Validate manifests against JSON schema
+      - name: Validate manifests and the connectors catalog against JSON schema
         run: |
           python3 check-schemas.py
 
@@ -94,6 +94,12 @@ jobs:
 
       - name: Validate opencode launch flags and reasoning-variant wrapper
         run: python3 adapters/opencode/tests/launch_test.py
+
+      - name: Validate Codex launch and resume argument boundaries
+        run: python3 adapters/codex/tests/launcher_test.py
+
+      - name: Validate Copilot hooks, launch commands, and session history
+        run: python3 -m unittest discover -s adapters/copilot/tests -p '*_test.py'
 
       - name: Validate goose launch-profile flag plumbing
         run: bash tests/goose-launch-profile-flags.assert.sh

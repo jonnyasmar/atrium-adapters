@@ -1,0 +1,25 @@
+{
+  "sessionId": "copilot-fixture",
+  "toolName": "edit",
+  "toolArgs": {
+    "path": "/work/proj/hello.py",
+    "old_str": "hello",
+    "new_str": "hi"
+  },
+  "toolResult": {
+    "resultType": "success",
+    "textResultForLlm": "Updated hello.py"
+  },
+  "session_id": "copilot-fixture",
+  "tool_name": "edit",
+  "tool_input": "{\"path\":\"/work/proj/hello.py\",\"old_str\":\"hello\",\"new_str\":\"hi\"}",
+  "tool_response": "Updated hello.py",
+  "_atrium": {
+    "writeKind": "edit",
+    "filePaths": [
+      "/work/proj/hello.py"
+    ],
+    "lineStart": null,
+    "lineEnd": null
+  }
+}

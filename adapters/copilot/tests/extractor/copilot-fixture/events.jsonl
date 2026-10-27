@@ -1,0 +1,7 @@
+{"type":"session.start","id":"event-1","timestamp":"2026-10-27T16:00:00Z","parentId":null,"data":{"sessionId":"copilot-fixture","startTime":"2026-10-27T16:00:00Z","context":{"cwd":"/work/proj"},"version":1}}
+{"type":"user.message","id":"event-2","timestamp":"2026-10-27T16:00:01Z","parentId":"event-1","data":{"content":"Fix the greeting.","transformedContent":"PRIVATE_CONTEXT\nFix the greeting."}}
+{"type":"system.message","id":"event-3","timestamp":"2026-10-27T16:00:02Z","data":{"content":"PRIVATE_SYSTEM_PROMPT"}}
+{"type":"tool.execution_start","id":"event-4","timestamp":"2026-10-27T16:00:03Z","data":{"toolCallId":"call-1","toolName":"edit","arguments":{"path":"/work/proj/hello.py","old_str":"hello","new_str":"hi"}}}
+{"type":"tool.execution_complete","id":"event-5","timestamp":"2026-10-27T16:00:04Z","data":{"toolCallId":"call-1","success":true,"result":{"content":"Updated hello.py"}}}
+{"type":"assistant.message","id":"event-6","timestamp":"2026-10-27T16:00:05Z","data":{"content":"Changed the greeting to hi."}}
+{"type":"assistant.turn_end","id":"event-7","timestamp":"2026-10-27T16:00:06Z","data":{"turnId":"0"}}

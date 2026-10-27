@@ -6,13 +6,13 @@
       "remotePath": "adapters/shared/atrium-context.md",
       "target": "atrium-home",
       "destName": "atrium-context.md",
-      "sha256": "3414151fce47aabebee8b51818efefb7a6a89c87fb7a2e5fe7707cb6d9b82c56"
+      "sha256": "594248f09e8d18003079cf08a7333db354e90741ea7885683cb7b3eb4afcc870"
     },
     {
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "16ac7c904f50f7c8ea15fe918b7488590b713dd6f43f33f15c1a166b1488df8e"
+      "sha256": "cfdfa59fb25677adf21121688c184bc28a57d1d4ec739ff78c703928efe35db1"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -68,7 +68,7 @@
       "remotePath": "skills/atrium/references/teaching-mode.md",
       "target": "adapter-skill-reference",
       "destName": "teaching-mode.md",
-      "sha256": "dd9518deea0e0f1ae5c5fdc0ae66d092aa5121fd13aba6801f3121259764a384"
+      "sha256": "5a4a072cddb24ac6b6a6f9f56c916c8a2627be137a4fcf8ed0cee3db5a19a4c1"
     },
     {
       "id": "atrium-skill-authoring",
@@ -103,12 +103,12 @@
       "remotePath": "skills/atrium-bug-report/SKILL.md",
       "target": "bundled-skill",
       "skillName": "atrium-bug-report",
-      "sha256": "d26545021b29d4638cb015bc21aa8c34d0a351f0cb13750cf04752aabcda0ba7"
+      "sha256": "74c0ab3b63e6bd4fd4af740d5b4f023f090497daf98ded39b0efe663c6a496c0"
     }
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "f07cdb4893fe752af69554d2df17f99944286149",
-    "generation": 86
+    "commit": "bdfe070c803cee65da73a5656cef5cc82e504414",
+    "generation": 88
   }
 }

@@ -1,0 +1,13 @@
+{
+  "sessionId": "copilot-fixture",
+  "toolName": "edit",
+  "toolArgs": {
+    "path": "/work/proj/hello.py",
+    "old_str": "hello",
+    "new_str": "hi"
+  },
+  "toolResult": {
+    "resultType": "success",
+    "textResultForLlm": "Updated hello.py"
+  }
+}

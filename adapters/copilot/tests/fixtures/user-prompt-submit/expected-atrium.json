@@ -1,0 +1,8 @@
+{
+  "sessionId": "copilot-fixture",
+  "cwd": "/work/proj",
+  "prompt": "Fix the greeting.",
+  "transformedPrompt": "Fix the greeting.",
+  "session_id": "copilot-fixture",
+  "user_prompt": "Fix the greeting."
+}

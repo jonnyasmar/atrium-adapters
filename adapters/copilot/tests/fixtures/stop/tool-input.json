@@ -1,0 +1,6 @@
+{
+  "sessionId": "copilot-fixture",
+  "cwd": "/work/proj",
+  "stopReason": "end_turn",
+  "stop_hook_active": false
+}
