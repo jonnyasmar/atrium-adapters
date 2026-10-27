@@ -369,7 +369,7 @@ The digest check must be in the same shell invocation as `gh issue create`. If i
 
 `gh issue create` posts the body directly. Do not invent or silently attempt `source:`, `area:`, or `version:` labels: the public tracker does not provision that taxonomy, and reporters commonly lack label permissions. Classification belongs in the body. A maintainer can add the existing `bug` label during triage.
 
-**Fallback — no `gh`, or not authenticated.** Prefill GitHub's blank issue composer with the already-approved body and let the user submit it themselves. Open it in an atrium browser pane (the `atrium` skill covers browser panes; `pane create --type browser --url "<url>"`), or just hand them the URL if atrium is the thing that is broken.
+**Fallback — no `gh`, or not authenticated.** Prefill GitHub's blank issue composer with the already-approved body and let the user submit it themselves. Open it in an atrium browser pane (the `atrium` skill covers browser panes; `browser open "<url>"`), or just hand them the URL if atrium is the thing that is broken.
 
 ```
 https://github.com/jonnyasmar/atrium-issues/issues/new?title=<urlencoded-title>&body=<urlencoded-approved-body>

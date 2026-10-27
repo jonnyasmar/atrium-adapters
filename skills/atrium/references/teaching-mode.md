@@ -48,7 +48,7 @@ Pipe the JSONL via heredoc or `--from-file`, NOT echoed inline — the user shou
 
 ### Demonstrations alongside the journal
 
-Some lessons need a live demo (running a command, opening a browser pane). Do those in the terminal pane or via `atrium pane create`, and reference the demo from the canvas section ("Watch the browser pane I just opened → …"). If a topic genuinely needs its own dedicated canvas (e.g. a reusable PR-triage form), open one in a NEW pane and link to it — that's a deliberate fork, not a follow-up picker.
+Some lessons need a live demo (running a command, opening a browser pane). Do those in the terminal pane or via `atrium pane create` (`atrium browser open <url>` for a page, then `browser navigate` that pane for the next one), and reference the demo from the canvas section ("Watch the browser pane I just opened → …"). If a topic genuinely needs its own dedicated canvas (e.g. a reusable PR-triage form), open one in a NEW pane and link to it — that's a deliberate fork, not a follow-up picker.
 
 ## Pulling live docs
 
