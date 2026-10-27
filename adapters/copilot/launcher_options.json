@@ -1,0 +1,18 @@
+{
+  "options": [
+    {"key": "dangerouslySkipPermissions", "label": "Skip Permissions", "description": "Allow tools, paths, and URLs without confirmation", "type": "toggle", "default": false},
+    {"key": "extraArgs", "label": "args", "description": "Additional CLI arguments", "type": "text", "default": ""}
+  ],
+  "suggestedFlags": [
+    {"flag": "--model", "description": "Copilot model ID (use /model to see your available models)"},
+    {"flag": "--reasoning-effort", "description": "Reasoning effort", "values": ["low", "medium", "high", "xhigh", "max"]},
+    {"flag": "--agent", "description": "Custom Copilot agent"},
+    {"flag": "--add-dir", "description": "Allow an additional directory"},
+    {"flag": "--allow-tool", "description": "Allow a tool or command pattern"},
+    {"flag": "--deny-tool", "description": "Deny a tool or command pattern"},
+    {"flag": "--additional-mcp-config", "description": "Additional MCP servers (JSON or @file)"},
+    {"flag": "--disable-builtin-mcps", "description": "Disable built-in MCP servers"},
+    {"flag": "--plan", "description": "Start in plan mode"},
+    {"flag": "--name", "description": "Name the session"}
+  ]
+}

@@ -95,6 +95,9 @@ jobs:
       - name: Validate opencode launch flags and reasoning-variant wrapper
         run: python3 adapters/opencode/tests/launch_test.py
 
+      - name: Validate Copilot hooks, launch commands, and session history
+        run: python3 -m unittest discover -s adapters/copilot/tests -p '*_test.py'
+
       - name: Validate goose launch-profile flag plumbing
         run: bash tests/goose-launch-profile-flags.assert.sh
 

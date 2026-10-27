@@ -1,0 +1,12 @@
+{
+  "sessionId": "copilot-fixture",
+  "toolName": "edit",
+  "toolArgs": {
+    "path": "/work/proj/hello.py",
+    "old_str": "hello",
+    "new_str": "hi"
+  },
+  "session_id": "copilot-fixture",
+  "tool_name": "edit",
+  "tool_input": "{\"path\":\"/work/proj/hello.py\",\"old_str\":\"hello\",\"new_str\":\"hi\"}"
+}

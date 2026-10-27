@@ -1,0 +1,8 @@
+{
+  "sessionId": "copilot-fixture",
+  "toolName": "edit",
+  "toolArgs": {
+    "path": "/work/proj/hello.py"
+  },
+  "error": "Original text was not found"
+}
