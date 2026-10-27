@@ -5,7 +5,7 @@
   "description": "GitHub's terminal coding agent",
   "accent": "#8957e5",
   "binary": "copilot",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "icon": "icon.svg",
   "updateCommand": ["copilot", "update"],
   "skillInstallPath": "~/.copilot/skills/atrium/SKILL.md",
