@@ -87,6 +87,13 @@ stop-failure\tStopFailure\t.*
 pre-compact\tPreCompact\t.*
 post-compact\tPostCompact\t.*'
 
+# The SessionStart sources that get atrium's context (the manifest sections and
+# the inject-context hop). Compaction and /clear drop it from the window, so it
+# goes back in; Claude Code fires SessionStart with source "compact" after a
+# compaction, SDK chat panes included (verified 2026-10-29, Agent SDK 0.3.283 +
+# Claude Code 2.1.312). The lifecycle session-start emit stays startup|resume.
+CONTEXT_SESSION_MATCHER="startup|resume|compact|clear"
+
 # Build the hook command string for a given event. Resolved at hook-fire
 # time against the pane's injected env vars so stable/dev/beta can
 # coexist. All lifecycle emit goes through claude-hook-entry.sh, which:
@@ -146,8 +153,8 @@ build_all_hooks() {
       ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
         "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$ctx_section")"
     fi
-    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
-      '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" --arg matcher "$CONTEXT_SESSION_MATCHER" \
+      '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
   done
 
@@ -200,8 +207,8 @@ build_all_hooks() {
     inject_base="$WINDOWS_HOOK inject"
     inject_ss_base="$inject_base"
   fi
-  inject_ss="$(jq -n --arg cmd "$inject_ss_base session-start" \
-    '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  inject_ss="$(jq -n --arg cmd "$inject_ss_base session-start" --arg matcher "$CONTEXT_SESSION_MATCHER" \
+    '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
   inject_ups="$(jq -n --arg cmd "$inject_base user-prompt-submit" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
