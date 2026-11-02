@@ -43,7 +43,7 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|claude-hook-entry\.sh|atrium hook emi
 # exists, which keeps the POSIX commands.
 WINDOWS_HOOK=""
 if atrium_hooks_on_windows; then
-  WINDOWS_HOOK="$(atrium_windows_hook_launcher "${ATRIUM_DATA_DIR:-$HOME/.atrium}" claude-code)" \
+  WINDOWS_HOOK="$(atrium_windows_hook_launcher claude-code "$HOME/.claude")" \
     || echo "atrium hooks: no space-free path to bash.exe or the atrium data dir; Claude Code hooks keep POSIX commands, which Grok cannot run on Windows" >&2
 fi
 
@@ -263,6 +263,7 @@ has_atrium_hooks_in() {
 
 do_install() {
   local new_hooks
+  [ -z "$WINDOWS_HOOK" ] || atrium_windows_write_hook_shim claude-code "$HOME/.claude"
   new_hooks="$(build_all_hooks)"
 
   atrium_config_lock "$SETTINGS_LOCK"

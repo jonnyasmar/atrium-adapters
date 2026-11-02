@@ -143,6 +143,9 @@ jobs:
       - name: Validate the catastrophic-command guard hooks
         run: bash tests/command-guard-hooks.assert.sh
 
+      - name: Validate that global hook configs name no atrium instance
+        run: bash tests/global-hooks-name-no-instance.assert.sh
+
       - name: Validate symlinked hook configuration
         run: python3 tests/hook-config-symlinks.py
 

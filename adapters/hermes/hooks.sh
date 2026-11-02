@@ -24,11 +24,42 @@ NORMALIZER="${ADAPTER_DIR}/normalize-hook-payload.sh"
 INJECT_SCRIPT="${ADAPTER_DIR}/inject-context.sh"
 PYHELPER="${ADAPTER_DIR}/manage_hermes_config.py"
 
-# Substring that identifies atrium-owned hook commands in config.yaml /
-# allowlist. Matches every script under the adapter dir (hermes-hook.sh +
-# inject-context.sh), so a (re)install cleans up any prior atrium entry before
-# writing the current set — only one instance's hooks exist at a time.
-MARKER="adapters/hermes/"
+# Hermes runs a hook command without a shell, so nothing in it expands at fire
+# time — and every atrium instance (stable, dev, each worktree) installs into
+# this one config. The commands therefore name no instance: they run a shim
+# beside config.yaml, the same bytes whoever writes it, which picks the pane's
+# own instance from $ATRIUM_DATA_DIR and answers `{}` by itself outside an
+# atrium pane or when that instance's adapter is gone.
+SHIM="${HERMES_HOME}/atrium-hook.sh"
+SHIM_BODY='#!/usr/bin/env bash
+# Written by atrium'"'"'s hermes adapter; the same for every atrium instance.
+dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/hermes"
+case "${1:-}" in
+  hook) script="$dir/hermes-hook.sh" ;;
+  inject) script="$dir/inject-context.sh" ;;
+  *) script="" ;;
+esac
+if [ -z "${ATRIUM_PANE_ID:-}" ] || [ -z "$script" ] || [ ! -f "$script" ]; then
+  printf '"'"'{}\n'"'"'
+  exit 0
+fi
+shift
+exec bash "$script" "$@"'
+
+# Substrings that identify atrium-owned hook commands in config.yaml /
+# allowlist: the shim, and the per-instance script paths older installs wrote,
+# so a (re)install cleans up any prior atrium entry before writing its own.
+MARKER="adapters/hermes/|${SHIM}"
+
+write_shim() {
+  if [ -f "$SHIM" ] && [ "$(cat "$SHIM")" = "$SHIM_BODY" ]; then
+    return
+  fi
+  mkdir -p "$HERMES_HOME"
+  printf '%s\n' "$SHIM_BODY" >"$SHIM.atrium-tmp"
+  chmod 0755 "$SHIM.atrium-tmp"
+  mv "$SHIM.atrium-tmp" "$SHIM"
+}
 
 # Hermes shell-hook event names we wire. The key in config.yaml IS the Hermes
 # event name; hermes-hook.sh maps each to the atrium event(s) it emits.
@@ -70,13 +101,13 @@ resolve_python() {
 build_events_json() {
   local arr='[]' ev cmd
   for ev in $HERMES_EVENTS; do
-    cmd="${HOOK_SCRIPT} ${ev}"
+    cmd="${SHIM} hook ${ev}"
     arr="$(jq -c --arg ev "$ev" --arg cmd "$cmd" '. + [{event: $ev, command: $cmd, timeout: 10}]' <<<"$arr")"
   done
   # Context injection: a second pre_llm_call entry that returns atrium's
   # manifest + pane-rename nudge as {"context": ...} (Hermes appends it to the
   # turn). Runs alongside the activity pre_llm_call entry; Hermes aggregates.
-  arr="$(jq -c --arg cmd "$INJECT_SCRIPT" '. + [{event: "pre_llm_call", command: $cmd, timeout: 15}]' <<<"$arr")"
+  arr="$(jq -c --arg cmd "${SHIM} inject" '. + [{event: "pre_llm_call", command: $cmd, timeout: 15}]' <<<"$arr")"
   printf '%s' "$arr"
 }
 
@@ -88,6 +119,7 @@ do_install() {
     exit 1
   fi
   chmod +x "$HOOK_SCRIPT" "$NORMALIZER" "$INJECT_SCRIPT" 2>/dev/null || true
+  write_shim
 
   local events
   events="$(build_events_json)"
@@ -104,6 +136,7 @@ do_uninstall() {
   if [ -n "$py" ]; then
     "$py" "$PYHELPER" uninstall "$CONFIG_YAML" "$ALLOWLIST" "$MARKER" || true
   fi
+  rm -f "$SHIM"
   echo '{"subcommand": "uninstall", "uninstalled": true}'
 }
 

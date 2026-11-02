@@ -19,7 +19,7 @@ fi
 # Expected: .atrium block exists with the four wired events. PostInvocation
 # is intentionally absent (per-invocation, would bounce the activity card).
 missing="$(jq -r '
-  .atrium // {} as $a
+  (.atrium // {}) as $a
   | [
       (if ($a.PreToolUse | type) == "array" and (($a.PreToolUse[0].hooks // []) | length) > 0 then empty else "PreToolUse" end),
       (if ($a.PostToolUse | type) == "array" and (($a.PostToolUse[0].hooks // []) | length) > 0 then empty else "PostToolUse" end),
@@ -35,17 +35,23 @@ if [[ -n "$missing" ]]; then
   exit 1
 fi
 
-# Every command must carry the atrium marker so uninstall can find ours.
-unmarked="$(jq -r '
+# Every command runs the instance-neutral shim beside hooks.json, which picks
+# the pane's own atrium instance at fire time.
+SHIM="${HOME}/.gemini/config/atrium-hook.sh"
+unexpected="$(jq -r --arg shim "$SHIM" '
   .atrium // {}
   | [.PreToolUse[0].hooks[0].command, .PostToolUse[0].hooks[0].command,
      .PreInvocation[0].command, .Stop[0].command]
-  | map(select(test("ATRIUM_HOOK_MARKER=atrium-runtime-hook") | not))
+  | map(select(startswith($shim + " ") | not))
   | length
 ' "$HOOKS_FILE")"
 
-if [[ "$unmarked" != "0" ]]; then
-  echo "install.assert: $unmarked hook command(s) missing atrium marker" >&2
+if [[ "$unexpected" != "0" ]]; then
+  echo "install.assert: $unexpected hook command(s) do not run $SHIM" >&2
+  exit 1
+fi
+if [[ ! -x "$SHIM" ]]; then
+  echo "install.assert: $SHIM is missing or not executable" >&2
   exit 1
 fi
 

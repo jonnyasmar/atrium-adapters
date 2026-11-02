@@ -47,7 +47,7 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manif
 # exists, which keeps the POSIX commands.
 WINDOWS_HOOK=""
 if atrium_hooks_on_windows; then
-  WINDOWS_HOOK="$(atrium_windows_hook_launcher "${ATRIUM_DATA_DIR:-$HOME/.atrium}" grok)" \
+  WINDOWS_HOOK="$(atrium_windows_hook_launcher grok "$HOME/.grok")" \
     || echo "atrium hooks: no space-free path to bash.exe or the atrium data dir; Grok hooks keep POSIX commands, which PowerShell cannot run" >&2
 fi
 
@@ -63,18 +63,10 @@ CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
 # event to; skip it and the normalizer + CLI spawns it costs.
 PANE_GUARD='[ -n "${ATRIUM_PANE_ID:-}" ] || exit 0'
 
-# Channel discovery — bake the right CLI fallback path into hook
-# commands so dev/stable installs don't clobber each other. The probe
-# inspects the running script's own location so a single machine with
-# both dev and stable installed gets the matching CLI for each install.
-# The `${ATRIUM_CLI_PATH:-…}` shell substitution at hook-fire time
-# still wins whenever the pane env injects it.
-SCRIPT_DIR_REAL="$(cd "$(dirname "$0")" 2>/dev/null && pwd -P || echo "")"
-if [ "${SCRIPT_DIR_REAL#${HOME}/.atrium-dev}" != "$SCRIPT_DIR_REAL" ]; then
-  ATRIUM_CLI_FALLBACK="${HOME}/.atrium-dev/bin/atrium-dev"
-else
-  ATRIUM_CLI_FALLBACK="${HOME}/.atrium/bin/atrium"
-fi
+# Every atrium instance (stable, dev, each worktree) installs this one global
+# file, so it names no instance: a pane's ${ATRIUM_CLI_PATH} picks its own CLI
+# at hook-fire time, and every command needing the CLI runs only in a pane.
+ATRIUM_CLI_FALLBACK="atrium"
 
 # Adapter dir — where normalize-hook-payload.sh lives. Resolved at
 # hook-fire time so the same hook entry works for stable/dev/beta.
@@ -217,6 +209,7 @@ EOF
 
 do_install() {
   mkdir -p "$HOOKS_DIR"
+  [ -z "$WINDOWS_HOOK" ] || atrium_windows_write_hook_shim grok "$HOME/.grok"
   build_hooks_json > "$HOOKS_FILE.atrium-tmp"
   mv "$HOOKS_FILE.atrium-tmp" "$HOOKS_FILE"
 
