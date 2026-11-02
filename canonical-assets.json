@@ -78,6 +78,13 @@
       "sha256": "40464d9f8e62a0d1da3d486abcbc8696a8f88e2fc8a19329fd5c8f492ceb2e23"
     },
     {
+      "id": "atrium-skill-hq",
+      "remotePath": "skills/atrium/references/hq.md",
+      "target": "adapter-skill-reference",
+      "destName": "hq.md",
+      "sha256": "03cbfe115b50cb24a5e8250394abfc80adebd3ec18468eeb63ee3d16dac1e6e7"
+    },
+    {
       "id": "atrium-create-brief",
       "remotePath": "skills/atrium-create-brief/SKILL.md",
       "target": "bundled-skill",

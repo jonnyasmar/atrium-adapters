@@ -117,11 +117,12 @@ build_all_hooks() {
   # SkillsHandler::manifest() per NFR18) is consumed as session context by
   # Codex, same as the Claude Code flow.
   #
-  # Split into THREE dedicated SessionStart entries (--section context|agent|
-  # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
-  # hook per section gives each section its own 10K budget (max headroom).
+  # Split into dedicated SessionStart entries (--section context|agent|
+  # director-rules|skills) instead of one: Claude Code caps hook output at 10K
+  # PER hook, so a hook per section gives each section its own 10K budget (max
+  # headroom). director-rules prints nothing for anyone atrium gives no rules.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent skills; do
+  for ctx_section in context agent director-rules skills; do
     ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex --section %s 2>/dev/null || true' \
       "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \

@@ -135,9 +135,14 @@ build_all_hooks() {
   # per NFR18). The CLI writes raw bytes shaped for the target harness
   # directly to stdout — no jq, no per-harness wrap here.
   #
-  # Split into THREE dedicated SessionStart entries (--section context|agent|
-  # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
-  # hook per section gives each section its own 10K budget (max headroom).
+  # Split into dedicated SessionStart entries (--section context|agent|
+  # director-rules|skills) instead of one: Claude Code collapses a hook's output
+  # past ~10K into a short preview, so a hook per section gives each section its
+  # own 10K budget (max headroom). director-rules is atrium's rules for an HQ
+  # director or delegated staff, apart from the owner's instructions in agent;
+  # it prints nothing for anyone else, and an older CLI that doesn't know the
+  # section fails quietly (`|| true`) while its daemon still puts the rules in
+  # agent.
   #
   # NO CHAT_SDK_GUARD here: the SDK's SessionStart hook callback never fires for
   # claude-sdk chat panes (verified 2026-07-25 — no `hook emit session-start`,
@@ -146,7 +151,7 @@ build_all_hooks() {
   # working SessionStart context source there; every other event keeps the
   # guard because its SDK callback does fire.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent skills; do
+  for ctx_section in context agent director-rules skills; do
     if [ -n "$WINDOWS_HOOK" ]; then
       ctx_cmd="$WINDOWS_HOOK manifest $ctx_section"
     else

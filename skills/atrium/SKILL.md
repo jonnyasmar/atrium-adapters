@@ -160,6 +160,10 @@ The user keeps API keys, env vars and logins in atrium. You use them by name and
 
 A delegated run may use whatever the agent that delegated it may use. If you need one you don't have and you're working for another agent, say exactly which in your report instead of requesting it.
 
+## HQ (directors and staff)
+
+An atrium HQ director, or a staff member on a run HQ delegated to it, gets atrium's rules each session: what to do and which command does it. **Before an HQ command whose flags or formats you don't know (delegating, hiring, routines and reminders, labels, your dock, your short name, secrets), read `references/hq.md`**, or run `--help` on it.
+
 ## Quick examples
 
 ```bash

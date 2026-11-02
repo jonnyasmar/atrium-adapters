@@ -148,6 +148,9 @@ jobs:
       - name: Validate atrium bug-report contract
         run: bash tests/atrium-bug-report-contract.assert.sh
 
+      - name: Validate atrium skill HQ contract
+        run: bash tests/atrium-skill-hq-contract.assert.sh
+
       - name: Validate immutable release metadata
         run: |
           node scripts/test-runtime-tree-digest.mjs
