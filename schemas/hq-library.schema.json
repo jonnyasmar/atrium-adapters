@@ -536,16 +536,16 @@
       }
     },
     "printable": {
-      "description": "Every key and string in a bundle: printable characters, tab and newline only. No controls, format characters (zero-width joiners, bidi overrides, tag characters), separators, variation selectors or private-use or surrogate characters, which hide text from review. A portable approximation of the rule build-hq-library.mjs and atrium enforce exactly (they also refuse unassigned code points).",
+      "description": "Every key and string in a bundle: printable characters, tab and newline only. No controls, format characters (zero-width joiners, bidi overrides, tag characters), separators, variation selectors or private-use characters, which hide text from review. A portable approximation of the rule build-hq-library.mjs and atrium enforce exactly (they also refuse unassigned code points).",
       "if": { "type": "string" },
       "then": {
-        "pattern": "^[^\u0000-\b\u000b-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ue000-\uf8ff\ufe00-\ufe0f\ufeff\ufff0-\ufffb\ufffe-\uffff\ud804\udcbd\ud804\udccd\ud80d\udc30-\ud80d\udc3f\ud82f\udca0-\ud82f\udca3\ud834\udd73-\ud834\udd7a\udb40\udc00-\udb40\udc7f\udb40\udd00-\udb40\uddef\udb80\udc00-\udbff\udfff\ud800-\udfff]*$"
+        "pattern": "^[^\u0000-\b\u000b-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ue000-\uf8ff\ufe00-\ufe0f\ufeff\ufff0-\ufffb\ufffe-\uffff\ud804\udcbd\ud804\udccd\ud80d\udc30-\ud80d\udc3f\ud82f\udca0-\ud82f\udca3\ud834\udd73-\ud834\udd7a\udb40\udc00-\udb40\udc7f\udb40\udd00-\udb40\uddef\udb80\udc00-\udbff\udfff]*$"
       },
       "else": {
         "if": { "type": "object" },
         "then": {
           "propertyNames": {
-            "pattern": "^[^\u0000-\b\u000b-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ue000-\uf8ff\ufe00-\ufe0f\ufeff\ufff0-\ufffb\ufffe-\uffff\ud804\udcbd\ud804\udccd\ud80d\udc30-\ud80d\udc3f\ud82f\udca0-\ud82f\udca3\ud834\udd73-\ud834\udd7a\udb40\udc00-\udb40\udc7f\udb40\udd00-\udb40\uddef\udb80\udc00-\udbff\udfff\ud800-\udfff]*$"
+            "pattern": "^[^\u0000-\b\u000b-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ue000-\uf8ff\ufe00-\ufe0f\ufeff\ufff0-\ufffb\ufffe-\uffff\ud804\udcbd\ud804\udccd\ud80d\udc30-\ud80d\udc3f\ud82f\udca0-\ud82f\udca3\ud834\udd73-\ud834\udd7a\udb40\udc00-\udb40\udc7f\udb40\udd00-\udb40\uddef\udb80\udc00-\udbff\udfff]*$"
           },
           "additionalProperties": { "$ref": "#/$defs/printable" }
         },
