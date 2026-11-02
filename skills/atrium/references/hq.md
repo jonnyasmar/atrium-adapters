@@ -104,7 +104,7 @@ Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`
 ```
 
 - `chat react 👍` reacts to the owner's latest message in the chat you're in. When a message only needs acknowledging (thanks, ok, got it), the reaction is your whole reply: react, then end your turn with that same emoji as your only text (`👍`, nothing else). atrium folds it into the reaction, so the owner sees only the reaction on their message. Use it sparingly: anything that needs an answer still gets one.
-- The owner's reactions to your messages reach you as a note at your next turn ("Since your last turn, the owner reacted 👍 to …"). Take them as feedback; don't reply to them.
+- The owner's reactions to your messages reach you right away ("The owner reacted 👍 to your message …"), or as a note at your next turn when your chat isn't running. Take them as feedback; don't reply to them unless one changes something. Any single emoji works for `chat react`, not only 👍.
 
 ## Memory and sessions
 
