@@ -159,6 +159,34 @@ function runAtriumCapture(
   });
 }
 
+// atrium's catastrophic-command guard: `atrium guard check` refuses only a
+// shell command that could erase /, the home folder, system folders or a disk.
+// A `{ block, reason }` from tool_call stops the call before it runs and hands
+// the model the reason. Runs in chat panes too and fails open: an atrium CLI
+// from before `guard`, a timeout or unreadable output all allow.
+async function refuseCatastrophicCommand(
+  tool: string | undefined,
+  input: unknown,
+): Promise<{ block: true; reason: string } | undefined> {
+  const shell = tool === "bash" ? "posix" : tool === "powershell" ? "powershell" : null;
+  const command = (input as { command?: unknown } | null)?.command;
+  if (!shell || typeof command !== "string") return undefined;
+  const out = await runAtriumCapture(
+    ["guard", "check", "--command", command, "--shell", shell, "--cwd", process.cwd(), "--format", "json"],
+    undefined,
+    2000,
+  );
+  try {
+    const verdict = JSON.parse(out) as { verdict?: unknown; message?: unknown };
+    if (verdict.verdict === "refuse" && typeof verdict.message === "string") {
+      return { block: true, reason: verdict.message };
+    }
+  } catch {
+    // Unreadable output allows, like every other failure.
+  }
+  return undefined;
+}
+
 // Extract the injected context string from a resolve-prompt-sigils
 // response (claude-shaped hookSpecificOutput envelope). Returns "" for the
 // no-op `{}` envelope or any parse failure.
@@ -345,6 +373,7 @@ export default function (pi: ExtensionAPI) {
       return;
     }
     emit("pre-tool-use", payload);
+    return refuseCatastrophicCommand(e.toolName, e.input);
   });
 
   // tool_result fires after a tool executes, before the LLM receives the

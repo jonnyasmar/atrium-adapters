@@ -141,7 +141,9 @@ jobs:
         run: bash tests/windows-hook-commands.assert.sh
 
       - name: Validate the catastrophic-command guard hooks
-        run: bash tests/command-guard-hooks.assert.sh
+        run: |
+          bash tests/command-guard-hooks.assert.sh
+          bash tests/plugin-command-guard.assert.sh
 
       - name: Validate that global hook configs name no atrium instance
         run: bash tests/global-hooks-name-no-instance.assert.sh

@@ -73,7 +73,7 @@ run() { # <cli> <payload> <env words> -- <argv…>
   shift 4
   : >"$CALLS"
   # shellcheck disable=SC2086
-  out="$(printf '%s' "$payload" | env -i HOME="$TMP/home" PATH="$BASE_PATH" \
+  out="$(printf '%s' "$payload" | env -i HOME="$TMP/home" PATH="$BASE_PATH" ATRIUM_HOOK_DEBUG=0 \
     ATRIUM_DATA_DIR="$DATA" ATRIUM_CLI_PATH="$cli" CALLS="$CALLS" $vars "$@" 2>/dev/null)" && code=0 || code=$?
   printf '%s|%s|%s' "$(grep -c '^guard check' "$CALLS" || true)" "$out" "$code"
 }
@@ -166,6 +166,16 @@ check "antigravity" antigravity \
   '{"conversationId":"c","toolCall":{"name":"run_command","args":{"CommandLine":"atrium-guard-test-refuse"}}}' \
   '{"conversationId":"c","toolCall":{"name":"run_command","args":{"CommandLine":"ls"}}}' \
   '{"decision":"allow"}' -- bash "$ROOT/adapters/antigravity/agy-hook-entry.sh" pre-tool-use
+
+check "copilot" copilot \
+  '{"sessionId":"s","toolName":"bash","toolArgs":{"command":"atrium-guard-test-refuse"}}' \
+  '{"sessionId":"s","toolName":"bash","toolArgs":{"command":"ls"}}' \
+  "{}" -- bash "$ROOT/adapters/copilot/copilot-hook.sh" preToolUse
+
+check "kimi" kimi \
+  '{"session_id":"s","tool_name":"Bash","tool_input":{"command":"atrium-guard-test-refuse"}}' \
+  '{"session_id":"s","tool_name":"Bash","tool_input":{"command":"ls"}}' \
+  "" -- bash "$ROOT/adapters/kimi/kimi-hook.sh" pre-tool-use pre-tool-use
 
 # Tools that cannot run a shell command never cost a guard call.
 out="$(run "$NEW_CLI" '{"tool_name":"developer__text_editor","tool_input":{"path":"a"}}' "$PANE" -- \
