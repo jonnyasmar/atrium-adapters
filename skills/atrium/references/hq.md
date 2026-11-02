@@ -64,13 +64,12 @@ Without `--adapter`, a hire runs on the default brain. Run from a director's cha
 
 `--metadata` sets one key and keeps the others.
 
-The dock is `{"tabs":[...],"hidden":[...]}`. A tab is one of:
+The dock is `{"tabs":[...],"hidden":[...]}`. Its sections are fixed: your dashboard sits at the bottom of its Overview, below live lists of your chats, work, browser and routines. What you put in `tabs` are attached items, listed in the Overview:
 
-- a built-in, by name: `"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`, `"browser"`;
 - a pane: `{"kind":"pane","paneId":"…"}`;
 - a note: `{"kind":"note","workspaceId":"…","noteId":"…"}`.
 
-A built-in you don't list shows at the end unless `hidden` names it. Save the whole dock, keeping the tabs you aren't changing. Which tab is open is the owner's choice, not part of the dock.
+Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`, `"browser"`) and `hidden` are still accepted but no longer change the dock. Save the whole dock, keeping the items you aren't changing. Which section is open is the owner's choice, not part of the dock.
 
 ## Your chats
 
