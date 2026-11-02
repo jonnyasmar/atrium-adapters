@@ -43,17 +43,13 @@ const BUNDLE_BYTES = 16 * 1024;
 const PERSONA_SHARE_BYTES = 64 * 1024;
 const MIN_GAP_MINUTES = 15;
 const MAX_FIRES_PER_DAY = 48;
-// NUL, zero-width characters, line and paragraph separators, bidi controls
-// and the BOM: invisible in review, so never in content. Code points, not
-// escapes, so this file itself can't carry one by accident.
-const HIDDEN_RANGES = [
-  [0x0000, 0x0000],
-  [0x200b, 0x200f],
-  [0x2028, 0x202e],
-  [0x2060, 0x2064],
-  [0x2066, 0x2069],
-  [0xfeff, 0xfeff],
-];
+// Text is an allow-list: printable characters, tab and newline. Anything
+// else (controls, format characters such as zero-width joiners, bidi
+// overrides and tag characters, private-use, unassigned and surrogate code
+// points, line and paragraph separators, variation selectors) is invisible
+// in review and can smuggle instructions into a prompt, so it never reaches a
+// bundle. atrium enforces the same rule itself when it loads the library.
+const DISALLOWED = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Cs}\p{Zl}\p{Zp}\u{FE00}-\u{FE0F}\u{E0100}-\u{E01EF}]/u;
 const SLOT = /\{([a-z][a-z0-9_]*)\}/g;
 
 // Key order in the compiled document, so a diff reads the way the files do.
@@ -90,12 +86,38 @@ const ORDER = [
   "prompt",
 ];
 
-function hasHidden(text) {
-  for (const ch of text) {
-    const code = ch.codePointAt(0);
-    if (HIDDEN_RANGES.some(([lo, hi]) => code >= lo && code <= hi)) return true;
+// The first character `text` may not hold, as `U+XXXX`, or null.
+export function disallowedChar(text) {
+  for (const ch of String(text)) {
+    if (ch === "\t" || ch === "\n") continue;
+    if (DISALLOWED.test(ch)) return `U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
   }
-  return false;
+  return null;
+}
+
+// Every key and string value in `value`, checked where it is, not through a
+// serialisation whose escapes would hide what a string holds.
+function disallowedIn(value, path = "") {
+  if (typeof value === "string") {
+    const found = disallowedChar(value);
+    return found ? `${found} in ${path || "(root)"}` : null;
+  }
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      const found = disallowedIn(value[i], `${path}/${i}`);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (value && typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      const inKey = disallowedChar(key);
+      if (inKey) return `${inKey} in the key ${path}/${JSON.stringify(key)}`;
+      const found = disallowedIn(child, `${path}/${key}`);
+      if (found) return found;
+    }
+  }
+  return null;
 }
 
 class YamlError extends Error {}
@@ -225,7 +247,10 @@ function parseDoubleQuoted(text, pos) {
     end++;
   }
   if (end >= text.length) throw new YamlError("unterminated double-quoted string");
-  return [JSON.parse(text.slice(pos, end + 1)), end + 1];
+  const value = JSON.parse(text.slice(pos, end + 1));
+  const found = disallowedChar(value);
+  if (found) throw new YamlError(`a quoted string decodes to ${found}, which a bundle can't hold`);
+  return [value, end + 1];
 }
 
 function parseSingleQuoted(text, pos) {
@@ -604,7 +629,8 @@ export function checkLibrary(files, presets) {
         if (!params.has(slot) && !BUILT_IN_SLOTS.has(slot)) fail(`uses {${slot}}, which it doesn't declare`);
       }
     }
-    if (hasHidden(JSON.stringify(bundle))) fail("has a NUL, zero-width, line-separator or bidi control character");
+    const hidden = disallowedIn(bundle);
+    if (hidden) fail(`has a character a bundle can't hold (controls, format, private-use or unassigned characters, separators, variation selectors): ${hidden}`);
     for (const slot of slotsIn(bundle.schedule?.tz)) {
       used.add(slot);
       if (!BUILT_IN_SLOTS.has(slot) && !params.has(slot)) fail(`schedule.tz uses {${slot}}, which it doesn't declare`);

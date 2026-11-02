@@ -9,25 +9,41 @@
   "properties": {
     "$schema": { "type": "string" },
     "schemaVersion": { "const": 1 },
-    "updatedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-    "bundles": { "type": "array", "items": { "$ref": "#/$defs/bundle" } }
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "bundles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/bundle" }
+    }
   },
   "$defs": {
     "bundle": {
-      "oneOf": [
-        { "$ref": "#/$defs/persona" },
-        { "$ref": "#/$defs/routine" },
-        { "$ref": "#/$defs/staff" }
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/persona"
+            },
+            {
+              "$ref": "#/$defs/routine"
+            },
+            {
+              "$ref": "#/$defs/staff"
+            }
+          ]
+        },
+        {
+          "$ref": "#/$defs/printable"
+        }
       ]
     },
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]{0,31}/[a-z0-9][a-z0-9-]{0,63}$"
     },
-    "text": {
-      "type": "string",
-      "minLength": 1
-    },
+    "text": { "type": "string", "minLength": 1 },
     "icon": {
       "description": "A lucide icon name in PascalCase, as atrium's labels name them (`Inbox`, `GitPullRequest`). A client that doesn't know it shows its default.",
       "type": "string",
@@ -39,22 +55,36 @@
     "effect": {
       "enum": ["read", "notify", "draft", "organise", "send", "post", "buy", "delete"]
     },
-    "tier": { "enum": ["everyday", "deep"] },
+    "tier": {
+      "enum": ["everyday", "deep"]
+    },
     "param": {
       "type": "object",
       "required": ["key", "label", "kind"],
       "additionalProperties": false,
       "properties": {
-        "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$" },
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,31}$"
+        },
         "label": { "type": "string", "minLength": 1, "maxLength": 40 },
         "kind": {
           "enum": ["text", "choice", "multi", "time", "timezone", "project", "person", "number"]
         },
         "default": {
           "oneOf": [
-            { "type": "string", "maxLength": 200 },
-            { "type": "number" },
-            { "type": "array", "items": { "type": "string", "maxLength": 80 }, "maxItems": 20 }
+            {
+              "type": "string",
+              "maxLength": 200
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string", "maxLength": 80 },
+              "maxItems": 20
+            }
           ]
         },
         "required": { "type": "boolean" },
@@ -73,7 +103,12 @@
           "type": "object",
           "required": ["preset"],
           "additionalProperties": false,
-          "properties": { "preset": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" } }
+          "properties": {
+            "preset": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            }
+          }
         },
         {
           "type": "object",
@@ -96,7 +131,10 @@
               "required": ["name", "kind"],
               "additionalProperties": false,
               "properties": {
-                "name": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+                },
                 "kind": { "const": "env" }
               }
             }
@@ -106,7 +144,12 @@
           "type": "object",
           "required": ["cli"],
           "additionalProperties": false,
-          "properties": { "cli": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,39}$" } }
+          "properties": {
+            "cli": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,39}$"
+            }
+          }
         }
       ]
     },
@@ -116,7 +159,10 @@
       "required": ["id", "why", "required", "anyOf"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+        },
         "label": { "type": "string", "minLength": 1, "maxLength": 40 },
         "why": { "type": "string", "minLength": 1, "maxLength": 120 },
         "required": { "type": "boolean" },
@@ -134,7 +180,9 @@
             "level": { "const": "acts-on-its-own" },
             "for": {
               "type": "array",
-              "items": { "enum": ["read", "notify", "draft", "organise"] },
+              "items": {
+                "enum": ["read", "notify", "draft", "organise"]
+              },
               "minItems": 1,
               "uniqueItems": true
             },
@@ -150,7 +198,9 @@
       "properties": {
         "author": { "type": "string", "minLength": 1, "maxLength": 60 },
         "url": { "type": "string", "format": "uri", "maxLength": 200 },
-        "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
+        "license": {
+          "enum": ["CC0-1.0", "CC-BY-4.0"]
+        },
         "forkedFrom": {
           "type": "object",
           "required": ["id", "revision"],
@@ -166,7 +216,9 @@
       "type": "object",
       "required": ["tier"],
       "additionalProperties": false,
-      "properties": { "tier": { "$ref": "#/$defs/tier" } }
+      "properties": {
+        "tier": { "$ref": "#/$defs/tier" }
+      }
     },
     "persona": {
       "type": "object",
@@ -200,13 +252,24 @@
         "category": { "$ref": "#/$defs/category" },
         "tags": {
           "type": "array",
-          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" },
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+          },
           "maxItems": 16,
           "uniqueItems": true
         },
         "icon": { "$ref": "#/$defs/icon" },
-        "params": { "type": "array", "items": { "$ref": "#/$defs/param" }, "maxItems": 12 },
-        "needs": { "type": "array", "items": { "$ref": "#/$defs/need" }, "maxItems": 8 },
+        "params": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/param" },
+          "maxItems": 12
+        },
+        "needs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/need" },
+          "maxItems": 8
+        },
         "effects": {
           "type": "array",
           "items": { "$ref": "#/$defs/effect" },
@@ -230,7 +293,10 @@
             "greeting": { "type": "string", "minLength": 1, "maxLength": 160 },
             "ask": {
               "type": "array",
-              "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$" },
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,31}$"
+              },
               "maxItems": 4,
               "uniqueItems": true
             }
@@ -255,7 +321,9 @@
             "type": "object",
             "required": ["ref"],
             "additionalProperties": false,
-            "properties": { "ref": { "$ref": "#/$defs/id" } }
+            "properties": {
+              "ref": { "$ref": "#/$defs/id" }
+            }
           },
           "maxItems": 4
         },
@@ -263,9 +331,18 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "color": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
-            "accessory": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
-            "shape": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" }
+            "color": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,31}$"
+            },
+            "accessory": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,31}$"
+            },
+            "shape": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,31}$"
+            }
           }
         },
         "labels": {
@@ -277,7 +354,10 @@
             "properties": {
               "name": { "type": "string", "minLength": 1, "maxLength": 32 },
               "icon": { "$ref": "#/$defs/icon" },
-              "color": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
+              "color": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,31}$"
+              },
               "guidance": { "type": "string", "minLength": 1, "maxLength": 160 }
             }
           },
@@ -318,13 +398,24 @@
         "category": { "$ref": "#/$defs/category" },
         "tags": {
           "type": "array",
-          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" },
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+          },
           "maxItems": 16,
           "uniqueItems": true
         },
         "icon": { "$ref": "#/$defs/icon" },
-        "params": { "type": "array", "items": { "$ref": "#/$defs/param" }, "maxItems": 12 },
-        "needs": { "type": "array", "items": { "$ref": "#/$defs/need" }, "maxItems": 8 },
+        "params": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/param" },
+          "maxItems": 12
+        },
+        "needs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/need" },
+          "maxItems": 8
+        },
         "effects": {
           "type": "array",
           "items": { "$ref": "#/$defs/effect" },
@@ -343,10 +434,7 @@
           "required": ["cron"],
           "additionalProperties": false,
           "properties": {
-            "cron": {
-              "type": "string",
-              "pattern": "^\\S+ \\S+ \\S+ \\S+ \\S+$"
-            },
+            "cron": { "type": "string", "pattern": "^\\S+ \\S+ \\S+ \\S+ \\S+$" },
             "tz": { "type": "string", "minLength": 1, "maxLength": 64 }
           }
         },
@@ -354,16 +442,22 @@
         "doneWhen": { "type": "string", "minLength": 1, "maxLength": 200 },
         "target": {
           "oneOf": [
-            { "const": "director" },
+            {
+              "const": "director"
+            },
             {
               "type": "object",
               "required": ["staff"],
               "additionalProperties": false,
-              "properties": { "staff": { "$ref": "#/$defs/id" } }
+              "properties": {
+                "staff": { "$ref": "#/$defs/id" }
+              }
             }
           ]
         },
-        "mode": { "enum": ["standing", "on-demand"] },
+        "mode": {
+          "enum": ["standing", "on-demand"]
+        },
         "runOptions": {
           "type": "object",
           "additionalProperties": false,
@@ -405,13 +499,24 @@
         "category": { "$ref": "#/$defs/category" },
         "tags": {
           "type": "array",
-          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" },
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,31}$"
+          },
           "maxItems": 16,
           "uniqueItems": true
         },
         "icon": { "$ref": "#/$defs/icon" },
-        "params": { "type": "array", "items": { "$ref": "#/$defs/param" }, "maxItems": 12 },
-        "needs": { "type": "array", "items": { "$ref": "#/$defs/need" }, "maxItems": 8 },
+        "params": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/param" },
+          "maxItems": 12
+        },
+        "needs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/need" },
+          "maxItems": 8
+        },
         "effects": {
           "type": "array",
           "items": { "$ref": "#/$defs/effect" },
@@ -427,6 +532,28 @@
         "description": { "type": "string", "minLength": 1, "maxLength": 160 },
         "instructions": { "type": "string", "minLength": 1, "maxLength": 1200 },
         "brain": { "$ref": "#/$defs/brain" }
+      }
+    },
+    "printable": {
+      "description": "Every key and string in a bundle: printable characters, tab and newline only. No controls, format characters (zero-width joiners, bidi overrides, tag characters), separators, variation selectors or private-use or surrogate characters, which hide text from review. A portable approximation of the rule build-hq-library.mjs and atrium enforce exactly (they also refuse unassigned code points).",
+      "if": { "type": "string" },
+      "then": {
+        "pattern": "^[^\u0000-\b\u000b-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ue000-\uf8ff\ufe00-\ufe0f\ufeff\ufff0-\ufffb\ufffe-\uffff\ud804\udcbd\ud804\udccd\ud80d\udc30-\ud80d\udc3f\ud82f\udca0-\ud82f\udca3\ud834\udd73-\ud834\udd7a\udb40\udc00-\udb40\udc7f\udb40\udd00-\udb40\uddef\udb80\udc00-\udbff\udfff\ud800-\udfff]*$"
+      },
+      "else": {
+        "if": { "type": "object" },
+        "then": {
+          "propertyNames": {
+            "pattern": "^[^\u0000-\b\u000b-\u001f\u007f-\u009f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ue000-\uf8ff\ufe00-\ufe0f\ufeff\ufff0-\ufffb\ufffe-\uffff\ud804\udcbd\ud804\udccd\ud80d\udc30-\ud80d\udc3f\ud82f\udca0-\ud82f\udca3\ud834\udd73-\ud834\udd7a\udb40\udc00-\udb40\udc7f\udb40\udd00-\udb40\uddef\udb80\udc00-\udbff\udfff\ud800-\udfff]*$"
+          },
+          "additionalProperties": { "$ref": "#/$defs/printable" }
+        },
+        "else": {
+          "if": { "type": "array" },
+          "then": {
+            "items": { "$ref": "#/$defs/printable" }
+          }
+        }
       }
     }
   }
