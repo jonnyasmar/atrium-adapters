@@ -108,6 +108,14 @@
       },
       "uniqueItems": true
     },
+    "manifestSections": {
+      "type": "array",
+      "description": "SDK v2. Optional. The SessionStart manifest sections this adapter's hooks request one per hook (`skills resolve-manifest --section <name>`). atrium gives an HQ director's or delegated staff member's rules a section of their own only when this names `director-rules`; otherwise the agent section carries them.",
+      "items": {
+        "enum": ["context", "agent", "director-rules", "skills"]
+      },
+      "uniqueItems": true
+    },
     "hookEnvelopes": {
       "type": "object",
       "description": "SDK v2. Optional. Declares the per-event response-envelope shape atrium core emits when the underlying tool fires SessionStart, UserPromptSubmit, PreToolUse, and PostToolUse hooks. This is ALSO the per-event injection-capability matrix (Epic 77): for each event, 'kind: none' (or an omitted field) means the adapter CANNOT have context injected back into that event ('cannot inject unless verified' — the conservative default); any non-none 'kind' means the adapter IS injection-capable for that event and atrium renders the assembled context in that envelope shape. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their capability + envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit, and PreToolUse/PostToolUse incapable — the Claude-Code-compatible defaults).",

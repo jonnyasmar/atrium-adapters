@@ -84,6 +84,7 @@
       "deep"
     ]
   },
+  "manifestSections": ["context", "agent", "director-rules", "skills"],
   "hookEnvelopes": {
     "sessionStartManifest": {
       "kind": "identity"
