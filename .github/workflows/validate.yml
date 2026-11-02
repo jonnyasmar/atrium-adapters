@@ -137,6 +137,9 @@ jobs:
       - name: Validate Windows hook commands for grok and claude-code
         run: bash tests/windows-hook-commands.assert.sh
 
+      - name: Validate the catastrophic-command guard hooks
+        run: bash tests/command-guard-hooks.assert.sh
+
       - name: Validate symlinked hook configuration
         run: python3 tests/hook-config-symlinks.py
 

@@ -13,6 +13,7 @@
 #   manifest <section>   SessionStart manifest section
 #   sigils               prompt-time +name sigil context
 #   inject <event>       hook-server context delivery (inject-context.sh)
+#   guard                catastrophic-command guard (`atrium guard check`)
 #
 # Builtins only until the guards pass: outside atrium this costs one bash.
 
@@ -67,6 +68,12 @@ case "${1:-}" in
     [ -n "${ATRIUM:-}" ] || exit 0
     shift
     . "$ADAPTER_DIR/inject-context.sh" "$@"
+    ;;
+  guard)
+    [ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0
+    [ -n "${ATRIUM:-}" ] || exit 0
+    "$CLI" guard check --adapter claude-code 2>/dev/null
+    exit 0
     ;;
 esac
 exit 0

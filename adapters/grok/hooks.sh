@@ -189,6 +189,25 @@ pre-tool-use	PreToolUse
 post-tool-use	PostToolUse
 EOF
 
+  # Catastrophic-command guard. `atrium guard check` refuses only a command
+  # that could erase /, the home folder, system folders or a disk, and prints
+  # a deny whose reason Grok shows the model; otherwise nothing. It refuses
+  # only through that JSON and the command always exits 0: an atrium CLI from
+  # before `guard` writes its usage error to stderr, which is dropped, so an
+  # old CLI can never block a command (Grok reads exit 2 as a deny). `Bash` is
+  # the Claude-style alias Grok maps to its shell tool. No CHAT_SDK_GUARD: the
+  # ACP engine runs these hooks in chat panes too.
+  local guard_cmd guard_entry
+  if [ -n "$WINDOWS_HOOK" ]; then
+    guard_cmd="$WINDOWS_HOOK guard"
+  else
+    guard_cmd="$(printf '%s; %s; "${ATRIUM_CLI_PATH:-%s}" guard check --adapter grok 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$PANE_GUARD" "$ATRIUM_CLI_FALLBACK")"
+  fi
+  guard_entry="$(jq -n --arg cmd "$guard_cmd" \
+    '[{matcher: "Bash", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson g "$guard_entry" '.PreToolUse += $g' <<< "$hooks")"
+
   # Keep the launch-time --rules wrapper as a compatibility fallback for
   # released Grok builds that predate additionalContext support. Patched/new
   # builds gain live context; older builds retain their static atrium rules.

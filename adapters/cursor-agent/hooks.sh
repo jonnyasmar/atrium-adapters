@@ -138,6 +138,20 @@ build_all_hooks() {
     '[{type: "command", command: $cmd, matcher: "*", timeout: 5}]')"
   hooks="$(jq --argjson e "$inject_entry" '.sessionStart += $e' <<< "$hooks")"
 
+  # Catastrophic-command guard. `atrium guard check` refuses only a command
+  # that could erase /, the home folder, system folders or a disk, and prints
+  # Cursor's deny (`permission`, `user_message`, `agent_message`); otherwise
+  # nothing. It refuses only through that JSON and the command always exits 0:
+  # an atrium CLI from before `guard` writes its usage error to stderr, which
+  # is dropped, so an old CLI can never block a command (Cursor reads exit 2
+  # as a deny). No chat guard: the ACP engine runs these hooks in chat panes
+  # too. The marker prefix makes the entry atrium-owned for reinstall/uninstall.
+  local guard_cmd guard_entry
+  guard_cmd='ATRIUM_HOOK_MARKER=atrium-runtime-hook; [ -n "${ATRIUM_PANE_ID:-}" ] || exit 0; "${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}" guard check --adapter cursor-agent 2>/dev/null || true'
+  guard_entry="$(jq -n --arg cmd "$guard_cmd" \
+    '[{type: "command", command: $cmd, matcher: "Shell", timeout: 5}]')"
+  hooks="$(jq --argjson g "$guard_entry" '.preToolUse += $g' <<< "$hooks")"
+
   printf '%s' "$hooks"
 }
 

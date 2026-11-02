@@ -57,6 +57,7 @@ CURSOR_GUARD='[ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0'
 # Prefix non-entry commands so shell dual-fire is suppressed when user
 # settings still load for chat. claude-hook-entry.sh has its own early-exit.
 CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
+GROK_GUARD='[ -z "${GROK_HOOK_EVENT:-}" ] || exit 0'
 
 # settings.json is global, so these hooks also fire for Claude Code sessions
 # started outside atrium. Bail in the hook's own shell there instead of
@@ -212,6 +213,25 @@ build_all_hooks() {
   inject_post="$(jq -n --arg cmd "$inject_base post-tool-use" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_post" '.PostToolUse += $e' <<< "$hooks")"
+
+  # Catastrophic-command guard. `atrium guard check` refuses only a command
+  # that could erase /, the home folder, system folders or a disk, and prints
+  # a PreToolUse deny whose reason Claude reads; otherwise it prints nothing.
+  # It refuses only through that JSON and the command always exits 0: an atrium
+  # CLI from before `guard` writes its usage error to stderr, which is dropped,
+  # so an old CLI can never block a command. No CHAT_SDK_GUARD: chat panes load
+  # these user settings and have no other guard. Grok and Cursor run this file
+  # too and have their own guard entries.
+  local guard_cmd guard_entry
+  if [ -n "$WINDOWS_HOOK" ]; then
+    guard_cmd="$WINDOWS_HOOK guard"
+  else
+    guard_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] || exit 0; "${ATRIUM_CLI_PATH:-atrium}" guard check --adapter claude-code 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$GROK_GUARD")"
+  fi
+  guard_entry="$(jq -n --arg cmd "$guard_cmd" \
+    '[{matcher: "Bash|PowerShell|Monitor", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson g "$guard_entry" '.PreToolUse += $g' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

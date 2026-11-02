@@ -62,5 +62,10 @@ case "${1:-}" in
     shift
     . "$ADAPTERS_DIR/grok/inject-context.sh" "$@"
     ;;
+  guard)
+    [ -n "${ATRIUM_PANE_ID:-}" ] || exit 0
+    "$CLI" guard check --adapter grok 2>/dev/null
+    exit 0
+    ;;
 esac
 exit 0
