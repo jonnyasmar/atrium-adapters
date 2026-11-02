@@ -16,6 +16,7 @@ import {
   canonicalGenerationViolation,
   compareSemver,
   contentVersionCouplingViolation,
+  previousRegistryRefs,
   publishedTipGenerationViolation,
   releaseWriteDecision,
   skillReferenceParityViolation,
@@ -257,9 +258,9 @@ function loadPublishedTipCanonical() {
 }
 
 function loadPreviousRegistry() {
-  const parent = loadJsonAtRef(`${sourceCommit}^`, "registry.json");
-  if (parent != null) return parent;
-  for (const ref of ["origin/main", "main"]) {
+  const publishedTipIsAncestor =
+    gitOptional("merge-base", "--is-ancestor", "origin/main", sourceCommit) != null;
+  for (const ref of previousRegistryRefs(sourceCommit, publishedTipIsAncestor)) {
     const document = loadJsonAtRef(ref, "registry.json");
     if (document != null) return document;
   }

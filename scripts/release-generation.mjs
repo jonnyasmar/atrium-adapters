@@ -142,6 +142,21 @@ export function contentVersionCouplingViolation({
   return null;
 }
 
+/**
+ * The refs to read the previous release's registry from, in order. The
+ * published tip is the previous release whenever this release builds on it:
+ * a release of several content commits can bump versions before its last
+ * one, and the last commit's parent would then make those bumps look
+ * already published. The source commit's parent stands in when the tip is
+ * not an ancestor (for instance when re-checking a release already merged).
+ */
+export function previousRegistryRefs(sourceCommit, publishedTipIsAncestor) {
+  const parent = `${sourceCommit}^`;
+  return publishedTipIsAncestor
+    ? ["origin/main", parent, "main"]
+    : [parent, "origin/main", "main"];
+}
+
 /** Decide whether --write should persist documents after validation. */
 export function releaseWriteDecision(write, validationFailed) {
   if (!write) return "verify";
