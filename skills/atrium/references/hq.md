@@ -103,3 +103,18 @@ Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`
 ```
 
 `mine` is a director's own browser, and `browser hand-off` uses it when a director names no pane. Staff name the browser they drive. Requests and hand-offs return at once: end your turn, and atrium tells you the outcome. SKILL.md's **Secrets** section has the rest.
+
+## Connectors
+
+Connectors are apps' tools (Linear, Notion, Slack, docs…) that atrium runs for you; a connected one's tools are simply yours to call.
+
+```bash
+"$ATRIUM_CLI_PATH" connector catalog [--search <q>]
+"$ATRIUM_CLI_PATH" connector request <id> --why "<one line>" [--autonomy full|ask-writes|read-only]
+"$ATRIUM_CLI_PATH" connector policy [<id> full|ask-writes|read-only|off]
+```
+
+- `connector catalog` lists what you could ask for: each one's id, whether it's connected, and what it signs in with. A `--search` with no curated match lists community servers; the owner adds those in Settings.
+- `connector request` puts a card in your chat and on the owner's phone and returns at once: end your turn. atrium tells you when it's connected (in a Claude chat its tools are live at once; otherwise from your next restart, or at once in a new side chat) or declined. Never ask again this week for one the owner declined.
+- Suggest connectors while you work out your role: name the one or two that would let you do more ("I can triage your inbox if you connect Gmail"). Ask when a task needs one.
+- `connector policy` (directors) lists what you may do with each connector on your own: `full` acts without asking; `ask-writes`, the default, runs reads and holds what sends, posts, changes, deletes or pays for the owner's tap on a card; `read-only` runs reads only; `off` keeps it out of your chats. Where it's `full`, act without asking in chat; where a call waits on a card, wait for it rather than asking again. Only the owner raises a level (ask with `connector request <id> --autonomy full`); you may lower your own with `connector policy <id> <level>`.
