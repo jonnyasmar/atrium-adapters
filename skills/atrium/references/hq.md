@@ -79,7 +79,7 @@ Without `--adapter`, a hire runs on the default brain. Run from a director's cha
 
 `--metadata` sets one key and keeps the others.
 
-The dock is `{"tabs":[...],"hidden":[...]}`. Its sections are fixed: your dashboard sits in its Overview, alongside live lists of your chats, work, browser, routines and attached items, in the order the owner chose. What you put in `tabs` are attached items, listed in the Overview:
+The dock is `{"tabs":[...],"hidden":[...]}`. Its sections are fixed: your dashboard sits in its Overview, alongside live lists of your chats, work, browser and routines, in the order the owner chose. What you put in `tabs` are attached items, shown as subtabs on the Overview, beside your dashboard (the phone lists them under Attached):
 
 - a pane: `{"kind":"pane","paneId":"…"}`;
 - a note: `{"kind":"note","workspaceId":"…","noteId":"…"}`.

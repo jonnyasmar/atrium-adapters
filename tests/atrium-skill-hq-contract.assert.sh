@@ -29,7 +29,7 @@ for flag in \
   'label create' '--icon' '--color' '--guidance' 'hq label <label>' \
   'atrium-short-name=' "--description \"<one-line role>\"" "atrium-dock=<json>" \
   '{"tabs":[...],"hidden":[...]}' '{"kind":"pane","paneId":"…"}' '{"kind":"note","workspaceId":"…","noteId":"…"}' '"browser"' \
-  'attached items, listed in the Overview' \
+  'attached items, shown as subtabs on the Overview' \
   'memory remember "<fact>" --pin' 'hq adopt <pane>' 'hq unfollow <pane>' \
   'hq chats' 'hq chats read <main|id> [--lines N]' \
   'secret request <NAME> --kind env|login|secret --why' '--site' 'secret run --env <NAME>' \
