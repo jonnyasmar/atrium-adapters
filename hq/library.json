@@ -80,7 +80,7 @@
           "required": false,
           "anyOf": [
             {
-              "login": "calendar.google.com"
+              "cli": "spark"
             }
           ]
         },
@@ -90,9 +90,6 @@
           "why": "spot mail that needs you, and draft replies",
           "required": false,
           "anyOf": [
-            {
-              "login": "mail.google.com"
-            },
             {
               "cli": "spark"
             }
@@ -327,9 +324,6 @@
           "required": false,
           "anyOf": [
             {
-              "login": "mail.google.com"
-            },
-            {
               "cli": "spark"
             }
           ]
@@ -424,9 +418,6 @@
           "why": "find bills, renewal notices and appointment confirmations",
           "required": false,
           "anyOf": [
-            {
-              "login": "mail.google.com"
-            },
             {
               "cli": "spark"
             }
@@ -552,9 +543,6 @@
           "required": true,
           "anyOf": [
             {
-              "login": "mail.google.com"
-            },
-            {
               "cli": "spark"
             }
           ]
@@ -673,9 +661,6 @@
           "why": "track replies from companies and draft follow-ups",
           "required": false,
           "anyOf": [
-            {
-              "login": "mail.google.com"
-            },
             {
               "cli": "spark"
             }
@@ -995,9 +980,6 @@
           "required": false,
           "anyOf": [
             {
-              "login": "mail.google.com"
-            },
-            {
               "cli": "spark"
             }
           ]
@@ -1086,9 +1068,6 @@
           "required": true,
           "anyOf": [
             {
-              "login": "mail.google.com"
-            },
-            {
               "cli": "spark"
             }
           ]
@@ -1163,9 +1142,6 @@
           "why": "read, label and draft replies in your inbox",
           "required": true,
           "anyOf": [
-            {
-              "login": "mail.google.com"
-            },
             {
               "cli": "spark"
             }
@@ -1303,7 +1279,7 @@
           "required": false,
           "anyOf": [
             {
-              "login": "calendar.google.com"
+              "cli": "spark"
             }
           ]
         },
@@ -1313,9 +1289,6 @@
           "why": "spot mail that needs you",
           "required": false,
           "anyOf": [
-            {
-              "login": "mail.google.com"
-            },
             {
               "cli": "spark"
             }
@@ -1823,7 +1796,7 @@
           "required": false,
           "anyOf": [
             {
-              "login": "calendar.google.com"
+              "cli": "spark"
             }
           ]
         },

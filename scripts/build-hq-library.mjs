@@ -36,6 +36,9 @@ const KINDS = [
 ];
 const BUILT_IN_SLOTS = new Set(["director", "timezone"]);
 const ASK_FIRST_EFFECTS = new Set(["send", "post", "buy", "delete"]);
+// Google has refused account sign-in from CEF-based browsers since 2021, and the
+// director's browser is CEF: a Google login would be an alternative that can't work.
+const NO_BROWSER_LOGIN = ["google.com", "gmail.com"];
 const PLAYBOOK_SECTIONS = ["How I work", "Checklists", "Lessons", "Defaults"];
 const PLAYBOOK_ITEM_CHARS = 200;
 const PLAYBOOK_CHARS = 3000;
@@ -580,6 +583,9 @@ function checkNeeds(bundle, presets, fail) {
     for (const alt of need.anyOf ?? []) {
       if (alt.preset && !presets.has(alt.preset)) {
         fail(`need "${need.id}" names preset "${alt.preset}", which connectors/catalog.json doesn't have`);
+      }
+      if (alt.login && NO_BROWSER_LOGIN.some((site) => alt.login === site || alt.login.endsWith(`.${site}`))) {
+        fail(`need "${need.id}" offers a login for ${alt.login}, but Google refuses sign-in from atrium's browser; offer spark or a connector`);
       }
     }
     if (!need.autonomy) continue;

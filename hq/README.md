@@ -16,6 +16,7 @@ The frontmatter is a strict YAML subset (block and flow maps and sequences, plai
 
 - every `{slot}` in the text is a declared param or a built-in (`{director}`, `{timezone}`), and every declared param is used;
 - every routine and staff `ref` resolves, and every connector `preset` is in `connectors/catalog.json`;
+- no need offers a Google `login` (`google.com`, `gmail.com` or a subdomain): Google refuses sign-in from CEF-based browsers, and the director's browser is CEF. Offer `spark` or a connector instead;
 - a routine that wakes the director fires at least 15 minutes apart and at most 48 times a day, and an on-demand routine says when it's done;
 - `send`, `post`, `buy` and `delete` come with `asksFirst`;
 - an `autonomy` request sits on a need with a connector preset, names only effects the bundle declares, and never one that always asks first. A bundle never grants autonomy: the owner does;

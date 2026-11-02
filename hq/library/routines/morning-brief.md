@@ -18,12 +18,12 @@ needs:
     label: Calendar
     why: list today's meetings
     required: false
-    anyOf: [{ login: calendar.google.com }]
+    anyOf: [{ cli: spark }]
   - id: email
     label: Email
     why: spot mail that needs you
     required: false
-    anyOf: [{ login: mail.google.com }, { cli: spark }]
+    anyOf: [{ cli: spark }]
   - { preset: github, label: GitHub, why: PRs and issues waiting on you, required: false }
   - { preset: linear, label: Linear, why: "what's due this week", required: false }
 effects: [read, notify]

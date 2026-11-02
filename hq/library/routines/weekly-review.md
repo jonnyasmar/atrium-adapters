@@ -18,7 +18,7 @@ needs:
     label: Calendar
     why: see what's planned for next week
     required: false
-    anyOf: [{ login: calendar.google.com }]
+    anyOf: [{ cli: spark }]
   - { preset: github, label: GitHub, why: work merged and issues closed this week, required: false }
   - { preset: linear, label: Linear, why: what closed and what slipped, required: false }
 effects: [read, notify, draft]

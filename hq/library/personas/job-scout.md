@@ -32,7 +32,7 @@ needs:
     label: Email
     why: track replies from companies and draft follow-ups
     required: false
-    anyOf: [{ login: mail.google.com }, { cli: spark }]
+    anyOf: [{ cli: spark }]
 effects: [read, notify, draft]
 asksFirst: ["applying anywhere, or sending anything to a recruiter or company", "changing my profiles", "sharing my resume"]
 minAtrium: "0.351.0"

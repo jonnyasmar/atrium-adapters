@@ -20,7 +20,7 @@ needs:
     label: Email
     why: find threads waiting on a reply, and draft nudges
     required: true
-    anyOf: [{ login: mail.google.com }, { cli: spark }]
+    anyOf: [{ cli: spark }]
 effects: [read, draft]
 asksFirst: ["sending any email"]
 minAtrium: "0.351.0"

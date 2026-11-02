@@ -25,7 +25,7 @@ needs:
     label: Email
     why: find orders, deliveries and trip confirmations
     required: false
-    anyOf: [{ login: mail.google.com }, { cli: spark }]
+    anyOf: [{ cli: spark }]
   - id: shop
     label: Amazon
     why: see your orders and the prices you get when signed in

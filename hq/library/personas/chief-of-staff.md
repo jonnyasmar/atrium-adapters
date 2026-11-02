@@ -27,12 +27,12 @@ needs:
     label: Calendar
     why: see your meetings and plan around them
     required: false
-    anyOf: [{ login: calendar.google.com }]
+    anyOf: [{ cli: spark }]
   - id: email
     label: Email
     why: spot mail that needs you, and draft replies
     required: false
-    anyOf: [{ login: mail.google.com }, { cli: spark }]
+    anyOf: [{ cli: spark }]
   - { preset: linear, label: Linear, why: "see what's due and what slipped", required: false }
 effects: [read, notify, draft]
 asksFirst: ["sending, accepting or declining anything for me", "booking, moving or cancelling meetings"]

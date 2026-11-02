@@ -20,7 +20,7 @@ needs:
     label: Email
     why: read, label and draft replies in your inbox
     required: true
-    anyOf: [{ login: mail.google.com }, { cli: spark }]
+    anyOf: [{ cli: spark }]
 effects: [read, organise, draft]
 asksFirst: ["sending any email"]
 minAtrium: "0.351.0"

@@ -18,7 +18,7 @@ needs:
     label: Email
     why: find bills, statements and renewal notices
     required: false
-    anyOf: [{ login: mail.google.com }, { cli: spark }]
+    anyOf: [{ cli: spark }]
   - id: ynab
     label: YNAB
     why: read scheduled bills and recent charges (read-only)
