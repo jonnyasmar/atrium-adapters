@@ -21,7 +21,7 @@ needs:
     required: true
     anyOf: [{ preset: github }, { cli: gh }]
     autonomy:
-      level: acts-on-its-own
+      level: full
       for: [organise]
       why: labels new issues and marks duplicates while you're away
 effects: [read, organise, draft]

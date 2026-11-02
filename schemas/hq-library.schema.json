@@ -173,11 +173,12 @@
           "maxItems": 6
         },
         "autonomy": {
+          "description": "What the bundle needs to run unattended: the connector's autonomy the owner is asked for (the connectors lane's `full`, \"act without asking\") and the effects it covers. A request the owner answers on the connect card, never a grant.",
           "type": "object",
           "required": ["level", "for", "why"],
           "additionalProperties": false,
           "properties": {
-            "level": { "const": "acts-on-its-own" },
+            "level": { "const": "full" },
             "for": {
               "type": "array",
               "items": {

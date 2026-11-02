@@ -217,7 +217,7 @@
             }
           ],
           "autonomy": {
-            "level": "acts-on-its-own",
+            "level": "full",
             "for": [
               "organise"
             ],
@@ -1239,7 +1239,7 @@
             }
           ],
           "autonomy": {
-            "level": "acts-on-its-own",
+            "level": "full",
             "for": [
               "organise"
             ],
