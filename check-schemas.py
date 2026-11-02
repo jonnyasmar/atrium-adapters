@@ -10,11 +10,16 @@
 - connectors/catalog.json against schemas/connectors-catalog.schema.json, plus
   the cross-field rules a JSON Schema cannot express (input references, auth
   evidence, pinned versions). See connectors/README.md.
+- hq/library.json against schemas/hq-library.schema.json, then
+  scripts/build-hq-library.mjs --check: the compiled library matches its
+  hq/library/**/*.md sources and passes the rules a schema can't express
+  (slots, refs, presets, effects, schedules, sizes). See hq/README.md.
 
 Requires: pip install jsonschema
 """
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -157,6 +162,23 @@ def check_connectors_catalog():
     return report(catalog_path, errors)
 
 
+def check_hq_library():
+    library_path = root / "hq" / "library.json"
+    schema = json.loads((root / "schemas" / "hq-library.schema.json").read_text())
+    Draft202012Validator.check_schema(schema)
+    library = json.loads(library_path.read_text())
+    failed = report(library_path, schema_errors(Draft202012Validator(schema), library))
+    built = subprocess.run(
+        ["node", str(root / "scripts" / "build-hq-library.mjs"), "--check"],
+        capture_output=True,
+        text=True,
+    )
+    sys.stdout.write(built.stdout)
+    sys.stdout.write(built.stderr)
+    return failed | (1 if built.returncode else 0)
+
+
 failed = check_adapters()
 failed |= check_connectors_catalog()
+failed |= check_hq_library()
 sys.exit(failed)
