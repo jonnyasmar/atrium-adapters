@@ -109,10 +109,19 @@ Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`
 ```bash
 "$ATRIUM_CLI_PATH" memory remember "<fact>" --pin    # loads every session; leave off --pin for the rest
 "$ATRIUM_CLI_PATH" pane read <pane>
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --search "<words>" [--epoch <N>]
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --around <@anchor> [--lines 40]
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --epochs
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --epoch <N> [--lines N]
 "$ATRIUM_CLI_PATH" hq adopt <pane>
 "$ATRIUM_CLI_PATH" hq follow <pane>
 "$ATRIUM_CLI_PATH" hq unfollow <pane>
 ```
+
+- Your chat runs in chapters. When it moves onto a fresh engine session (it grew long, or the owner switched your brain), atrium opens the new chapter with a handoff: the last chapter's summary, your plan and open work, the owner's latest messages, and these commands. Earlier chapters stay in your pane; carry on as one conversation.
+- Before asking the owner to repeat something, look back: atrium_recall and your notebook, then `--search` your chapters and read `--around` a hit. Ask only when that finds nothing.
+- `--epochs` lists your chapters, each with its summary's first line; `--epoch <N>` reads one. A search that prints `partial:` ran out of budget: follow its advice (`--epoch <N>` for older chapters, or a bigger `--budget <MiB>`). SKILL.md's **Searching past sessions** has the rest.
+- If `pane read --help` doesn't list `--search`, or a read refuses it, page your chat with `--from-start` and `--offset` instead.
 
 ## Playbook
 

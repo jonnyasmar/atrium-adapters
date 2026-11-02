@@ -25,7 +25,7 @@ You're running inside **atrium**, a resumable development environment for AI cod
 Each bucket is one top-level verb. Run `<verb> --help` for its full surface.
 
 - **`task`** — Kanban task cards with statuses, priorities, labels, comments, workspace scoping. Human IDs like `ATR-12` alongside UUIDs.
-- **`pane`** — Create, read, write, focus, close, rename, resize, split panes (terminals, editors, browsers, agent sessions). `pane read` returns rendered xterm.js text (what the user sees), with `--lines N` (default 200) and `--offset N` (page back through scrollback).
+- **`pane`** — Create, read, write, focus, close, rename, resize, split panes (terminals, editors, browsers, agent sessions). `pane read` returns what the user sees: a terminal's rendered text, or an agent chat's whole transcript, compactions included. `--lines N` (default 200), `--offset N` to page back, `--from-start` to read from the oldest line. Your own chat's earlier chapters: **Searching past sessions** below.
 - **`note`** — Workspace-scoped notes in four modes (markdown, sketch, canvas, html): new / list / read / write / search / open / delete / `canvas-patch` / history. Markdown supports mermaid via fenced code blocks. See **Notes** below.
 - **`room`** — List, switch, close rooms.
 - **`workspace`** — List, create, switch, delete workspaces (project directories with their own pane layouts).
@@ -326,11 +326,26 @@ When the user asks you to *create a skill*, *save this as a skill*, or *add a sk
 
 ## Searching past sessions
 
-atrium maintains a local content-searchable index of every adapter session on this machine. Suggest it for recall ("find that session where we fixed the popover") or to find which sessions touched a file. Three surfaces:
+**Your own chat first.** Before asking the user to repeat something, look back through your chat. A long chat runs in **chapters**: when it moves onto a fresh engine session, usually because it grew long or switched brains, atrium starts a new chapter in the same pane. Its first turn opens with an `ATRIUM ENGINE EPOCH HANDOFF` block: the last chapter's summary, the plan, open tasks and recent user messages, and the commands to look back. Earlier chapters stay readable; carry on as one conversation.
 
-- **Vault search** — the Library's "Search vault…" input; ranked content matches with snippets over saved entries.
-- **Launcher session picker** — the search above the new-room adapter tiles; searches the full corpus (not just saved), click to resume.
+If `pane read --help` lists `--search`:
+
+```bash
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --epochs                  # chapters: number, start, turns, brain, summary
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --epoch 2 --lines 120     # one chapter; --from-start / --offset work inside it
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --search "staging deploy" # every chapter: summaries first, then newest first
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --around <@anchor> --lines 40
+"$ATRIUM_CLI_PATH" pane epochs "$ATRIUM_PANE_ID"                         # why a chapter did or didn't start; --all for every chat
+```
+
+- `--search` is case-insensitive and needs every word in one message (words match inside longer words; tool output isn't searched). Each hit starts with an anchor (`@<chapter>:s<seq>~<hint>`) to pass to `--around`. `--limit` (default 20); `--epoch N` narrows it. A `partial:` line means the read budget (`--budget <MiB>`, default 256) ran out: it says to add `--epoch N` for older chapters, or a bigger `--budget` when the cut chapter was the oldest or the one you named.
+- Chat panes only; `--json` works on every form.
+- No `--search` in `--help`, or a read that refuses it (an older daemon runs that pane): page your chat with `--from-start` and `--offset`.
+
+**Other sessions.** atrium keeps a local content index of every adapter session on this machine, for recall ("find that session where we fixed the popover") or which sessions touched a file:
+
 - **`atrium edits <file>`** — which past sessions modified a file, recent-first. Flags: `--limit N`, `--session <id>`, `--adapter <name>`, `--since <iso|7d|30d|1y>`, `--json`.
+- To point the user at: **Vault search** (the Library's "Search vault…" input; ranked matches with snippets over saved entries) and the **launcher session picker** (the search above the new-room adapter tiles; the full corpus, click to resume).
 
 Index depth, horizon, and per-workspace excludes live under Settings → Vault. Search is local — no transcript content leaves the machine.
 
