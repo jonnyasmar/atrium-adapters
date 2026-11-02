@@ -206,3 +206,6 @@ jobs:
           done
           if [ "$failed" -eq 1 ]; then exit 1; fi
           echo "canonical-assets.json: all $count assets valid."
+
+      - name: Validate canonical-asset digests and the base-context budget
+        run: python3 tests/canonical-assets.py
