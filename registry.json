@@ -32,7 +32,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "b45b21b48e537a8d05a41c17561b0d1c8586fbe4bbd603133f7fb5618b9d012f",
+      "contentSha256": "ceb4d7c38de6d823a09d9284a966335d8df6d6b0c9a9a5226cdb0811a9724b13",
       "maxAppVersion": null
     },
     {
@@ -49,7 +49,7 @@
       ],
       "official": true,
       "version": "1.20.0",
-      "minAppVersion": "0.310.1",
+      "minAppVersion": "0.354.0",
       "models": [
         "fable",
         "opus",
@@ -71,7 +71,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "161f9da9cde78e0043ad2fd83cf3dd7b35fb2724a0bd3fc09ba94f70b4bb5933",
+      "contentSha256": "569af8d600b9199114a27b9147702c542d9978962b840188cd1b2cc7f67ca732",
       "maxAppVersion": null
     },
     {
@@ -88,7 +88,7 @@
       ],
       "official": true,
       "version": "1.27.0",
-      "minAppVersion": "0.228.0",
+      "minAppVersion": "0.354.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" fill-rule=\"evenodd\"><title>Codex</title><path clip-rule=\"evenodd\" d=\"M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z\"/></svg>",
       "models": [
         "gpt-6.1-terra",
@@ -115,7 +115,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "21b75cd34c6a2d0e16b7cb40c3304ffbcaf4ad4c8a881751493ca149388ca942",
+      "contentSha256": "e38789f10eb7d8aeb74e5160eba5d6f20e6e331e4d6e45726f8d8f29e7285b01",
       "maxAppVersion": null
     },
     {
@@ -148,7 +148,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "dc4741e86b3ec9b3472056a07501bd4130b4d30319388cdd5393ae833830c43c",
+      "contentSha256": "89430dbb305efdfb9e6d00c7309a96acf2e668e739eaa23d21948ad746d8265a",
       "maxAppVersion": null
     },
     {
@@ -182,7 +182,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "bffbd1798234c9b6111c91695d58541ab0ba763c35e134837094930b5abce4b6"
+      "contentSha256": "5b7ab99a70884b1626a2180d7d5c1ef2f062861c355683f3c8113546955ae9c7"
     },
     {
       "name": "kimi",
@@ -214,7 +214,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "a2af0703a1a478b1c06996958714cb2a798ffcc04b128568ced2f5137d0c79f6",
+      "contentSha256": "e982edacef721e5efbb2831663b5081a76540eb4d46ee2becf323f610a08557a",
       "maxAppVersion": null
     },
     {
@@ -247,7 +247,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "41dcb8c701e5bc68de6fa2cb94f65e0c67166b9f66bf09f6be9c97bcb0ee3a5a",
+      "contentSha256": "2bd5e28897d26fd83c2b41475dc200630deadee19953dafec74e0e460dbbf556",
       "maxAppVersion": null
     },
     {
@@ -280,7 +280,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "10bab066836ecd2f96e4d772777f7b3766fde1c55f4b33fb07f58eecc7da4ac1",
+      "contentSha256": "f5c71a57664bdc0223e8e37de564141ec9993ff32afca7abab4a260c90717df9",
       "maxAppVersion": null
     },
     {
@@ -297,7 +297,7 @@
       ],
       "official": true,
       "version": "0.6.0",
-      "minAppVersion": "0.156.0",
+      "minAppVersion": "0.354.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" fill-rule=\"evenodd\"><title>Grok</title><path d=\"M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815\"/></svg>",
       "install": {
         "macos": {
@@ -314,7 +314,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "16ed58746007b7420c9cb1e4950b079a96ffe9384322941c45df51c0ae5915d9"
+      "contentSha256": "1013cdbe9528e02ebf6fcbe4b25d6ac6d9d60383bfd79de364958e12c667efa3"
     },
     {
       "name": "hermes",
@@ -346,7 +346,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "1289bdbd907795c3c60a94654feea80ff4dca460299f651609ef5590669138c3",
+      "contentSha256": "7641122b3d562efe99cd95f6f1b54b4d91f26238e494dcdb6e6374a79f792fa2",
       "maxAppVersion": null
     },
     {
@@ -379,7 +379,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "c9dc55334273c80a3596f0b5ff5c790fb84d6ecce296e92a60472515780d7181",
+      "contentSha256": "477e830617bdec29325746fef1965c597817c3daab9b44202877b185fd1f8b99",
       "maxAppVersion": null
     },
     {
@@ -446,14 +446,14 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "38e5dd48763cefc373d20ac58da951f5a3446247e309921f5e739fe4f03f8946"
+      "contentSha256": "926b5ce7eab539faf3f961f22c27436c69c83da03a10a83cee34300d075fe914"
     }
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "bdfe070c803cee65da73a5656cef5cc82e504414",
-    "sharedSha256": "8fb45dcd1246f99fb73fc9073628ebafe1713415007d39fef2a5d39c3083ce74",
-    "schemaSha256": "39b50785d4720c5dde13c636acff9ea53b76fb1f99360cbbc3c47db4248d7eb4",
+    "commit": "8e1c515e35539b7f45f131d0e5dd31957e6a88ed",
+    "sharedSha256": "709c0d6f34755e26ec40bdd84b3aac4dcf1f12070a43f7e0de495fadd3356ff1",
+    "schemaSha256": "e33a0eed9467d721231cdda1527e84bf30b4d1d426aac1e364e257b740176001",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },
   "tombstones": []
