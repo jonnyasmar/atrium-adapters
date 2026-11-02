@@ -84,6 +84,8 @@ The dock is `{"tabs":[...],"hidden":[...]}`. Its sections are fixed: your dashbo
 - a pane: `{"kind":"pane","paneId":"…"}`;
 - a note: `{"kind":"note","workspaceId":"…","noteId":"…"}`.
 
+`atrium note open <id>` from your chat, a side chat or a worker of yours puts the note there too, never in a pane. A new subtab doesn't change what the owner is looking at, so say so when they should look.
+
 Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`, `"browser"`) and `hidden` are still accepted but no longer change the dock. Save the whole dock, keeping the items you aren't changing. Which section is open is the owner's choice, not part of the dock.
 
 ## Your chats
