@@ -89,9 +89,26 @@ log "$EVENT stdin=$(printf '%s' "$payload" | head -c 400)"
 
 case "$EVENT" in
   pre-tool-use)
+    # Catastrophic-command guard: `atrium guard check` prints agy's deny for a
+    # command that could erase /, the home folder, system folders or a disk,
+    # and nothing otherwise. Only a JSON object counts; an atrium CLI from
+    # before `guard` prints its usage error to stderr, which is dropped, so the
+    # explicit allow below still goes out.
+    guard=""
+    case "$payload" in
+      *run_command*)
+        guard="$(printf '%s' "$payload" | "$CLI" guard check --adapter antigravity 2>/dev/null)" || true
+        ;;
+    esac
     printf '%s' "$payload" | emit pre-tool-use
-    # agy denies the tool call unless it sees an explicit allow.
-    printf '{"decision":"allow"}\n'
+    case "$guard" in
+      "{"*)
+        log "pre-tool-use refused by the guard"
+        printf '%s\n' "$guard"
+        ;;
+      # agy denies the tool call unless it sees an explicit allow.
+      *) printf '{"decision":"allow"}\n' ;;
+    esac
     ;;
 
   post-tool-use)

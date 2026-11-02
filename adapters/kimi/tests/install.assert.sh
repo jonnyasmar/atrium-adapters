@@ -31,7 +31,7 @@ for event in \
 done
 
 grep -Fq 'ATRIUM_HOOK_MARKER=atrium-runtime-hook' <<<"$managed"
-grep -Fq "$ADAPTER_DIR/kimi-hook.sh" <<<"$managed"
+grep -Fq '"${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/kimi/kimi-hook.sh"' <<<"$managed"
 ! grep -Fq 'matcher =' <<<"$managed"
 
 jq -e '

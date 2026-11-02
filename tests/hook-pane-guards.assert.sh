@@ -17,7 +17,9 @@ fail() {
 }
 
 STUB_CLI="$TMP/atrium"
-printf '#!/bin/sh\ncat >/dev/null\necho "emit:$*" >>"$EMIT_LOG"\nexit 0\n' >"$STUB_CLI"
+# Counts `hook emit` calls only; the pre-tool guard's `guard check` is pinned by
+# command-guard-hooks.assert.sh.
+printf '#!/bin/sh\ncat >/dev/null\n[ "$1" = hook ] && echo "emit:$*" >>"$EMIT_LOG"\nexit 0\n' >"$STUB_CLI"
 chmod +x "$STUB_CLI"
 
 # Installed hook commands reach scripts through ATRIUM_DATA_DIR, so point one

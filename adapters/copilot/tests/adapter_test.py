@@ -87,20 +87,40 @@ class AdapterTests(unittest.TestCase):
         self.assertTrue(hooks.manage("status")["activityHooks"])
         config = json.loads(installed)
         self.assertEqual(set(config["hooks"]), set(hooks.EVENTS))
+        shim = self.home / "atrium-hook.sh"
         for event, entries in config["hooks"].items():
-            self.assertEqual(entries[0]["args"], [str(self.data / "adapters/copilot/copilot-hook.sh"), event, str(self.data), os.environ.get("ATRIUM_CLI_PATH", "atrium")])
+            self.assertEqual(entries[0]["args"], [shim.as_posix(), event])
+        self.assertEqual(shim.read_text(), hooks.SHIM)
+        self.assertTrue(os.access(shim, os.X_OK))
         hooks.manage("uninstall")
         self.assertFalse((other.parent / "atrium.json").exists())
+        self.assertFalse(shim.exists())
         self.assertTrue(other.exists())
 
-    def test_uninstall_does_not_remove_another_instances_hooks(self):
+    def test_every_instance_writes_the_same_bytes_naming_no_instance(self):
         hooks.manage("install")
-        with patch.dict(os.environ, {"ATRIUM_DATA_DIR": str(self.root / "other-instance")}):
-            self.assertFalse(hooks.manage("status")["installed"])
-            hooks.manage("uninstall")
-        self.assertTrue(hooks.manage("status")["installed"])
+        config = (self.home / "hooks/atrium.json").read_bytes()
+        shim = (self.home / "atrium-hook.sh").read_bytes()
+        with patch.dict(os.environ, {"ATRIUM_DATA_DIR": str(self.root / ".atrium-dev-other")}):
+            self.assertTrue(hooks.manage("status")["installed"])
+            hooks.manage("install")
+        self.assertEqual(config, (self.home / "hooks/atrium.json").read_bytes())
+        self.assertEqual(shim, (self.home / "atrium-hook.sh").read_bytes())
+        for text in (config, shim):
+            self.assertNotIn(str(self.data).encode(), text)
+            self.assertNotIn(b"other", text)
 
-    def test_status_without_instance_is_read_only(self):
+    def test_shim_answers_by_itself_when_no_instance_can(self):
+        hooks.manage("install")
+        shim = str(self.home / "atrium-hook.sh")
+        env = {key: value for key, value in os.environ.items() if not key.startswith("ATRIUM")}
+        for extra in ({}, {"ATRIUM_PANE_ID": "pane", "ATRIUM_DATA_DIR": str(self.root / "removed-instance")}):
+            with self.subTest(extra=extra):
+                result = subprocess.run(["bash", shim, "preToolUse"], input="{}", text=True,
+                                        capture_output=True, env={**env, **extra})
+                self.assertEqual((result.returncode, result.stdout), (0, ""))
+
+    def test_status_is_read_only_and_needs_no_instance(self):
         hooks.manage("install")
         target = self.home / "hooks/atrium.json"
         installed = target.read_bytes()
@@ -109,13 +129,8 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         status = json.loads(result.stdout)
         self.assertEqual(status["subcommand"], "status")
-        self.assertFalse(status["installed"])
+        self.assertTrue(status["installed"])
         self.assertEqual(target.read_bytes(), installed)
-        for command in ("install", "uninstall"):
-            with self.subTest(command=command):
-                result = self.script("hooks.sh", command, env=env)
-                self.assertNotEqual(result.returncode, 0)
-                self.assertEqual(target.read_bytes(), installed)
 
     def test_no_hooks_outside_atrium_or_in_chat(self):
         with patch.dict(os.environ, {}, clear=True), patch.object(hooks, "post_event") as post:

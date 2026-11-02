@@ -125,6 +125,9 @@ jobs:
       - name: Validate kimi workspace-trust pre-accept
         run: bash tests/kimi-workspace-trust.assert.sh
 
+      - name: Validate kimi's idempotent config install
+        run: bash tests/kimi-config-install.assert.sh
+
       - name: Validate Claude root bypass compatibility
         run: bash tests/claude-root-bypass.assert.sh
 
@@ -136,6 +139,14 @@ jobs:
 
       - name: Validate Windows hook commands for grok and claude-code
         run: bash tests/windows-hook-commands.assert.sh
+
+      - name: Validate the catastrophic-command guard hooks
+        run: |
+          bash tests/command-guard-hooks.assert.sh
+          bash tests/plugin-command-guard.assert.sh
+
+      - name: Validate that global hook configs name no atrium instance
+        run: bash tests/global-hooks-name-no-instance.assert.sh
 
       - name: Validate symlinked hook configuration
         run: python3 tests/hook-config-symlinks.py
@@ -209,3 +220,6 @@ jobs:
           done
           if [ "$failed" -eq 1 ]; then exit 1; fi
           echo "canonical-assets.json: all $count assets valid."
+
+      - name: Validate canonical-asset digests and the base-context budget
+        run: python3 tests/canonical-assets.py

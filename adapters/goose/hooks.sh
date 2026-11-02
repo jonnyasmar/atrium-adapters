@@ -45,6 +45,15 @@ PostToolUseFailure post-tool-use-failure   post-tool-use
 Stop               stop                    stop
 '
 
+# Goose loads this plugin for every goose process on the machine, and every
+# atrium instance (stable, dev, each worktree) installs it. The command names
+# no instance: goose runs it through `sh -c`, so the pane's own instance comes
+# from $ATRIUM_DATA_DIR at fire time, and a hook whose instance is gone exits
+# 0 instead of failing.
+hook_command() {
+  printf 'f="${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/goose/goose-hook.sh"; [ -f "$f" ] || exit 0; exec bash "$f" %s %s' "$1" "$2"
+}
+
 do_install() {
   mkdir -p "${PLUGIN_DIR}/hooks"
   chmod +x "$HOOK_SCRIPT" "${ADAPTER_DIR}/normalize-hook-payload.sh"
@@ -52,7 +61,7 @@ do_install() {
   local jq_args=() filter='{hooks: {}}'
   while read -r native norm emit; do
     [ -n "$native" ] || continue
-    jq_args+=(--arg "n_${native}" "$native" --arg "c_${native}" "${HOOK_SCRIPT} ${norm} ${emit}")
+    jq_args+=(--arg "n_${native}" "$native" --arg "c_${native}" "$(hook_command "$norm" "$emit")")
     filter="${filter} | .hooks[\$n_${native}] = [ { hooks: [ { type: \"command\", command: \$c_${native} } ] } ]"
   done <<< "$(printf '%s\n' "$EVENT_MAP" | sed '/^[[:space:]]*$/d')"
 

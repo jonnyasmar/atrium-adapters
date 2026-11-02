@@ -27,7 +27,7 @@ fi
 check_wired() {
   local native="$1" args="$2"
   if ! jq -e --arg n "$native" --arg a " ${args}\$" \
-       '.hooks[$n][0].hooks[0].command | test("goose-hook\\.sh" + $a)' \
+       '.hooks[$n][0].hooks[0].command | contains("${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/goose/goose-hook.sh") and test($a)' \
        "$HOOKS_JSON" >/dev/null 2>&1; then
     echo "install.assert: $HOOKS_JSON missing $native -> goose-hook.sh $args" >&2
     exit 1

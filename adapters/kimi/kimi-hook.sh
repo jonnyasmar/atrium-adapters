@@ -5,12 +5,12 @@ NORMALIZER_EVENT="${1:-}"
 ATRIUM_EVENT="${2:-$NORMALIZER_EVENT}"
 PAYLOAD="$(cat 2>/dev/null || true)"
 
-if [[ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]]; then
+if [[ -z "${ATRIUM_PANE_ID:-}" ]]; then
   [[ "$NORMALIZER_EVENT" == "user-prompt-submit" ]] && printf '{}\n'
   exit 0
 fi
 
-if [[ -z "${ATRIUM_PANE_ID:-}" ]]; then
+if [[ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" && "$NORMALIZER_EVENT" != "pre-tool-use" ]]; then
   [[ "$NORMALIZER_EVENT" == "user-prompt-submit" ]] && printf '{}\n'
   exit 0
 fi
@@ -23,6 +23,25 @@ case "$(basename "$DATA_DIR")" in
 esac
 ATRIUM_CLI="${ATRIUM_CLI_PATH:-$DEFAULT_CLI}"
 [[ -x "$ATRIUM_CLI" ]] || ATRIUM_CLI="atrium"
+
+# Catastrophic-command guard, in terminal and chat panes alike: `atrium guard
+# check` prints kimi's deny for a command that could erase /, the home folder,
+# system folders or a disk, and nothing otherwise. Only a JSON object on stdout
+# refuses; an atrium CLI from before `guard` prints its usage error to stderr,
+# which is dropped, so it can never block a command.
+GUARD=""
+if [[ "$NORMALIZER_EVENT" == "pre-tool-use" ]]; then
+  case "$PAYLOAD" in
+    *Bash* | *Shell*)
+      GUARD="$(printf '%s' "$PAYLOAD" | "$ATRIUM_CLI" guard check --adapter kimi 2>/dev/null)" || true
+      [[ "$GUARD" == "{"* ]] || GUARD=""
+      ;;
+  esac
+  if [[ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]]; then
+    [[ -z "$GUARD" ]] || printf '%s\n' "$GUARD"
+    exit 0
+  fi
+fi
 
 debug() {
   [[ "${ATRIUM_HOOK_DEBUG:-0}" == "0" ]] && return 0
@@ -50,5 +69,6 @@ debug "emit=$ATRIUM_EVENT"
 if [[ "$NORMALIZER_EVENT" == "user-prompt-submit" ]]; then
   printf '%s' "$PAYLOAD" | "$DIR/inject-context.sh"
 fi
+[[ -z "$GUARD" ]] || printf '%s\n' "$GUARD"
 
 exit 0

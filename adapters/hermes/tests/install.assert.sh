@@ -11,8 +11,11 @@ ALLOW="${HERMES_HOME}/shell-hooks-allowlist.json"
 [ -f "$CONFIG" ] || { echo "config.yaml missing after install" >&2; exit 1; }
 
 # Hook commands written into config.yaml.
-grep -q "hermes-hook.sh" "$CONFIG" || {
+# Every one runs the instance-neutral shim beside config.yaml.
+grep -q "atrium-hook.sh hook" "$CONFIG" || {
   echo "no atrium hook commands in config.yaml" >&2; exit 1; }
+[ -x "${HERMES_HOME}/atrium-hook.sh" ] || {
+  echo "atrium-hook.sh shim missing or not executable" >&2; exit 1; }
 
 # Session-registration + activity events present.
 for ev in on_session_start pre_llm_call pre_tool_call post_tool_call post_llm_call; do
@@ -20,12 +23,12 @@ for ev in on_session_start pre_llm_call pre_tool_call post_tool_call post_llm_ca
 done
 
 # Context-injection hook wired (delivers manifest + rename nudge).
-grep -q "inject-context.sh" "$CONFIG" || {
+grep -q "atrium-hook.sh inject" "$CONFIG" || {
   echo "context-injection hook not wired" >&2; exit 1; }
 
 # Consent allowlist pre-seeded so launch never blocks on the TTY prompt.
 [ -f "$ALLOW" ] || { echo "allowlist not created" >&2; exit 1; }
-grep -q "hermes-hook.sh" "$ALLOW" || { echo "allowlist not pre-seeded" >&2; exit 1; }
+grep -q "atrium-hook.sh hook" "$ALLOW" || { echo "allowlist not pre-seeded" >&2; exit 1; }
 
 # hermes 0.21.6 advertises promptCapabilities.image=true and hands a
 # session/prompt image block to the model (probed 2026-10-11). Only this flag
