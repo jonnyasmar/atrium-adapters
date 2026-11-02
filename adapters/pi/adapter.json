@@ -109,7 +109,7 @@
       "PI_SKIP_VERSION_CHECK": "1"
     },
     "capabilities": {
-      "resume": false,
+      "resume": true,
       "setModel": true,
       "thinking": true,
       "permissionCallback": true,

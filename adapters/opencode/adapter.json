@@ -107,7 +107,7 @@
       "OPENCODE_DISABLE_AUTOUPDATE": "1"
     },
     "capabilities": {
-      "resume": false,
+      "resume": true,
       "setModel": true,
       "thinking": true,
       "permissionCallback": true,
