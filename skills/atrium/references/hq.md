@@ -42,6 +42,21 @@ Without `--adapter`, a hire runs on the default brain. Run from a director's cha
 - `--done-when "<condition>"`: a woken chat is told it each time, and ends the routine with `routine done <card>` once it holds.
 - A routine that wakes a pane fires at most every 15 minutes and 48 times a day.
 
+## Library
+
+```bash
+"$ATRIUM_CLI_PATH" hq library [--kind persona|routine|staff] [--for "<what it's for>"]
+"$ATRIUM_CLI_PATH" hq library show <id>
+"$ATRIUM_CLI_PATH" hq library add <routine-id> [--param <key>=<value>]... [--cron "<…>"] [--tz <zone>] [--title "<title>"]
+"$ATRIUM_CLI_PATH" hq library adopt <persona-id>
+```
+
+- Ready-made routines and personas. Run from your chat, the list is ranked for you and marks the routines you have. Check it before writing a routine from scratch; when one fits, offer it in one small canvas with the values you'd use, and set it up when the owner says yes.
+- `show` prints a bundle in full: its text, schedule, slots, needs (met or not, with the ask for each) and effects.
+- `add` fills the slots now: your `--param` values, then your persona's, then the routine's defaults. A required slot with no value is refused by name. Adding a routine you have retunes it with the new values. It prints any need still unmet, with the command that asks for it: ask, then end your turn.
+- A need lists the ways to meet it: a connector (`connector request`), a login or key (`secret request`), or a tool on this machine. A routine that runs unattended may ask the owner to let it act on its own for some of what it does; only the owner grants that.
+- `adopt` merges a persona's playbook seed into yours and lists its routines to offer. It leaves your instructions alone: those are the owner's.
+
 ## Labels
 
 ```bash
@@ -91,6 +106,19 @@ Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`
 "$ATRIUM_CLI_PATH" hq follow <pane>
 "$ATRIUM_CLI_PATH" hq unfollow <pane>
 ```
+
+## Playbook
+
+```bash
+"$ATRIUM_CLI_PATH" hq playbook [show]
+"$ATRIUM_CLI_PATH" hq playbook add <how-i-work|checklists|lessons|defaults> "<one line>"
+"$ATRIUM_CLI_PATH" hq playbook write --file <path> --expect <hash>
+```
+
+- Your playbook is how you do your job well, written so it would help anyone doing it for someone else: the part of what you learn that can be shared. Facts about the owner go in your notebook (`memory remember … --pin`), never here.
+- Is a learning only true of the owner? Notebook. Would it help a stranger doing this job? Playbook. Both? Split it: "replies under five lines" in the notebook, "learn the owner's preferred reply length early; default to short" in the playbook.
+- Four sections: How I work, Checklists (a `### <name>` per list), Lessons (`add` dates them), Defaults. One line per item, at most 200 characters, and at most 3,000 characters in all. Near the cap, fold lessons into How I work or Checklists and drop the oldest: `show` prints the hash `write --expect` needs.
+- No names, contact details, amounts, account names or personal dates in it.
 
 ## Secrets and the browser
 
