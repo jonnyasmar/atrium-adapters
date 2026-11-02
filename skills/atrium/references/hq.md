@@ -5,13 +5,13 @@ atrium's director and staff rules say what to do and name the command for it. Th
 ## Delegating
 
 ```bash
-"$ATRIUM_CLI_PATH" task delegate --title "<title>" --brief "<goal, context, constraints, what done looks like>" [--to <staff-slug>] [--workspace <project>]
+"$ATRIUM_CLI_PATH" task delegate --title "<title>" --brief "<goal, context, constraints, what done looks like>" (--to <staff-slug> | --adapter <name>) [--workspace <project>]
 ```
 
-- `--to <slug>` hands it to a staff member (`hq staff` lists them). Without it, a general worker runs it; `--adapter <name>` picks that worker's adapter.
+- `--to <slug>` hands it to a staff member (`hq staff` lists them). For a general worker, leave out `--to` and pass `--adapter <name>`: the CLI it runs on, e.g. `claude-code`. A name that isn't a staff member's is refused.
 - `--workspace <name>`: work that touches code names its project (`workspace list`).
 - `--brief-file <path>` reads a long brief from a file (`-` for stdin).
-- The `atrium_delegate` tool takes the same fields.
+- The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `workspace`.
 - A worker's report ends with the command that accepts it: `task set-done --run-id <runId>`.
 
 ## Staff
@@ -71,6 +71,17 @@ The dock is `{"tabs":[...],"hidden":[...]}`. A tab is one of:
 - a note: `{"kind":"note","workspaceId":"…","noteId":"…"}`.
 
 A built-in you don't list shows at the end unless `hidden` names it. Save the whole dock, keeping the tabs you aren't changing. Which tab is open is the owner's choice, not part of the dock.
+
+## Your chats
+
+```bash
+"$ATRIUM_CLI_PATH" hq chats
+"$ATRIUM_CLI_PATH" hq chats read <main|id> [--lines N]
+```
+
+- `hq chats` lists your main chat and the side chats the owner opened with you: each one's id, title and last activity, and which one you're in.
+- `hq chats read main` prints the last 80 lines of your main chat; a side chat is named by its id, and four or more characters of it do. `--lines` goes up to 400.
+- You read only your own chats. From a side chat, note what belongs in the main thread with `agent message <main pane> "…"`; `hq chats --json` gives the main chat's `paneId`.
 
 ## Memory and sessions
 

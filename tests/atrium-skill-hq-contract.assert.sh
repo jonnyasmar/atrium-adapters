@@ -30,6 +30,7 @@ for flag in \
   'atrium-short-name=' "--description \"<one-line role>\"" "atrium-dock=<json>" \
   '{"tabs":[...],"hidden":[...]}' '{"kind":"pane","paneId":"…"}' '{"kind":"note","workspaceId":"…","noteId":"…"}' '"browser"' \
   'memory remember "<fact>" --pin' 'hq adopt <pane>' 'hq unfollow <pane>' \
+  'hq chats' 'hq chats read <main|id> [--lines N]' \
   'secret request <NAME> --kind env|login|secret --why' '--site' 'secret run --env <NAME>' \
   'browser fill-login <pane|mine> <login>' 'browser hand-off' '--pane <pane|mine>' '--done-when-url'; do
   require "$ref" "$flag" "references/hq.md lost $flag"
