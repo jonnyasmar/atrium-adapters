@@ -97,6 +97,13 @@ Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`
 - `hq chats read main` prints the last 80 lines of your main chat; a side chat is named by its id, and four or more characters of it do. `--lines` goes up to 400.
 - You read only your own chats. From a side chat, note what belongs in the main thread with `agent message <main pane> "…"`; `hq chats --json` gives the main chat's `paneId`.
 
+```bash
+"$ATRIUM_CLI_PATH" chat react <emoji> [--message <id>] [--remove]
+```
+
+- `chat react 👍` reacts to the owner's latest message in the chat you're in. When a message only needs acknowledging (thanks, ok, got it), react instead of replying, and end your turn. Use it sparingly: anything that needs an answer still gets one.
+- The owner's reactions to your messages reach you as a note at your next turn ("Since your last turn, the owner reacted 👍 to …"). Take them as feedback; don't reply to them.
+
 ## Memory and sessions
 
 ```bash
