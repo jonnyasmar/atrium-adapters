@@ -125,6 +125,9 @@ jobs:
       - name: Validate kimi workspace-trust pre-accept
         run: bash tests/kimi-workspace-trust.assert.sh
 
+      - name: Validate kimi's idempotent config install
+        run: bash tests/kimi-config-install.assert.sh
+
       - name: Validate Claude root bypass compatibility
         run: bash tests/claude-root-bypass.assert.sh
 
