@@ -12,7 +12,7 @@
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "cfdfa59fb25677adf21121688c184bc28a57d1d4ec739ff78c703928efe35db1"
+      "sha256": "6be231ed29e0a79a14240d3be135fa0e4f22d350accd74a09b658befa90f2329"
     },
     {
       "id": "atrium-skill-session-worktree-move",
