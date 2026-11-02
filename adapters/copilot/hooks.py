@@ -78,41 +78,64 @@ def normalize(event, payload):
     return result
 
 
-def hook_config(data_dir):
+# Copilot runs ~/.copilot/hooks/*.json for every session on the machine and
+# denies the tool call when a hook fails, while every atrium instance (stable,
+# dev, each worktree) installs this adapter. So the config and the shim it
+# runs are the same bytes whichever instance writes them: the shim picks the
+# pane's own instance at fire time, and answers by itself (an empty allow)
+# outside an atrium pane or when that instance's adapter is gone. A config
+# naming one instance's data dir denied every Copilot tool call once that dir
+# was removed.
+SHIM = """#!/usr/bin/env bash
+# Written by atrium's copilot adapter; the same for every atrium instance.
+[ -n "${ATRIUM_PANE_ID:-}" ] || exit 0
+hook="${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/copilot/copilot-hook.sh"
+[ -f "$hook" ] || exit 0
+exec bash "$hook" "$@"
+"""
+
+
+def shim_path():
+    return home() / "atrium-hook.sh"
+
+
+def hook_config():
     import shutil
     import subprocess
-    script = Path(data_dir) / "adapters/copilot/copilot-hook.sh"
-    cli = os.environ.get("ATRIUM_CLI_PATH", "atrium")
     bash = shutil.which("bash") or "/bin/bash"
     if os.name == "nt":
         converted = subprocess.run(["cygpath", "-w", bash], capture_output=True, text=True, check=True)
         bash = converted.stdout.strip()
     return {"version": 1, "hooks": {
-        event: [{"type": "command", "exec": bash,
-                 "args": [script.as_posix(), event, Path(data_dir).as_posix(), cli], "timeoutSec": 5}]
+        event: [{"type": "command", "exec": bash, "args": [shim_path().as_posix(), event], "timeoutSec": 5}]
         for event in EVENTS
     }}
 
 
+def write_atomically(target, text, mode=None):
+    import tempfile
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=target.parent, delete=False) as stream:
+        temp = Path(stream.name)
+        stream.write(text)
+    try:
+        if mode is not None:
+            os.chmod(temp, mode)
+        os.replace(temp, target)
+    finally:
+        temp.unlink(missing_ok=True)
+
+
 def manage(command):
     target = home() / "hooks/atrium.json"
-    data_dir = os.environ.get("ATRIUM_DATA_DIR")
-    if not data_dir:
-        if command == "status":
-            return {"subcommand": command, "installed": False, "reason": "No atrium instance selected"}
-        raise ValueError("ATRIUM_DATA_DIR is required to manage Copilot hooks")
-    expected = hook_config(data_dir)
+    shim = shim_path()
+    expected = hook_config()
     if command == "install":
-        import tempfile
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=target.parent, delete=False) as stream:
-            temp = Path(stream.name)
-            json.dump(expected, stream, indent=2)
-            stream.write("\n")
-        try:
-            os.replace(temp, target)
-        finally:
-            temp.unlink(missing_ok=True)
+        if not shim.exists() or shim.read_text(encoding="utf-8") != SHIM:
+            write_atomically(shim, SHIM, 0o755)
+        text = json.dumps(expected, indent=2) + "\n"
+        if not target.exists() or target.read_text(encoding="utf-8") != text:
+            write_atomically(target, text)
         return {"subcommand": command, "installed": True}
     try:
         actual = json.loads(target.read_text(encoding="utf-8"))
@@ -120,11 +143,17 @@ def manage(command):
         actual = None
     owned = actual == expected
     if command == "uninstall":
-        # Another atrium instance may have installed this shared hook file.
+        # Only atrium's own config: a user's file of that name stays.
         if owned:
             target.unlink()
+            shim.unlink(missing_ok=True)
         return {"subcommand": command, "uninstalled": True}
-    return {"subcommand": command, "installed": owned, "activityHooks": owned}
+    try:
+        shim_ok = shim.read_text(encoding="utf-8") == SHIM
+    except OSError:
+        shim_ok = False
+    installed = owned and shim_ok
+    return {"subcommand": command, "installed": installed, "activityHooks": installed}
 
 
 def post_event(event, payload):

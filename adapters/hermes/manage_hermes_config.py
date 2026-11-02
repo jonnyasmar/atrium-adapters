@@ -20,7 +20,7 @@ Subcommands:
   uninstall <config> <allowlist> <marker>
   status    <config> <marker>
 
-`marker` is a substring identifying atrium-owned hook commands (the
+`marker` is one or more `|`-separated substrings identifying atrium-owned hook commands (the
 hermes-hook.sh path). `events_json` is a JSON array of {event, command, timeout}.
 """
 import datetime
@@ -117,6 +117,11 @@ def _parse_hooks_subtree(lines, start, end):
     return hooks if _is_map(hooks) else {}
 
 
+def _owned(command, marker):
+    """atrium owns a command containing any `|`-separated part of `marker`."""
+    return any(part and part in str(command) for part in marker.split("|"))
+
+
 def _strip_marker(hooks, marker):
     """Drop atrium-owned entries (command contains marker) from every event
     list; drop now-empty event keys."""
@@ -125,7 +130,7 @@ def _strip_marker(hooks, marker):
         if not isinstance(entries, list):
             continue
         kept = [
-            e for e in entries if not (_is_map(e) and marker in str(e.get("command", "")))
+            e for e in entries if not (_is_map(e) and _owned(e.get("command", ""), marker))
         ]
         if kept:
             hooks[ev] = kept
@@ -209,7 +214,7 @@ def _drop_marker_approvals(approvals, marker):
     return [
         a
         for a in approvals
-        if not (isinstance(a, dict) and marker in str(a.get("command", "")))
+        if not (isinstance(a, dict) and _owned(a.get("command", ""), marker))
     ]
 
 
@@ -293,7 +298,7 @@ def do_status(cfg_path, marker):
             def has(ev):
                 lst = hooks.get(ev)
                 return isinstance(lst, list) and any(
-                    _is_map(e) and marker in str(e.get("command", "")) for e in lst
+                    _is_map(e) and _owned(e.get("command", ""), marker) for e in lst
                 )
 
             installed = has("on_session_start")

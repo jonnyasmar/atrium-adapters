@@ -3,6 +3,7 @@
 import {
   canonicalGenerationViolation,
   contentVersionCouplingViolation,
+  previousRegistryRefs,
   publishedTipGenerationViolation,
   releaseWriteDecision,
   skillReferenceParityViolation,
@@ -50,6 +51,17 @@ function expectCouplingRejected(input, label) {
     throw new Error(`${label}: content/version coupling was unexpectedly accepted`);
   }
 }
+
+// --- previous release registry ---
+// A release of several content commits whose version bumps precede its last
+// commit compares with the published tip, not with that commit's parent.
+if (previousRegistryRefs(commitTwo, true)[0] !== "origin/main") {
+  throw new Error("previous registry: a release on the published tip must compare with it");
+}
+if (previousRegistryRefs(commitTwo, false)[0] !== `${commitTwo}^`) {
+  throw new Error("previous registry: off the published tip, the parent must stand in");
+}
+console.log("release generation: previous release registry passed");
 
 // --- source commit ancestry ---
 if (sourceCommitAncestryViolation(commitOne, commitTwo, true) != null) {

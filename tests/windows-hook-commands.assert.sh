@@ -85,16 +85,36 @@ CLAUDE_POSIX="$TMP/claude-posix/.claude/settings.json"
 # data dir, then plain words. Nothing PowerShell, cmd or Grok would read as
 # shell syntax: no quotes, $, ;, |, &, [, (, =, spaces in a path.
 check_shape() {
-  local label="$1" file="$2" adapter="$3" prefix bad
-  prefix="$WIN_BASH $SHORT_DATA/adapters/$adapter/atrium-runtime-hook.sh "
+  local label="$1" file="$2" dir="$3" prefix bad
+  prefix="$WIN_BASH $dir/atrium-runtime-hook.sh "
   bad="$(jq -r --arg prefix "$prefix" '
     [.hooks[][].hooks[].command]
     | map(select((startswith($prefix) and test("^[A-Za-z0-9_.~/:-]+( [A-Za-z0-9_.~/:-]+)+$")) | not))
     | .[]' "$file")"
   expect "$label: every command is plain words" "" "$bad"
 }
-check_shape "grok" "$GROK_WIN" grok
-check_shape "claude-code" "$CLAUDE_WIN" claude-code
+check_shape "grok" "$GROK_WIN" "$TMP/grok-win/.grok"
+check_shape "claude-code" "$CLAUDE_WIN" "$TMP/claude-win/.claude"
+
+# The global config and the shim it runs name no atrium instance: installing
+# from another instance's data dir writes the same bytes.
+OTHER="$TMP/other/.atrium-dev-other"
+mkdir -p "$OTHER/adapters"
+for adapter in claude-code grok shared; do
+  ln -s "$ROOT/adapters/$adapter" "$OTHER/adapters/$adapter"
+done
+for pair in "claude-code:.claude/settings.json:.claude" "grok:.grok/hooks/atrium-grok.json:.grok"; do
+  IFS=: read -r adapter config dir <<<"$pair"
+  home="$TMP/neutral-$adapter"
+  install "$adapter" "$home" windows
+  first="$(cat "$home/$config" "$home/$dir/atrium-runtime-hook.sh")"
+  env -i HOME="$home" PATH="$WINBIN:$BASE_PATH" ATRIUM_DATA_DIR="$OTHER" \
+    bash "$ROOT/adapters/$adapter/hooks.sh" install >/dev/null 2>&1
+  expect "$adapter: every instance writes the same Windows hooks" "$first" \
+    "$(cat "$home/$config" "$home/$dir/atrium-runtime-hook.sh")"
+  expect "$adapter: the Windows hooks name no instance" "0" \
+    "$(cat "$home/$config" "$home/$dir/atrium-runtime-hook.sh" | grep -c 'atrium data\|ATRIUM~1\|atrium-dev-other' || true)"
+done
 
 # Same events, same handler count and matchers per event as the POSIX install.
 slots() { jq -c '.hooks | to_entries | map({key, value: [.value[] | {matcher, n: (.hooks | length)}]})' "$1"; }

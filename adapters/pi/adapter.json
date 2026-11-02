@@ -5,7 +5,7 @@
   "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
   "accent": "#06b6d4",
   "binary": "pi",
-  "version": "0.6.11",
+  "version": "0.7.0",
   "updateCommand": [
     "bash",
     "-c",
@@ -109,7 +109,7 @@
       "PI_SKIP_VERSION_CHECK": "1"
     },
     "capabilities": {
-      "resume": false,
+      "resume": true,
       "setModel": true,
       "thinking": true,
       "permissionCallback": true,

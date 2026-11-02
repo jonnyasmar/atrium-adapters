@@ -36,18 +36,6 @@ fi
 
 ATRIUM_HOOK_MARKER_PREFIX="ATRIUM_HOOK_MARKER=atrium-runtime-hook"
 
-# agy (like gemini) sanitizes hook environments. We probe the active channel
-# at install time and bake fallbacks for both ATRIUM_CLI_PATH and
-# ATRIUM_DATA_DIR — runtime env wins when it survives, baked path kicks in
-# when it doesn't. Dev install preferred when both channels are present.
-if [ -d "${HOME}/.atrium-dev/adapters/antigravity" ]; then
-  ATRIUM_CLI_FALLBACK="${HOME}/.atrium-dev/bin/atrium-dev"
-  ATRIUM_DATA_DIR_FALLBACK="${HOME}/.atrium-dev"
-else
-  ATRIUM_CLI_FALLBACK="${HOME}/.atrium/bin/atrium"
-  ATRIUM_DATA_DIR_FALLBACK="${HOME}/.atrium"
-fi
-
 ensure_hooks_file() {
   mkdir -p "$(dirname "$HOOKS_FILE")"
   [ -f "$HOOKS_FILE" ] || echo '{}' > "$HOOKS_FILE"
@@ -67,10 +55,38 @@ LOG='log() { [ "${ATRIUM_HOOK_DEBUG:-1}" = "0" ] && return; printf "[%s] [pane=%
 # PreToolUse treats missing stdout as DENY, that blocks every tool call
 # in an ACP chat session. A bare path + arg runs correctly under both.
 #
-# The path is absolute and resolved at install time because the exec'd
-# command string gets no variable expansion. agy-hook-entry.sh re-derives
-# ATRIUM_DATA_DIR / ATRIUM_CLI_PATH itself when the env is sanitized.
-HOOK_ENTRY="${ATRIUM_DATA_DIR_FALLBACK}/adapters/antigravity/agy-hook-entry.sh"
+# The exec'd command gets no variable expansion, so its path is fixed at
+# install time — and every atrium instance (stable, dev, each worktree)
+# installs this one global file. It must therefore name no instance: the
+# command is a shim beside hooks.json, the same bytes whoever writes it, which
+# picks the pane's own instance from $ATRIUM_DATA_DIR at fire time. agy denies
+# a tool call when PreToolUse prints nothing, so the shim answers by itself
+# outside an atrium pane or when that instance's adapter is gone; a hook
+# naming one instance's data dir denied every agy tool call once that dir was
+# removed.
+HOOK_ENTRY="${HOME}/.gemini/config/atrium-hook.sh"
+SHIM='#!/usr/bin/env bash
+# Written by atrium'"'"'s antigravity adapter; the same for every atrium instance.
+entry="${ATRIUM_DATA_DIR:-$HOME/.atrium}/adapters/antigravity/agy-hook-entry.sh"
+if [ -z "${ATRIUM_PANE_ID:-}" ] || [ ! -f "$entry" ]; then
+  case "${1:-}" in
+    post-tool-use | session-start | stop) printf '"'"'{}\n'"'"' ;;
+    *) printf '"'"'{"decision":"allow"}\n'"'"' ;;
+  esac
+  exit 0
+fi
+exec bash "$entry" "$@"'
+
+write_shim() {
+  if [ -f "$HOOK_ENTRY" ] && [ "$(cat "$HOOK_ENTRY")" = "$SHIM" ]; then
+    return
+  fi
+  mkdir -p "$(dirname "$HOOK_ENTRY")"
+  local tmp="${HOOK_ENTRY}.atrium-tmp"
+  printf '%s\n' "$SHIM" > "$tmp"
+  chmod 0755 "$tmp"
+  mv "$tmp" "$HOOK_ENTRY"
+}
 
 build_hook_command() {
   printf '%s %s' "$HOOK_ENTRY" "$1"
@@ -113,6 +129,7 @@ build_atrium_hook_block() {
 
 do_install() {
   ensure_hooks_file
+  write_shim
 
   local block
   block="$(build_atrium_hook_block)"
@@ -135,6 +152,7 @@ do_uninstall() {
 
   local updated
   updated="$(jq --arg name "$HOOK_NAME" 'del(.[$name])' "$HOOKS_FILE")"
+  rm -f "$HOOK_ENTRY"
 
   local tmp="${HOOKS_FILE}.atrium-tmp"
   printf '%s\n' "$updated" > "$tmp"

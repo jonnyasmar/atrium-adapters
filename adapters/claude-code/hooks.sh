@@ -43,7 +43,7 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|claude-hook-entry\.sh|atrium hook emi
 # exists, which keeps the POSIX commands.
 WINDOWS_HOOK=""
 if atrium_hooks_on_windows; then
-  WINDOWS_HOOK="$(atrium_windows_hook_launcher "${ATRIUM_DATA_DIR:-$HOME/.atrium}" claude-code)" \
+  WINDOWS_HOOK="$(atrium_windows_hook_launcher claude-code "$HOME/.claude")" \
     || echo "atrium hooks: no space-free path to bash.exe or the atrium data dir; Claude Code hooks keep POSIX commands, which Grok cannot run on Windows" >&2
 fi
 
@@ -57,6 +57,7 @@ CURSOR_GUARD='[ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0'
 # Prefix non-entry commands so shell dual-fire is suppressed when user
 # settings still load for chat. claude-hook-entry.sh has its own early-exit.
 CHAT_SDK_GUARD='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0'
+GROK_GUARD='[ -z "${GROK_HOOK_EVENT:-}" ] || exit 0'
 
 # settings.json is global, so these hooks also fire for Claude Code sessions
 # started outside atrium. Bail in the hook's own shell there instead of
@@ -86,6 +87,13 @@ subagent-stop\tSubagentStop\t.*
 stop-failure\tStopFailure\t.*
 pre-compact\tPreCompact\t.*
 post-compact\tPostCompact\t.*'
+
+# The SessionStart sources that get atrium's context (the manifest sections and
+# the inject-context hop). Compaction and /clear drop it from the window, so it
+# goes back in; Claude Code fires SessionStart with source "compact" after a
+# compaction, SDK chat panes included (verified 2026-10-29, Agent SDK 0.3.283 +
+# Claude Code 2.1.312). The lifecycle session-start emit stays startup|resume.
+CONTEXT_SESSION_MATCHER="startup|resume|compact|clear"
 
 # Build the hook command string for a given event. Resolved at hook-fire
 # time against the pane's injected env vars so stable/dev/beta can
@@ -128,9 +136,14 @@ build_all_hooks() {
   # per NFR18). The CLI writes raw bytes shaped for the target harness
   # directly to stdout — no jq, no per-harness wrap here.
   #
-  # Split into THREE dedicated SessionStart entries (--section context|agent|
-  # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
-  # hook per section gives each section its own 10K budget (max headroom).
+  # Split into dedicated SessionStart entries (--section context|agent|
+  # director-rules|skills) instead of one: Claude Code collapses a hook's output
+  # past ~10K into a short preview, so a hook per section gives each section its
+  # own 10K budget (max headroom). director-rules is atrium's rules for an HQ
+  # director or delegated staff, apart from the owner's instructions in agent;
+  # it prints nothing for anyone else, and an older CLI that doesn't know the
+  # section fails quietly (`|| true`) while its daemon still puts the rules in
+  # agent.
   #
   # NO CHAT_SDK_GUARD here: the SDK's SessionStart hook callback never fires for
   # claude-sdk chat panes (verified 2026-07-25 — no `hook emit session-start`,
@@ -139,15 +152,15 @@ build_all_hooks() {
   # working SessionStart context source there; every other event keeps the
   # guard because its SDK callback does fire.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent skills; do
+  for ctx_section in context agent director-rules skills; do
     if [ -n "$WINDOWS_HOOK" ]; then
       ctx_cmd="$WINDOWS_HOOK manifest $ctx_section"
     else
       ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section %s 2>/dev/null || true' \
         "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$ctx_section")"
     fi
-    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
-      '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+    ctx_entry="$(jq -n --arg cmd "$ctx_cmd" --arg matcher "$CONTEXT_SESSION_MATCHER" \
+      '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
   done
 
@@ -200,8 +213,8 @@ build_all_hooks() {
     inject_base="$WINDOWS_HOOK inject"
     inject_ss_base="$inject_base"
   fi
-  inject_ss="$(jq -n --arg cmd "$inject_ss_base session-start" \
-    '[{matcher: "startup|resume", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  inject_ss="$(jq -n --arg cmd "$inject_ss_base session-start" --arg matcher "$CONTEXT_SESSION_MATCHER" \
+    '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_ss" '.SessionStart += $e' <<< "$hooks")"
   inject_ups="$(jq -n --arg cmd "$inject_base user-prompt-submit" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
@@ -212,6 +225,25 @@ build_all_hooks() {
   inject_post="$(jq -n --arg cmd "$inject_base post-tool-use" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_post" '.PostToolUse += $e' <<< "$hooks")"
+
+  # Catastrophic-command guard. `atrium guard check` refuses only a command
+  # that could erase /, the home folder, system folders or a disk, and prints
+  # a PreToolUse deny whose reason Claude reads; otherwise it prints nothing.
+  # It refuses only through that JSON and the command always exits 0: an atrium
+  # CLI from before `guard` writes its usage error to stderr, which is dropped,
+  # so an old CLI can never block a command. No CHAT_SDK_GUARD: chat panes load
+  # these user settings and have no other guard. Grok and Cursor run this file
+  # too and have their own guard entries.
+  local guard_cmd guard_entry
+  if [ -n "$WINDOWS_HOOK" ]; then
+    guard_cmd="$WINDOWS_HOOK guard"
+  else
+    guard_cmd="$(printf '%s; %s; %s; [ -n "${ATRIUM:-}" ] || exit 0; "${ATRIUM_CLI_PATH:-atrium}" guard check --adapter claude-code 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD" "$GROK_GUARD")"
+  fi
+  guard_entry="$(jq -n --arg cmd "$guard_cmd" \
+    '[{matcher: "Bash|PowerShell|Monitor", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson g "$guard_entry" '.PreToolUse += $g' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }
@@ -243,6 +275,7 @@ has_atrium_hooks_in() {
 
 do_install() {
   local new_hooks
+  [ -z "$WINDOWS_HOOK" ] || atrium_windows_write_hook_shim claude-code "$HOME/.claude"
   new_hooks="$(build_all_hooks)"
 
   atrium_config_lock "$SETTINGS_LOCK"

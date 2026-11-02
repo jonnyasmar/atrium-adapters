@@ -10,18 +10,12 @@
 #
 # with the native hook payload on stdin. We translate the Hermes event to the
 # atrium event(s), normalize the payload to atrium's contract, and forward it
-# to `atrium hook emit`. Hermes ignores our stdout for these events, so we
-# print a no-op `{}` and ALWAYS exit 0 — a CLI failure must never break the
-# agent's turn.
+# to `atrium hook emit`. We print a no-op `{}` (or, for pre_tool_call, the
+# catastrophic-command guard's block decision) and ALWAYS exit 0 — a CLI
+# failure must never break the agent's turn.
 set -uo pipefail
 
 HERMES_EVENT="${1:-}"
-
-# Chat-sidecar sessions get activity from the chat runtime's turn bridge —
-# engine-side lifecycle emits double-feed the activity card and (with no
-# settling stop behind them) wedge it in "working". Hermes ignores stdout
-# here, so the plain early exit is safe.
-[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || { printf '{}\n'; exit 0; }
 
 # Only report activity when running inside an atrium pane. Hermes shell hooks
 # live in the machine-wide config.yaml, so EVERY hermes process fires them — the
@@ -31,6 +25,16 @@ HERMES_EVENT="${1:-}"
 # this gate those external processes emit phantom events onto atrium's hermes
 # panes. Print the no-op stdout hermes expects and exit cleanly.
 if [ -z "${ATRIUM_PANE_ID:-}" ]; then
+  printf '{}\n'
+  exit 0
+fi
+
+# Chat-sidecar sessions get activity from the chat runtime's turn bridge —
+# engine-side lifecycle emits double-feed the activity card and (with no
+# settling stop behind them) wedge it in "working". Hermes ignores stdout
+# for those events, so the plain early exit is safe. pre_tool_call still runs
+# the guard below.
+if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ] && [ "$HERMES_EVENT" != "pre_tool_call" ]; then
   printf '{}\n'
   exit 0
 fi
@@ -53,6 +57,28 @@ fi
 NORMALIZE="$DIR/normalize-hook-payload.sh"
 
 payload="$(cat)"
+
+# Catastrophic-command guard, in terminal and chat panes alike: `atrium guard
+# check` prints Hermes's block decision for a command that could erase /, the
+# home folder, system folders or a disk, and nothing otherwise. Only a JSON
+# object on stdout refuses; an atrium CLI from before `guard` prints its usage
+# error to stderr, which is dropped, so it can never block a command.
+GUARD=""
+reply() {
+  if [ -n "$GUARD" ]; then printf '%s\n' "$GUARD"; else printf '{}\n'; fi
+}
+if [ "$HERMES_EVENT" = "pre_tool_call" ]; then
+  case "$payload" in
+    *terminal*)
+      GUARD="$(printf '%s' "$payload" | "$ATRIUM_CLI" guard check --adapter hermes 2>/dev/null)" || true
+      case "$GUARD" in "{"*) ;; *) GUARD="" ;; esac
+      ;;
+  esac
+  if [ -n "${ATRIUM_CHAT_SDK_HOOKS:-}" ]; then
+    reply
+    exit 0
+  fi
+fi
 
 emit() {
   local atrium_event="$1"
@@ -84,5 +110,5 @@ case "$HERMES_EVENT" in
     ;;
 esac
 
-printf '{}\n'
+reply
 exit 0

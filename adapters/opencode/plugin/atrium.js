@@ -75,6 +75,9 @@ function emit(event, payload) {
       ],
       { stdio: ["pipe", "ignore", "ignore"] },
     );
+    // A CLI that exits before reading the payload closes the pipe; the write
+    // then fails with EPIPE, which must not take the agent down with it.
+    child.stdin.on("error", (err) => debug("emit stdin", String(err)));
     child.stdin.write(JSON.stringify(payload ?? {}));
     child.stdin.end();
     child.unref();
@@ -119,12 +122,41 @@ function runAtriumCapture(args, stdin, timeoutMs = 2500) {
         clearTimeout(timer);
         finish("");
       });
+      child.stdin.on("error", () => {
+        // EPIPE from a CLI that exited without reading; `close` settles.
+      });
       if (stdin != null) child.stdin.write(stdin);
       child.stdin.end();
     } catch {
       finish("");
     }
   });
+}
+
+// atrium's catastrophic-command guard: `atrium guard check` refuses only a
+// shell command that could erase /, the home folder, system folders or a disk.
+// Throwing fails the tool call before it runs, and opencode hands the model
+// the message. Runs in chat panes too (`opencode acp` loads this plugin) and
+// fails open: an atrium CLI from before `guard`, a timeout or unreadable
+// output all allow.
+async function refuseCatastrophicCommand(tool, args) {
+  if (tool !== "bash" || typeof args?.command !== "string") return;
+  const cwd = typeof args.workdir === "string" ? args.workdir : process.cwd();
+  const out = await runAtriumCapture(
+    ["guard", "check", "--command", args.command, "--cwd", cwd, "--format", "json"],
+    null,
+    2000,
+  );
+  let verdict;
+  try {
+    verdict = JSON.parse(out);
+  } catch {
+    return;
+  }
+  if (verdict?.verdict === "refuse" && typeof verdict.message === "string") {
+    debug("guard refused", args.command);
+    throw new Error(verdict.message);
+  }
 }
 
 // Fetch the pipeline context (Epic 77/78) from the hook server's
@@ -336,6 +368,7 @@ export const AtriumPlugin = async (_input, _options) => {
         tool_name: input?.tool,
         tool_input: stringify(output?.args),
       });
+      await refuseCatastrophicCommand(input?.tool, output?.args);
     },
     "tool.execute.after": async (input, output) => {
       if (input?.sessionID) lastSessionId = input.sessionID;

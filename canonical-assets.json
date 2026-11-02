@@ -6,13 +6,13 @@
       "remotePath": "adapters/shared/atrium-context.md",
       "target": "atrium-home",
       "destName": "atrium-context.md",
-      "sha256": "594248f09e8d18003079cf08a7333db354e90741ea7885683cb7b3eb4afcc870"
+      "sha256": "0c909ca1f31ff5ecc1ec4f0de3ad46218d454a17a9a9ae620bba4f66e1fcfe1d"
     },
     {
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "cfdfa59fb25677adf21121688c184bc28a57d1d4ec739ff78c703928efe35db1"
+      "sha256": "4f8bdc769af83ec0628da1bb4ca4405354eb732e245668982bd2ddb327f9929a"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -78,6 +78,13 @@
       "sha256": "40464d9f8e62a0d1da3d486abcbc8696a8f88e2fc8a19329fd5c8f492ceb2e23"
     },
     {
+      "id": "atrium-skill-hq",
+      "remotePath": "skills/atrium/references/hq.md",
+      "target": "adapter-skill-reference",
+      "destName": "hq.md",
+      "sha256": "dff9255b7138b3be9a73e0d41f28ca4133293d7c737fcdfcebf42a19597edec4"
+    },
+    {
       "id": "atrium-create-brief",
       "remotePath": "skills/atrium-create-brief/SKILL.md",
       "target": "bundled-skill",
@@ -108,7 +115,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "bdfe070c803cee65da73a5656cef5cc82e504414",
-    "generation": 88
+    "commit": "fcfb7d615148758f87b22b39892423fdf2fd3301",
+    "generation": 90
   }
 }

@@ -117,11 +117,12 @@ build_all_hooks() {
   # SkillsHandler::manifest() per NFR18) is consumed as session context by
   # Codex, same as the Claude Code flow.
   #
-  # Split into THREE dedicated SessionStart entries (--section context|agent|
-  # skills) instead of one: Claude Code caps hook output at 10K PER hook, so a
-  # hook per section gives each section its own 10K budget (max headroom).
+  # Split into dedicated SessionStart entries (--section context|agent|
+  # director-rules|skills) instead of one: Claude Code caps hook output at 10K
+  # PER hook, so a hook per section gives each section its own 10K budget (max
+  # headroom). director-rules prints nothing for anyone atrium gives no rules.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent skills; do
+  for ctx_section in context agent director-rules skills; do
     ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex --section %s 2>/dev/null || true' \
       "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
@@ -179,6 +180,20 @@ build_all_hooks() {
   inject_post="$(jq -n --arg cmd "$inject_base post-tool-use" \
     '[{matcher: ".*", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
   hooks="$(jq --argjson e "$inject_post" '.PostToolUse += $e' <<< "$hooks")"
+
+  # Catastrophic-command guard. `atrium guard check` refuses only a command
+  # that could erase /, the home folder, system folders or a disk, and prints
+  # a PreToolUse deny whose reason codex hands the model; otherwise nothing.
+  # It refuses only through that JSON and the command always exits 0: an atrium
+  # CLI from before `guard` writes its usage error to stderr, which is dropped,
+  # so an old CLI can never block a command (codex reads exit 2 as a block).
+  # No CHAT_SDK_GUARD: the app-server runs these hooks in chat panes too.
+  local guard_cmd guard_entry
+  guard_cmd="$(printf '%s; %s; "${ATRIUM_CLI_PATH:-atrium}" guard check --adapter codex 2>/dev/null || true' \
+    "$ATRIUM_HOOK_MARKER_PREFIX" "$PANE_GUARD")"
+  guard_entry="$(jq -n --arg cmd "$guard_cmd" \
+    '[{matcher: "Bash", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson g "$guard_entry" '.PreToolUse += $g' <<< "$hooks")"
 
   printf '%s' "$hooks"
 }

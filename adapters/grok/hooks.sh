@@ -47,7 +47,7 @@ ATRIUM_HOOK_MARKER_RE='atrium-runtime-hook|atrium hook emit|skills resolve-manif
 # exists, which keeps the POSIX commands.
 WINDOWS_HOOK=""
 if atrium_hooks_on_windows; then
-  WINDOWS_HOOK="$(atrium_windows_hook_launcher "${ATRIUM_DATA_DIR:-$HOME/.atrium}" grok)" \
+  WINDOWS_HOOK="$(atrium_windows_hook_launcher grok "$HOME/.grok")" \
     || echo "atrium hooks: no space-free path to bash.exe or the atrium data dir; Grok hooks keep POSIX commands, which PowerShell cannot run" >&2
 fi
 
@@ -63,18 +63,10 @@ CHAT_SDK_JSON_NOOP='[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || printf "{}\n"'
 # event to; skip it and the normalizer + CLI spawns it costs.
 PANE_GUARD='[ -n "${ATRIUM_PANE_ID:-}" ] || exit 0'
 
-# Channel discovery — bake the right CLI fallback path into hook
-# commands so dev/stable installs don't clobber each other. The probe
-# inspects the running script's own location so a single machine with
-# both dev and stable installed gets the matching CLI for each install.
-# The `${ATRIUM_CLI_PATH:-…}` shell substitution at hook-fire time
-# still wins whenever the pane env injects it.
-SCRIPT_DIR_REAL="$(cd "$(dirname "$0")" 2>/dev/null && pwd -P || echo "")"
-if [ "${SCRIPT_DIR_REAL#${HOME}/.atrium-dev}" != "$SCRIPT_DIR_REAL" ]; then
-  ATRIUM_CLI_FALLBACK="${HOME}/.atrium-dev/bin/atrium-dev"
-else
-  ATRIUM_CLI_FALLBACK="${HOME}/.atrium/bin/atrium"
-fi
+# Every atrium instance (stable, dev, each worktree) installs this one global
+# file, so it names no instance: a pane's ${ATRIUM_CLI_PATH} picks its own CLI
+# at hook-fire time, and every command needing the CLI runs only in a pane.
+ATRIUM_CLI_FALLBACK="atrium"
 
 # Adapter dir — where normalize-hook-payload.sh lives. Resolved at
 # hook-fire time so the same hook entry works for stable/dev/beta.
@@ -143,10 +135,11 @@ build_hooks_json() {
       '.[$key] = (.[$key] // []) + $entry' <<< "$hooks")"
   done <<< "$EVENTS"
 
-  # SessionStart manifest. Split into three hooks so each section receives
-  # Grok's per-hook output budget independently.
+  # SessionStart manifest. Split into a hook per section so each receives
+  # Grok's per-hook output budget independently; director-rules prints nothing
+  # for anyone atrium gives no rules.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent skills; do
+  for ctx_section in context agent director-rules skills; do
     if [ -n "$WINDOWS_HOOK" ]; then
       ctx_cmd="$WINDOWS_HOOK manifest $ctx_section"
     else
@@ -189,6 +182,25 @@ pre-tool-use	PreToolUse
 post-tool-use	PostToolUse
 EOF
 
+  # Catastrophic-command guard. `atrium guard check` refuses only a command
+  # that could erase /, the home folder, system folders or a disk, and prints
+  # a deny whose reason Grok shows the model; otherwise nothing. It refuses
+  # only through that JSON and the command always exits 0: an atrium CLI from
+  # before `guard` writes its usage error to stderr, which is dropped, so an
+  # old CLI can never block a command (Grok reads exit 2 as a deny). `Bash` is
+  # the Claude-style alias Grok maps to its shell tool. No CHAT_SDK_GUARD: the
+  # ACP engine runs these hooks in chat panes too.
+  local guard_cmd guard_entry
+  if [ -n "$WINDOWS_HOOK" ]; then
+    guard_cmd="$WINDOWS_HOOK guard"
+  else
+    guard_cmd="$(printf '%s; %s; "${ATRIUM_CLI_PATH:-%s}" guard check --adapter grok 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$PANE_GUARD" "$ATRIUM_CLI_FALLBACK")"
+  fi
+  guard_entry="$(jq -n --arg cmd "$guard_cmd" \
+    '[{matcher: "Bash", hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson g "$guard_entry" '.PreToolUse += $g' <<< "$hooks")"
+
   # Keep the launch-time --rules wrapper as a compatibility fallback for
   # released Grok builds that predate additionalContext support. Patched/new
   # builds gain live context; older builds retain their static atrium rules.
@@ -198,6 +210,7 @@ EOF
 
 do_install() {
   mkdir -p "$HOOKS_DIR"
+  [ -z "$WINDOWS_HOOK" ] || atrium_windows_write_hook_shim grok "$HOME/.grok"
   build_hooks_json > "$HOOKS_FILE.atrium-tmp"
   mv "$HOOKS_FILE.atrium-tmp" "$HOOKS_FILE"
 

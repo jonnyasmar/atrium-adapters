@@ -22,15 +22,12 @@ NORM_EVENT="${1:-}"
 ATRIUM_EVENT="${2:-$NORM_EVENT}"
 [ -n "$NORM_EVENT" ] || exit 0
 
-# Chat panes receive activity from atrium's ACP turn bridge; relaying the plugin
-# hook stream on top double-feeds the activity card and, with no settling stop
-# behind it, wedges it in "working" (matches hermes/kimi/grok/cursor-agent).
-[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0
-
-# Only relay a Goose that atrium launched into a pane. atrium injects
+# Only act for a Goose that atrium launched into a pane. atrium injects
 # ATRIUM_PANE_ID only into its own panes; its absence means there is no pane to
 # attribute activity to (a plain-terminal `goose`, a cron job, an IDE plugin).
 [ -n "${ATRIUM_PANE_ID:-}" ] || exit 0
+# Chat panes only need the guard below; skip the rest of the work for them.
+[ "$NORM_EVENT" = "pre-tool-use" ] || [ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -46,6 +43,25 @@ ATRIUM_CLI="${ATRIUM_CLI_PATH:-$DEFAULT_CLI}"
 [ -x "$ATRIUM_CLI" ] || ATRIUM_CLI="atrium"
 
 PAYLOAD="$(cat 2>/dev/null || true)"
+
+# Catastrophic-command guard, in terminal and chat panes alike: `atrium guard
+# check` prints Goose's block decision for a command that could erase /, the
+# home folder, system folders or a disk, and nothing otherwise. Only a JSON
+# object on stdout refuses; an atrium CLI from before `guard` prints its usage
+# error to stderr, which is dropped, so it can never block a command.
+if [ "$NORM_EVENT" = "pre-tool-use" ]; then
+  case "$PAYLOAD" in
+    *shell*)
+      GUARD="$(printf '%s' "$PAYLOAD" | "$ATRIUM_CLI" guard check --adapter goose 2>/dev/null)" || true
+      case "$GUARD" in "{"*) printf '%s\n' "$GUARD" ;; esac
+      ;;
+  esac
+fi
+
+# Chat panes receive activity from atrium's ACP turn bridge; relaying the plugin
+# hook stream on top double-feeds the activity card and, with no settling stop
+# behind it, wedges it in "working" (matches hermes/kimi/grok/cursor-agent).
+[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0
 
 printf '%s' "$PAYLOAD" \
   | "${DIR}/normalize-hook-payload.sh" "$NORM_EVENT" 2>/dev/null \

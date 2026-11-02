@@ -418,12 +418,14 @@ gets pushed:
 
 | Manifest | Owns | Installs to |
 |----------|------|-------------|
-| `canonical-assets.json` (repo root) | The home context file + bundled skills (and any future global asset) | `~/.atrium/<destName>`; sibling skill dirs at each adapter's `skillInstallPath` |
-| `skills/atrium/skill-assets.json` | The atrium skill's `references/*.md` | `references/` beside each installed `SKILL.md` |
+| `canonical-assets.json` (repo root) | Every pushed file: the home context file, the atrium skill and its references, the bundled skills | `~/.atrium/<destName>`; the skill, its `references/` and sibling skill dirs at each adapter's `skillInstallPath` |
+| `skills/atrium/skill-assets.json` | The atrium skill's reference names, for older atrium clients | `references/` beside each installed `SKILL.md` |
 
-`canonical-assets.json` entries carry a `target`: `atrium-home` (needs `destName`)
-or `bundled-skill` (needs `skillName`). CI (`validate.yml`) fails the build if a
-listed `remotePath` doesn't exist on disk.
+`canonical-assets.json` entries carry a `target`: `atrium-home` (needs `destName`),
+`adapter-skill` (exactly one), `adapter-skill-reference` (needs `destName`) or
+`bundled-skill` (needs `skillName`), and the file's `sha256`. CI (`validate.yml`)
+fails the build if a listed `remotePath` doesn't exist on disk or a digest is stale
+(`python3 tests/canonical-assets.py`).
 
 **Delivery is launch + periodic, content-hash-gated.** atrium refreshes every
 listed asset at app launch *and* on its update-check cadence, rewriting a file
@@ -431,8 +433,9 @@ only when its content actually differs. So long-running sessions pick up changes
 without a relaunch, and **without any version bump**:
 
 - **Editing** an already-listed file (`atrium-context.md`, `SKILL.md`, a
-  reference, a bundled skill) → propagates automatically on the next refresh. No
-  manifest change needed.
+  reference, a bundled skill) → refresh its `sha256` in `canonical-assets.json`
+  in the same commit. atrium refuses an asset whose bytes don't match its digest,
+  and one stale digest skips the whole refresh with only a warning.
 - **Adding / renaming / removing** a pushed file → you **must** update the right
   manifest (`canonical-assets.json` for global/bundled assets, `skill-assets.json`
   for skill references), or it silently never reaches users. This is the one

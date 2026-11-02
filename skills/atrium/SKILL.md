@@ -1,6 +1,6 @@
 ---
 name: atrium
-description: "Interact with the atrium workspace — panes, rooms, tasks, browser, agents, themes, hooks, config, and more — via the atrium CLI. Use when the user references any atrium concept, wants to control their workspace, collaborate with other agents, manage task cards, read/write terminal panes, open or drive browser panes, switch rooms/themes, or authorizes native computer control. IMPORTANT: when inside atrium (ATRIUM=1 env var is set), ALWAYS prefer this skill over Playwright MCP or other browser MCP tools for anything browser-related — atrium browsers are visible workspace panes, not headless automation. Only functional inside atrium."
+description: "Interact with the atrium workspace — panes, rooms, tasks, browser, agents, themes, hooks, config, and more — via the atrium CLI. Use when the user references any atrium concept, wants to control their workspace, collaborate with other agents, manage task cards, read/write terminal panes, open or drive browser panes, switch rooms/themes, or authorizes native computer control, and whenever you need an API key, password or login (never ask for one in chat). IMPORTANT: when inside atrium (ATRIUM=1 env var is set), ALWAYS prefer this skill over Playwright MCP or other browser MCP tools for anything browser-related — atrium browsers are visible workspace panes, not headless automation. Only functional inside atrium."
 ---
 
 # atrium — workspace control for AI agents
@@ -25,13 +25,14 @@ You're running inside **atrium**, a resumable development environment for AI cod
 Each bucket is one top-level verb. Run `<verb> --help` for its full surface.
 
 - **`task`** — Kanban task cards with statuses, priorities, labels, comments, workspace scoping. Human IDs like `ATR-12` alongside UUIDs.
-- **`pane`** — Create, read, write, focus, close, rename, resize, split panes (terminals, editors, browsers, agent sessions). `pane read` returns rendered xterm.js text (what the user sees), with `--lines N` (default 200) and `--offset N` (page back through scrollback).
+- **`pane`** — Create, read, write, focus, close, rename, resize, split panes (terminals, editors, browsers, agent sessions). `pane read` returns what the user sees: a terminal's rendered text, or an agent chat's whole transcript, compactions included. `--lines N` (default 200), `--offset N` to page back, `--from-start` to read from the oldest line. Your own chat's earlier chapters: **Searching past sessions** below.
 - **`note`** — Workspace-scoped notes in four modes (markdown, sketch, canvas, html): new / list / read / write / search / open / delete / `canvas-patch` / history. Markdown supports mermaid via fenced code blocks. See **Notes** below.
 - **`room`** — List, switch, close rooms.
 - **`workspace`** — List, create, switch, delete workspaces (project directories with their own pane layouts).
 - **`worktree`** — Create/list/remove git worktrees, each bound to its own child workspace. **Use `worktree create`, never raw `git worktree add`** — see **Worktrees** below.
 - **`workspace-command`** — The workspace's named background commands (dev server, watcher, etc.): list / status / start / stop / restart / logs / clear / create / edit / delete. **Check before you launch** — see **Workspace commands** below.
 - **`browser`** — Drive browser panes: navigate, click, fill, type, press, select, scroll, eval JS, screenshot, snapshot, wait, read attributes. Always prefer this over Playwright or any browser MCP. Every verb works on a pane the user can't see — see **Never take the user's focus** below.
+- **`secret`** — Keys, env vars and logins the user keeps in atrium: list / request / run. You get access, never the value. See **Secrets** below.
 - **`agent`** — List active agent panes and send framed messages between them. See **Agent-to-agent messaging** below.
 - **`theme`** — List and switch themes.
 - **`config`** — Read/write atrium settings.
@@ -118,6 +119,8 @@ have to know about, because the default answers are scoped to this machine:
 
    The test is not what kind of message it is — it's **do you need something back from them before you can proceed?** No → `--no-reply`. That covers status, steers, hints, corrections, heads-ups, and handoffs where they own the next step. Yes → default. Questions, requests, and anything you're about to wait on keep the reply hint.
 
+**Reactions in your chat.** In an agent chat pane, `chat react <emoji>` puts an emoji reaction on the user's latest message in your own chat (`--message <id>` for an earlier one, `--remove` takes it back). It never starts a turn. The user can react to your messages too: their reactions reach you as a one-line note at the start of your next turn. A reaction needs no reply.
+
 **Browser snapshot → ref → action loop.** Before you click/fill/type/select on a browser pane, run `browser snapshot <pane-id>` for an accessibility tree where each interactable has a short ref (`e1`, `e2`, …). Pass refs to `browser click`/`fill`/etc. Re-snapshot after the DOM changes — refs aren't stable across navigations.
 
 **Browsers: open one per task, then navigate it.** Every page you open is a live browser in the user's room, and a room full of them slows atrium down and can freeze it on launch. So:
@@ -143,6 +146,25 @@ More generally: **never background an atrium CLI call.** Run it in the foregroun
 **`pane close` reports what happened, not just that it was accepted.** `closed` = verified gone. `scheduled` = waiting on the turn. A non-zero exit means the close did NOT land — say so rather than reporting success.
 
 **Adapter-side install/config is atrium's.** Don't hand-edit files under `~/.atrium/adapters/` or seed skills yourself — reinstall the adapter from Settings instead.
+
+## Secrets
+
+The user keeps API keys, env vars and logins in atrium. You use them by name and never see the values. **Never ask the user to paste a key, token, password or 2FA code into chat, and never print one** (`env`, `printenv`, `echo $KEY`, `cat .env`) or write one into a file, note or message.
+
+- `secret list --json` — what you may use: names, kinds, whose they are, where they come from. Never values.
+- `secret request <NAME> --kind env|login|secret --why "<one line>"` — asks the user for one you don't have. A login adds `--site <domain>`. A card goes up in your chat and on the user's phone, and the command **returns at once: end your turn.** If you already have it, it answers `granted` right away.
+- `secret run --env <NAME> [--env VAR=NAME] -- <command> [args]` — runs a command with the secret in its environment. Non-interactive only (no stdin, no TTY), so not for tools that prompt. Its output comes back with each value replaced by `[secret:NAME]`, and the exit status is the command's.
+- `browser fill-login <pane-id> <login> [--submit]` — types a saved login into the page's sign-in form with real key events: only on the login's own site, over https, and not on a page you ran `eval`, `cdp` or `wait --function` on since it loaded (reload it first). `--otp` also types the code of a 1Password login. Password fields can't be read back.
+- `browser hand-off "<what the user should do>" --pane <pane-id>` — for a step only the user can take: a login you don't have, a 2FA code, a CAPTCHA. **Returns at once: end your turn**, and leave that browser alone until it's done. `--done-when-url <substring>` finishes it as soon as the page reaches that address.
+- An HQ director's own browser is `mine`, accepted wherever a browser verb takes a pane id (`browser fill-login mine <login>`; `browser hand-off` defaults to it for a director). Everyone else names a pane.
+
+**The answer comes as a turn.** You don't poll: when the user answers, atrium wakes you with one line, `[atrium · secrets] The owner gave you OPENAI_API_KEY…` (or declined it, or it ran out), or `[atrium · browser] The owner finished: …`. Pick the work up from there. `--wait [--timeout <s>]` on `request` or `hand-off` waits in place instead (up to 600 s); the card stays up either way.
+
+A delegated run may use whatever the agent that delegated it may use. If you need one you don't have and you're working for another agent, say exactly which in your report instead of requesting it.
+
+## HQ (directors and staff)
+
+An atrium HQ director, or a staff member on a run HQ delegated to it, gets atrium's rules each session: what to do and which command does it. **Before an HQ command whose flags or formats you don't know (delegating, hiring, routines and reminders, labels, your dock, your short name, secrets), read `references/hq.md`**, or run `--help` on it.
 
 ## Quick examples
 
@@ -304,11 +326,26 @@ When the user asks you to *create a skill*, *save this as a skill*, or *add a sk
 
 ## Searching past sessions
 
-atrium maintains a local content-searchable index of every adapter session on this machine. Suggest it for recall ("find that session where we fixed the popover") or to find which sessions touched a file. Three surfaces:
+**Your own chat first.** Before asking the user to repeat something, look back through your chat. A long chat runs in **chapters**: when it moves onto a fresh engine session, usually because it grew long or switched brains, atrium starts a new chapter in the same pane. Its first turn opens with an `ATRIUM ENGINE EPOCH HANDOFF` block: the last chapter's summary, the plan, open tasks and recent user messages, and the commands to look back. Earlier chapters stay readable; carry on as one conversation.
 
-- **Vault search** — the Library's "Search vault…" input; ranked content matches with snippets over saved entries.
-- **Launcher session picker** — the search above the new-room adapter tiles; searches the full corpus (not just saved), click to resume.
+If `pane read --help` lists `--search`:
+
+```bash
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --epochs                  # chapters: number, start, turns, brain, summary
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --epoch 2 --lines 120     # one chapter; --from-start / --offset work inside it
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --search "staging deploy" # every chapter: summaries first, then newest first
+"$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --around <@anchor> --lines 40
+"$ATRIUM_CLI_PATH" pane epochs "$ATRIUM_PANE_ID"                         # why a chapter did or didn't start; --all for every chat
+```
+
+- `--search` is case-insensitive and needs every word in one message (words match inside longer words; tool output isn't searched). Each hit starts with an anchor (`@<chapter>:s<seq>~<hint>`) to pass to `--around`. `--limit` (default 20); `--epoch N` narrows it. A `partial:` line means the read budget (`--budget <MiB>`, default 256) ran out: it says to add `--epoch N` for older chapters, or a bigger `--budget` when the cut chapter was the oldest or the one you named.
+- Chat panes only; `--json` works on every form.
+- No `--search` in `--help`, or a read that refuses it (an older daemon runs that pane): page your chat with `--from-start` and `--offset`.
+
+**Other sessions.** atrium keeps a local content index of every adapter session on this machine, for recall ("find that session where we fixed the popover") or which sessions touched a file:
+
 - **`atrium edits <file>`** — which past sessions modified a file, recent-first. Flags: `--limit N`, `--session <id>`, `--adapter <name>`, `--since <iso|7d|30d|1y>`, `--json`.
+- To point the user at: **Vault search** (the Library's "Search vault…" input; ranked matches with snippets over saved entries) and the **launcher session picker** (the search above the new-room adapter tiles; the full corpus, click to resume).
 
 Index depth, horizon, and per-workspace excludes live under Settings → Vault. Search is local — no transcript content leaves the machine.
 
