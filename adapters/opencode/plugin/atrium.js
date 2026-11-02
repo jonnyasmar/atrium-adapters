@@ -75,6 +75,9 @@ function emit(event, payload) {
       ],
       { stdio: ["pipe", "ignore", "ignore"] },
     );
+    // A CLI that exits before reading the payload closes the pipe; the write
+    // then fails with EPIPE, which must not take the agent down with it.
+    child.stdin.on("error", (err) => debug("emit stdin", String(err)));
     child.stdin.write(JSON.stringify(payload ?? {}));
     child.stdin.end();
     child.unref();
@@ -118,6 +121,9 @@ function runAtriumCapture(args, stdin, timeoutMs = 2500) {
       child.on("error", () => {
         clearTimeout(timer);
         finish("");
+      });
+      child.stdin.on("error", () => {
+        // EPIPE from a CLI that exited without reading; `close` settles.
       });
       if (stdin != null) child.stdin.write(stdin);
       child.stdin.end();
