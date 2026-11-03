@@ -28,7 +28,7 @@ for flag in \
   'routine create --title' '--prompt' '--self' '--agent <staff-slug>' '--cron' '--every' '--at' '--in' '--done-when' 'routine done <card>' \
   'label create' '--icon' '--color' '--guidance' 'hq label <label>' \
   'atrium-short-name=' "--description \"<one-line role>\"" "atrium-dock=<json>" \
-  '{"tabs":[...],"hidden":[...]}' '{"kind":"pane","paneId":"…"}' '{"kind":"note","workspaceId":"…","noteId":"…"}' '"browser"' \
+  '{"tabs":[...],"hidden":[...]}' '{"kind":"pane","paneId":"…"}' '{"kind":"note","workspaceId":"…","noteId":"…"}' '"browser"' '"side":"left"' \
   'attached items, shown as subtabs on the Overview' 'note open <id>' \
   'memory remember "<fact>" --pin' 'hq adopt <pane>' 'hq unfollow <pane>' \
   'hq chats' 'hq chats read <main|id> [--lines N]' \
