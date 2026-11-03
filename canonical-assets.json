@@ -26,7 +26,7 @@
       "remotePath": "skills/atrium/references/notes-interactive-ui.md",
       "target": "adapter-skill-reference",
       "destName": "notes-interactive-ui.md",
-      "sha256": "89bc7a61b83986757db372448d69ddd2a91ad76bccb7f73c0993a087377025fe"
+      "sha256": "e6564cf1c09cb7d52af1beccb4f3ef495f12c29821a865acc34a315313e5c4fe"
     },
     {
       "id": "atrium-skill-chat-canvas-fence",
