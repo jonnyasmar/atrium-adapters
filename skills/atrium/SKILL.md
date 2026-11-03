@@ -119,7 +119,7 @@ have to know about, because the default answers are scoped to this machine:
 
    The test is not what kind of message it is — it's **do you need something back from them before you can proceed?** No → `--no-reply`. That covers status, steers, hints, corrections, heads-ups, and handoffs where they own the next step. Yes → default. Questions, requests, and anything you're about to wait on keep the reply hint.
 
-**Reactions in your chat.** In an agent chat pane, `chat react <emoji>` puts an emoji reaction on the user's latest message in your own chat (`--message <id>` for an earlier one, `--remove` takes it back). It never starts a turn. The user can react to your messages too: their reactions reach you as a one-line note at the start of your next turn. A reaction needs no reply.
+**Reactions in your chat.** In an agent chat pane, `chat react <emoji>` puts an emoji reaction (any single emoji) on the user's latest message in your own chat (`--message <id>` for an earlier one, `--remove` takes it back). It never starts a turn. When the reaction is your whole reply, end your turn with the same emoji as your only text; atrium folds it into the reaction. The user can react to your messages too, down to one paragraph: atrium tells you right away (in the middle of your turn if you're working) or, if your chat isn't running, at the start of your next turn. A reaction needs no reply unless it changes something.
 
 **Browser snapshot → ref → action loop.** Before you click/fill/type/select on a browser pane, run `browser snapshot <pane-id>` for an accessibility tree where each interactable has a short ref (`e1`, `e2`, …). Pass refs to `browser click`/`fill`/etc. Re-snapshot after the DOM changes — refs aren't stable across navigations.
 

@@ -79,10 +79,12 @@ Without `--adapter`, a hire runs on the default brain. Run from a director's cha
 
 `--metadata` sets one key and keeps the others.
 
-The dock is `{"tabs":[...],"hidden":[...]}`. Its sections are fixed: your dashboard sits in its Overview, alongside live lists of your chats, work, browser, routines and attached items, in the order the owner chose. What you put in `tabs` are attached items, listed in the Overview:
+The dock is `{"tabs":[...],"hidden":[...]}`. Its sections are fixed: your dashboard sits in its Overview, alongside live lists of your chats, work, browser and routines, in the order the owner chose. What you put in `tabs` are attached items, shown as subtabs on the Overview, beside your dashboard (the phone lists them under Attached):
 
 - a pane: `{"kind":"pane","paneId":"…"}`;
 - a note: `{"kind":"note","workspaceId":"…","noteId":"…"}`.
+
+`atrium note open <id>` from your chat, a side chat or a worker of yours puts the note there too, never in a pane. A new subtab doesn't change what the owner is looking at, so say so when they should look.
 
 Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`, `"browser"`) and `hidden` are still accepted but no longer change the dock. Save the whole dock, keeping the items you aren't changing. Which section is open is the owner's choice, not part of the dock.
 
@@ -101,8 +103,8 @@ Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`
 "$ATRIUM_CLI_PATH" chat react <emoji> [--message <id>] [--remove]
 ```
 
-- `chat react 👍` reacts to the owner's latest message in the chat you're in. When a message only needs acknowledging (thanks, ok, got it), react instead of replying, and end your turn. Use it sparingly: anything that needs an answer still gets one.
-- The owner's reactions to your messages reach you as a note at your next turn ("Since your last turn, the owner reacted 👍 to …"). Take them as feedback; don't reply to them.
+- `chat react 👍` reacts to the owner's latest message in the chat you're in. When a message only needs acknowledging (thanks, ok, got it), the reaction is your whole reply: react, then end your turn with that same emoji as your only text (`👍`, nothing else). atrium folds it into the reaction, so the owner sees only the reaction on their message. Use it sparingly: anything that needs an answer still gets one.
+- The owner's reactions to your messages reach you right away ("The owner reacted 👍 to your message …"), or as a note at your next turn when your chat isn't running. Take them as feedback; don't reply to them unless one changes something. Any single emoji works for `chat react`, not only 👍.
 
 ## Memory and sessions
 
