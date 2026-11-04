@@ -1,7 +1,7 @@
 {
   "$schema": "../schemas/hq-library.schema.json",
   "schemaVersion": 1,
-  "updatedAt": "2026-11-03",
+  "updatedAt": "2026-11-04",
   "bundles": [
     {
       "kind": "persona",
@@ -1440,6 +1440,42 @@
         "license": "CC0-1.0"
       },
       "prompt": "Check the prices on the owner's watch list (the Watch list part of your dashboard). If the list is empty, stay quiet.\n\n1. For each item, open its page and note today's price, whether it's in stock, and any coupon shown on the page.\n2. Compare with the price when it was added and the lowest you've seen.\n3. A drop of {drop_pct}% or more, or a price at or under the owner's target: message the owner with the item, the old and new price, and the link. Check the price history first; a \"sale\" is often the usual price. Use anything your playbook adds.\n4. Update the watch list. An item the owner has bought, or no longer wants, comes off it.\n5. Never buy, add to a cart, or sign up for anything in the owner's name. Nothing new? Stay quiet.\n\nIf an item's page won't load or hides the price, note it on the list and try again on the next pass. If it fails three passes running, say so once and ask the owner whether to keep watching it."
+    },
+    {
+      "kind": "routine",
+      "id": "atrium/project-briefs",
+      "revision": 1,
+      "title": "Project briefs",
+      "summary": "Keeps each of your projects' briefs fresh, so their cards say where things stand.",
+      "category": "engineering",
+      "tags": [
+        "briefs",
+        "projects",
+        "weekly",
+        "orientation",
+        "context"
+      ],
+      "icon": "FileText",
+      "target": "director",
+      "mode": "standing",
+      "schedule": {
+        "cron": "0 7 * * 1",
+        "tz": "{timezone}"
+      },
+      "scheduleLabel": "Mon 7:00",
+      "params": [],
+      "needs": [],
+      "effects": [
+        "read",
+        "draft"
+      ],
+      "asksFirst": [],
+      "minAtrium": "0.357.0",
+      "attribution": {
+        "author": "atrium",
+        "license": "CC0-1.0"
+      },
+      "prompt": "Keep your projects' briefs fresh: each project card's \"Latest brief\" line is what you know of a project between delegations.\n\n1. List your projects (`atrium hq projects`) and read their cards.\n2. Pick each project whose brief is 6 days old or more (\"6d old\" on its card), or that has none. Skip one with no Activity line: nothing happened there in a week, so its brief still holds.\n3. For each pick, delegate to a general worker in that project (name the project), titled \"Refresh the brief\", with this brief: \"Write this project's brief with the atrium-create-brief skill, for a director who delegates work here: what the project is, the conventions that change how work here should be briefed, and where things stand. Keep the summary above the `<!-- more -->` line under 600 characters. Done when `atrium timeline list --kind brief` shows this project's brief from today.\"\n4. Accept each report once its card shows the new brief. Say nothing to the owner unless a project couldn't be briefed.\n\nNever more than one refresh per project per run, and none while one is still running there."
     },
     {
       "kind": "routine",
