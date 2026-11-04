@@ -12,7 +12,20 @@ atrium's director and staff rules say what to do and name the command for it. Th
 - `--workspace <name>`: work that touches code names its project (`workspace list`).
 - `--brief-file <path>` reads a long brief from a file (`-` for stdin).
 - The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `workspace`.
-- A worker's report ends with the command that accepts it: `task set-done --run-id <runId>`.
+- A worker's report ends with the command that accepts it: `task set-done --run-id <runId>`. While it awaits review it also says `Related follow-up? Message this worker before accepting.`: a follow-up close to what it just did goes to that worker (`agent message <pane> "…"`), which already has the context, and comes back as a new report.
+- There is no limit on how many workers run at once: pacing them is yours. Every delegation's output ends with two readouts (in `--json` and the tool's result, the `machine` and `parallelWork` lists):
+  - `machine`: each machine's load against its core count (calm, busy or overloaded), memory pressure, and free disk on atrium's data volume (marked tight or low). Locations you've linked are listed too, with what they last said.
+  - `parallelWork`: every worker still running or awaiting review, which director it works for, its project and checkout, the files it has changed (newest first), and any checkout two workers share, with the files both changed.
+
+## The machine and parallel work
+
+```bash
+"$ATRIUM_CLI_PATH" hq machine [--json]
+```
+
+- The same two readouts on demand, asking each linked location fresh. A location is asked only over a link that is already up, never dialed; one on an older atrium says it can't tell.
+- On your prompts you also get a short line of it, sent again only when a load, memory or disk level changes, a worker starts or stops, or two workers start sharing a checkout.
+- Workers in one checkout see each other's uncommitted changes and can collide in the same files. For work likely to overlap, brief one worker to use a worktree (`worktree create --branch <name>`), weighing its disk: a full checkout plus its build outputs, on a volume the readout may already show as tight.
 
 ## Staff
 
@@ -25,6 +38,9 @@ atrium's director and staff rules say what to do and name the command for it. Th
 ```
 
 Without `--adapter`, a hire runs on the default brain. Run from a director's chat, the hire is that director's.
+
+- Hire once you've written the same constraints into a second brief: the staff member carries them, so briefs stay short. Prefer a fitting staff member over a general worker.
+- Start from a template: `hq library --kind staff` lists them (an engineer for mobile, desktop/frontend or backend/core work, a release manager, a researcher, a reviewer, a smoke tester), `hq library show <id>` prints one. Hire with its description and instructions, tailored to the project: its paths, checks and rules.
 
 ## Routines and reminders
 
@@ -51,11 +67,15 @@ Without `--adapter`, a hire runs on the default brain. Run from a director's cha
 "$ATRIUM_CLI_PATH" hq library adopt <persona-id>
 ```
 
-- Ready-made routines and personas. Run from your chat, the list is ranked for you and marks the routines you have. Check it before writing a routine from scratch; when one fits, offer it in one small canvas with the values you'd use, and set it up when the owner says yes.
+- Ready-made routines, personas and staff templates. Run from your chat, the list is ranked for you and marks the routines you have. Check it before writing a routine from scratch; when one fits, offer it in one small canvas with the values you'd use, and set it up when the owner says yes.
 - `show` prints a bundle in full: its text, schedule, slots, needs (met or not, with the ask for each) and effects.
 - `add` fills the slots now: your `--param` values, then your persona's, then the routine's defaults. A required slot with no value is refused by name. Adding a routine you have retunes it with the new values. It prints any need still unmet, with the command that asks for it: ask, then end your turn.
 - A need lists the ways to meet it: a connector (`connector request`), a login or key (`secret request`), or a tool on this machine. A routine that runs unattended may ask the owner to let it act on its own for some of what it does; only the owner grants that.
 - `adopt` merges a persona's playbook seed into yours and lists its routines to offer. It leaves your instructions alone: those are the owner's.
+
+## Asking the owner in a canvas
+
+- Every question offers a free-text answer next to its buttons: an `Input` or `Textarea` ("Or tell me something else") that the same send action carries, so the owner is never held to your options. Components and format: `references/chat-canvas-fence.md`.
 
 ## Labels
 
