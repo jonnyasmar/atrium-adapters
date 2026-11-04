@@ -192,6 +192,7 @@ When a canvas asks the owner something, put `"ask"` beside the `type` of the ele
 - `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
 - A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
 - A canvas with a send button and no markers is tracked as one question.
+- On a dashboard, give each new question a fresh element key: a finished one doesn't reopen when you edit it.
 - A plain question the owner could answer in a word or a pick from a short list goes through your harness's question tool, not a canvas.
 
 ## Reserved flags
