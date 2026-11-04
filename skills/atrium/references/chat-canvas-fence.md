@@ -185,6 +185,26 @@ The same two custom actions as notes (`send_to_agent`, `atrium_command`), with o
 - **You must include a submit affordance.** Nothing renders a default "send" footer. A canvas with no `send_to_agent` button is a display, not a form — which is fine if that's what you meant, and a dead end if it isn't.
 - Action params read state with `{"$state": "/pointer"}`; `$bindState` is render-time only. Same rule, same trap, as notes.
 
+## Mark each question
+
+When a canvas asks the owner something, put `"ask"` beside the `type` of the element that holds each question: one part per decision, holding its text, its fields and its own send buttons.
+
+```json
+"store": {
+  "type": "Stack",
+  "ask": { "id": "store" },
+  "props": { "direction": "column", "gap": 8 },
+  "children": ["storeText", "storeNote", "storeButtons"]
+}
+```
+
+- atrium then tracks each marked part on its own: it counts as waiting on the owner, locks on the answer they send with their choice lit, and offers Later and Decline. Every decision line gets its own part, so the owner can answer one and leave the rest.
+- `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
+- A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
+- A canvas with a send button and no markers is tracked as one question.
+- On a dashboard, give each new question a fresh element key: a finished one doesn't reopen when you edit it.
+- A plain question the owner could answer in a word or a pick from a short list goes through your harness's question tool, not a canvas.
+
 ## Reserved flags
 
 The info string carries space-separated flags after the language (`` ```canvas ``, `` ```html render ``). One flag is reserved:
