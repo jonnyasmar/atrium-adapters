@@ -5,17 +5,33 @@ atrium's director and staff rules say what to do and name the command for it. Th
 ## Delegating
 
 ```bash
-"$ATRIUM_CLI_PATH" task delegate --title "<title>" --brief "<goal, context, constraints, what done looks like>" (--to <staff-slug> | --adapter <name>) [--workspace <project>]
+"$ATRIUM_CLI_PATH" task delegate --title "<title>" --brief "<goal, context, constraints, what done looks like>" (--to <staff-slug> | --adapter <name>) \
+  [--project <project>] [--path <subfolder>] [--also <project>]...
 ```
 
 - `--to <slug>` hands it to a staff member (`hq staff` lists them). For a general worker, leave out `--to` and pass `--adapter <name>`: the CLI it runs on, e.g. `claude-code`. A name that isn't a staff member's is refused.
-- `--workspace <name>`: work that touches code names its project (`workspace list`).
+- `--project <name>` (or `--workspace`): the project to work in, by id, prefix or name. A director that names none works in its roster's primary project; with a roster but no primary it is asked to name one, and with no roster the work stays in HQ and the answer says so.
+- `--path <subfolder>`: a folder inside the project (`atrium-mobile`). The worker starts there, so brains that read instructions only from their folder up (Codex, Pi, OpenCode, Antigravity) see that folder's own `AGENTS.md`.
+- `--also <project>` (repeatable): related projects the work touches. The worker gets their cards and a line naming the instruction file to read before editing there.
 - `--brief-file <path>` reads a long brief from a file (`-` for stdin).
-- The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `workspace`.
+- The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `project`, `path`, `also`.
 - A worker's report ends with the command that accepts it: `task set-done --run-id <runId>`. While it awaits review it also says `Related follow-up? Message this worker before accepting.`: a follow-up close to what it just did goes to that worker (`agent message <pane> "…"`), which already has the context, and comes back as a new report.
 - There is no limit on how many workers run at once: pacing them is yours. Every delegation's output ends with two readouts (in `--json` and the tool's result, the `machine` and `parallelWork` lists):
   - `machine`: each machine's load against its core count (calm, busy or overloaded), memory pressure, and free disk on atrium's data volume (marked tight or low). Locations you've linked are listed too, with what they last said.
   - `parallelWork`: every worker still running or awaiting review, which director it works for, its project and checkout, the files it has changed (newest first), and any checkout two workers share, with the files both changed.
+
+## Your projects
+
+```bash
+"$ATRIUM_CLI_PATH" hq projects [--director <slug>]
+"$ATRIUM_CLI_PATH" hq projects add <project> [--primary] [--note "<what it is to you>"]
+"$ATRIUM_CLI_PATH" hq projects remove <project> | note <project> "<note>" | primary <project>
+"$ATRIUM_CLI_PATH" hq project show <project>
+```
+
+- Your roster: the projects you oversee, one of them primary (where your delegations go by default), each with a one-line note. It starts seeded from where you've delegated; edit it freely. HQ and worktrees can't be on it (a project's card covers its worktrees).
+- Each session starts with a card per roster project: git state, open work, your running delegations there, the last day's and week's commits, pushes and finished tasks, the latest brief, and its instruction files. `hq project show` prints one in full, with each instruction file's headings.
+- Name a project's skills in a brief rather than loading them: `atrium skills list --project <p>` lists them; the worker loads them natively.
 
 ## The machine and parallel work
 
