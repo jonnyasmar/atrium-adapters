@@ -143,7 +143,9 @@ build_all_hooks() {
   # director or delegated staff, apart from the owner's instructions in agent;
   # it prints nothing for anyone else, and an older CLI that doesn't know the
   # section fails quietly (`|| true`) while its daemon still puts the rules in
-  # agent.
+  # agent. projects is a director's project cards (a worker's, when it was
+  # given related projects): empty for anyone else, and an older daemon puts
+  # them in context instead.
   #
   # NO CHAT_SDK_GUARD here: the SDK's SessionStart hook callback never fires for
   # claude-sdk chat panes (verified 2026-07-25 — no `hook emit session-start`,
@@ -152,7 +154,7 @@ build_all_hooks() {
   # working SessionStart context source there; every other event keeps the
   # guard because its SDK callback does fire.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent director-rules skills; do
+  for ctx_section in context agent director-rules skills projects; do
     if [ -n "$WINDOWS_HOOK" ]; then
       ctx_cmd="$WINDOWS_HOOK manifest $ctx_section"
     else

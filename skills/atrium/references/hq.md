@@ -5,14 +5,49 @@ atrium's director and staff rules say what to do and name the command for it. Th
 ## Delegating
 
 ```bash
-"$ATRIUM_CLI_PATH" task delegate --title "<title>" --brief "<goal, context, constraints, what done looks like>" (--to <staff-slug> | --adapter <name>) [--workspace <project>]
+"$ATRIUM_CLI_PATH" task delegate --title "<title>" --brief "<goal, context, constraints, what done looks like>" (--to <staff-slug> | --adapter <name>) \
+  [--project <project>] [--path <subfolder>] [--also <project>]...
 ```
 
 - `--to <slug>` hands it to a staff member (`hq staff` lists them). For a general worker, leave out `--to` and pass `--adapter <name>`: the CLI it runs on, e.g. `claude-code`. A name that isn't a staff member's is refused.
-- `--workspace <name>`: work that touches code names its project (`workspace list`).
+- `--project <name>` (or `--workspace`): the project to work in, by id, prefix or name. A director that names none works in its roster's primary project; with a roster but no primary it is asked to name one, and with no roster the work stays in HQ and the answer says so.
+- `--path <subfolder>`: a folder inside the project (`atrium-mobile`). The worker starts there, so brains that read instructions only from their folder up (Codex, Pi, OpenCode, Antigravity) see that folder's own `AGENTS.md`.
+- `--also <project>` (repeatable): related projects the work touches. The worker gets their cards, a line naming the instruction file to read before editing there, and their folders where its brain takes them: Claude Code loads their `CLAUDE.md`, rules and skills (not an `AGENTS.md`); Copilot only their `*.instructions.md`; Codex may write there but reads only its own project's `AGENTS.md`; an ACP brain only when it offers extra folders; Pi and OpenCode get the card and the line alone. With `--path`, the project's own top folder is one of them, so the worker can still work across the project.
 - `--brief-file <path>` reads a long brief from a file (`-` for stdin).
-- The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `workspace`.
-- A worker's report ends with the command that accepts it: `task set-done --run-id <runId>`.
+- The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `project`, `path`, `also`.
+- A worker's report ends with the command that accepts it: `task set-done --run-id <runId>`. While it awaits review it also says `Related follow-up? Message this worker before accepting.`: a follow-up close to what it just did goes to that worker (`agent message <pane> "…"`), which already has the context, and comes back as a new report.
+- There is no limit on how many workers run at once: pacing them is yours. Every delegation's output ends with two readouts (in `--json` and the tool's result, the `machine` and `parallelWork` lists):
+  - `machine`: each machine's load against its core count (calm, busy or overloaded), memory pressure, and free disk on atrium's data volume (marked tight or low). Locations you've linked are listed too, with what they last said.
+  - `parallelWork`: every worker still running or awaiting review, which director it works for, its project and checkout, the files it has changed (newest first), and any checkout two workers share, with the files both changed.
+
+## Your projects
+
+```bash
+"$ATRIUM_CLI_PATH" hq projects [--director <slug>]
+"$ATRIUM_CLI_PATH" hq projects add <project> [--primary] [--note "<what it is to you>"]
+"$ATRIUM_CLI_PATH" hq projects remove <project> | note <project> "<note>" | primary <project>
+"$ATRIUM_CLI_PATH" hq projects folders on|off
+"$ATRIUM_CLI_PATH" hq project show <project>
+```
+
+- Your roster: the projects you oversee, one of them primary (where your delegations go by default), each with a one-line note. It starts seeded from where you've delegated; edit it freely. HQ and worktrees can't be on it (a project's card covers its worktrees).
+- Keeping it current is your job, not the owner's. A delegation into a project off your roster ends with a line naming the `hq projects add` that adds it; `hq projects` names the command that makes another project primary when your primary had none of your last 30 days' delegations and that one had most. Neither edits the roster: run the command when it's right.
+- Each session starts with a card per roster project: git state, open work, your running delegations there, the last day's and week's commits, pushes and finished tasks, the latest brief, and its instruction files. `hq project show` prints one in full, with each instruction file's headings.
+- A project on another machine gets its card from that machine (one running this atrium or newer). When it doesn't answer in time, the card is the last one it sent, with its age, or says why there is none.
+- Briefs go stale as a project moves. The library's `atrium/project-briefs` routine refreshes each busy project's brief weekly through a worker there; the Projects header names stale ones until you run it.
+- `hq projects folders on` gives your own sessions your roster's folders the way `--also` gives a worker its related projects' (off by default: each project's instructions cost you context again after every compaction). `folders off` takes them away from your next session.
+- Name a project's skills in a brief rather than loading them: `atrium skills list --project <p>` lists them; the worker loads them natively.
+- Commands that act in a project take `--project <p>` from HQ: `workspace-command`, `skills load` and `list`, `context`, `blackboard`, `memory remember`, `timeline`. Without it, `workspace-command` from HQ says HQ holds no code.
+
+## The machine and parallel work
+
+```bash
+"$ATRIUM_CLI_PATH" hq machine [--json]
+```
+
+- The same two readouts on demand, asking each linked location fresh. A location is asked only over a link that is already up, never dialed; one on an older atrium says it can't tell.
+- On your prompts you also get a short line of it, sent again only when a load, memory or disk level changes, a worker starts or stops, or two workers start sharing a checkout.
+- Workers in one checkout see each other's uncommitted changes and can collide in the same files. For work likely to overlap, brief one worker to use a worktree (`worktree create --branch <name>`), weighing its disk: a full checkout plus its build outputs, on a volume the readout may already show as tight.
 
 ## Staff
 
@@ -25,6 +60,9 @@ atrium's director and staff rules say what to do and name the command for it. Th
 ```
 
 Without `--adapter`, a hire runs on the default brain. Run from a director's chat, the hire is that director's.
+
+- Hire once you've written the same constraints into a second brief: the staff member carries them, so briefs stay short. Prefer a fitting staff member over a general worker.
+- Start from a template: `hq library --kind staff` lists them (an engineer for mobile, desktop/frontend or backend/core work, a release manager, a researcher, a reviewer, a smoke tester), `hq library show <id>` prints one. Hire with its description and instructions, tailored to the project: its paths, checks and rules.
 
 ## Routines and reminders
 
@@ -51,11 +89,15 @@ Without `--adapter`, a hire runs on the default brain. Run from a director's cha
 "$ATRIUM_CLI_PATH" hq library adopt <persona-id>
 ```
 
-- Ready-made routines and personas. Run from your chat, the list is ranked for you and marks the routines you have. Check it before writing a routine from scratch; when one fits, offer it in one small canvas with the values you'd use, and set it up when the owner says yes.
+- Ready-made routines, personas and staff templates. Run from your chat, the list is ranked for you and marks the routines you have. Check it before writing a routine from scratch; when one fits, offer it in one small canvas with the values you'd use, and set it up when the owner says yes.
 - `show` prints a bundle in full: its text, schedule, slots, needs (met or not, with the ask for each) and effects.
 - `add` fills the slots now: your `--param` values, then your persona's, then the routine's defaults. A required slot with no value is refused by name. Adding a routine you have retunes it with the new values. It prints any need still unmet, with the command that asks for it: ask, then end your turn.
 - A need lists the ways to meet it: a connector (`connector request`), a login or key (`secret request`), or a tool on this machine. A routine that runs unattended may ask the owner to let it act on its own for some of what it does; only the owner grants that.
 - `adopt` merges a persona's playbook seed into yours and lists its routines to offer. It leaves your instructions alone: those are the owner's.
+
+## Asking the owner in a canvas
+
+- Every question offers a free-text answer next to its buttons: an `Input` or `Textarea` ("Or tell me something else") that the same send action carries, so the owner is never held to your options. Components and format: `references/chat-canvas-fence.md`.
 
 ## Labels
 

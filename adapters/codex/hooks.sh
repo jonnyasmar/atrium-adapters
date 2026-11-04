@@ -120,9 +120,10 @@ build_all_hooks() {
   # Split into dedicated SessionStart entries (--section context|agent|
   # director-rules|skills) instead of one: Claude Code caps hook output at 10K
   # PER hook, so a hook per section gives each section its own 10K budget (max
-  # headroom). director-rules prints nothing for anyone atrium gives no rules.
+  # headroom). director-rules prints nothing for anyone atrium gives no rules,
+  # projects nothing for anyone with no project cards.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent director-rules skills; do
+  for ctx_section in context agent director-rules skills projects; do
     ctx_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter codex --section %s 2>/dev/null || true' \
       "$ATRIUM_HOOK_MARKER_PREFIX" "$CHAT_SDK_GUARD" "$ctx_section")"
     ctx_entry="$(jq -n --arg cmd "$ctx_cmd" \
