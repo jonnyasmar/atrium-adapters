@@ -149,7 +149,9 @@ A canvas in a transcript renders at whatever width the pane happens to be, and t
 
 - **`ToggleGroup` is for 2–4 short options.** A segmented control puts every option on one rail, so it is the most width-hungry thing in the catalog. More options, or labels longer than a word or two, want a `Select` — one control, constant width, no matter how many choices.
 - **Same for `Tabs`:** a handful of short labels. Long tab names in a side-by-side `Grid` column is the case that bites.
-- **Two columns of `Grid` is a lot in a transcript.** A chat pane is often half the width of a notepad pane. Prefer a single `Stack` unless the two halves are genuinely independent.
+- **Give a `Grid` a `minColumnWidth`, not a fixed `columns`.** The same canvas lands in a wide notepad, a half-width chat pane, a director's dock and a phone. `"minColumnWidth": 160` puts six metric tiles six across where they fit and two across on a phone; add `columns` only to cap it (`"columns": 3` for a 3 + 3 dashboard). A bare `"columns": 4` still drops columns when the grid is too narrow, but never goes past four in a wide pane.
+- **Need a different count per width?** `columns` takes container-width breakpoints, e.g. `{"base": 1, "sm": 2, "md": 3}` (`sm` from 400px, `md` 600, `lg` 800, `xl` 1000 of grid width, not window width).
+- **Side-by-side halves still want to be independent.** Two prose or form columns at half a chat pane's width are cramped; a single `Stack` reads better unless the halves genuinely stand alone. Tiles (metrics, small cards) are what grids are for.
 - Long free text belongs in a `Textarea`, which wraps, rather than a row of chips or badges, which don't.
 
 ## What happens to the user's input

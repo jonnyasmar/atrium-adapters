@@ -26,14 +26,14 @@
       "remotePath": "skills/atrium/references/notes-interactive-ui.md",
       "target": "adapter-skill-reference",
       "destName": "notes-interactive-ui.md",
-      "sha256": "e6564cf1c09cb7d52af1beccb4f3ef495f12c29821a865acc34a315313e5c4fe"
+      "sha256": "0f3554c9c55cebe72437cef42eca951bcd49af7678d05a8d2e696323eaee5ff1"
     },
     {
       "id": "atrium-skill-chat-canvas-fence",
       "remotePath": "skills/atrium/references/chat-canvas-fence.md",
       "target": "adapter-skill-reference",
       "destName": "chat-canvas-fence.md",
-      "sha256": "b4ee19115bd3eeb7d185ca976bcbbc923a1e527a0851ccee1525d0f97533c1a9"
+      "sha256": "2f08ae5d96a3d127339416743e8a2ee2516118329873a8dfcc1859f58be64806"
     },
     {
       "id": "atrium-skill-chat-html-pages",
