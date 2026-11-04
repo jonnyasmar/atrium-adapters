@@ -280,14 +280,14 @@ Streaming patches are forgiving — you don't have to emit elements in strict de
 
 ## The component catalog
 
-atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus two atrium-specific additions: `Label` (for a11y pairing) and `Code` (Prism-highlighted source snippets). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
+atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus three atrium-specific additions: `Label` (for a11y pairing), `Code` (Prism-highlighted source snippets) and `Html` (a rich HTML visual inside the canvas). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
 
 **Layout & display:**
 
 | Component | Key props |
 |---|---|
 | `Stack`     | `direction?: "row"\|"column"`, `gap?: number`, `padding?: number`, `align?: "start"\|"center"\|"end"\|"stretch"\|"baseline"`, `justify?: "start"\|"center"\|"end"\|"between"\|"around"\|"evenly"`. Row stacks default `align: "center"`, with tiles (`Card`, `Metric`, charts, `Collapsible`, `Alert`) stretched to the row's height so their labels line up; column stacks default `align: "stretch"`. |
-| `Grid`      | `columns?: 1..6`, `gap?: number` |
+| `Grid`      | `minColumnWidth?: number`, `columns?: 1..6 \| {base?, sm?, md?, lg?, xl?}`, `gap?: number`. Columns adapt to the grid's own width. `minColumnWidth` (px) fits as many columns as are at least that wide, lets a few cells fill the row and balances the rows (six tiles where five fit go 3 + 3, not 5 + 1); prefer it. `columns` sets the most columns instead, filling each row up to it (default 2), or caps it per container-width breakpoint, mobile-first: `sm` ≥ 400px, `md` ≥ 600, `lg` ≥ 800, `xl` ≥ 1000; one left out inherits the next smaller, `base` defaults to 1. Without `minColumnWidth`, a narrow grid drops columns instead of squeezing them (never under 120px; 150pt on iPhone and iPad). Cells stretch to their row's height. |
 | `Card`      | `title?: string`, `description?: string` |
 | `Carousel`  | `items: { title?, content? }[]` (scroll-snap row) |
 | `Separator` | `orientation?: "horizontal"\|"vertical"` |
@@ -344,6 +344,17 @@ atrium implements the **full json-render standard catalog** — all 41 component
 | `Pagination` | `totalPages: number`, `page?` (bind, 1-indexed). Fires `change`. |
 | `BarGraph`   | `title?: string`, `data: { name, ...numericSeries }[]` |
 | `LineGraph`  | `title?: string`, `data: { name, ...numericSeries }[]` |
+| `Html`       | `page?: string` (a published page's hash) or `html?: string` (small inline HTML, up to 64 KB): exactly one. `title?: string`, `height?: number` (px) or `aspectRatio?: number` (width ÷ height); neither = the content's own height. Display-only; see below. |
+
+### HTML blocks inside a canvas
+
+An `Html` block puts a visual that canvas components can't draw (a custom chart, a timeline, a diagram, a pipeline) inside the canvas, with the canvas still the structure around it. It renders like a chat HTML page (`chat-html-pages.md`): sandboxed, in the user's theme tokens, transparent, full width. It shows a snapshot until the user clicks it, and only one HTML page or block in the app runs live at a time, so a dashboard can hold several.
+
+- **Native components first.** Metrics, bar and line graphs, tables, tabs and every input are native: they stream, work on every device, and read the same in any theme. Reach for `Html` only for a drawing they can't make.
+- **Never put questions, buttons or forms meant for the user inside it.** The block is display-only and nothing in it reaches you: answers and actions belong in native controls (`Select`, `Radio`, `Button` + `send_to_agent`), where they are tracked.
+- **`page` or `html`?** A larger or reusable visual: write the file, check it with `atrium html preview`, `atrium html publish` it, and pass the printed `page` hash. A small self-contained visual (an inline SVG, a short timeline) can go inline as `html`. Write either with the theme tokens from `chat-html-pages.md`.
+- **A page lives on the machine that published it,** and is kept for as long as any note or chat transcript there names it, so publish from the machine whose workspace holds the note.
+- **Size it.** Give `height` or `aspectRatio` when the visual has a natural shape, so the canvas doesn't reflow when the snapshot arrives. Windows shows a placeholder card for now.
 
 For json-render conventions (visibility conditions, repeat, action bindings), see the catalog's upstream docs at https://json-render.dev — atrium implements the same vocabulary. Renderers use atrium tokens (`var(--accent)`, `var(--surface)`, `scaledPx()`, etc.) so canvas notes match the rest of atrium's chrome and pick up theme changes automatically.
 
