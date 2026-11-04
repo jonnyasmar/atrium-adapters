@@ -18,7 +18,7 @@ It is **not** a tool call and **not** a note. No CLI invocation, no file on disk
 
 - **Backticks**, and the info string is a language tag plus optional space-separated flags. `canvas` needs no flag.
 - The body is **one JSON object — a whole canvas `Spec`** (`{ root, elements, state? }`), the same JSON that lives in a note's `note.canvas.json`. Not patch ops, not JSONL.
-- **`canvas` is the only language you write inline.** The one other rendered fence, ` ```html render `, shows a *published* HTML page and is printed for you by `atrium html publish` (see `chat-html-pages.md`); never write HTML inline. `ts`, `json`, plain `html`, `bash` and everything else stay ordinary code blocks, unchanged.
+- **`canvas` is the only language you write inline.** The one other rendered fence, ` ```html render `, shows a *published* HTML page and is printed for you by `atrium html publish` (see `chat-html-pages.md`); never write an HTML fence body inline. Inside a canvas, an `Html` block can carry a small inline visual (see "HTML inside a canvas"). `ts`, `json`, plain `html`, `bash` and everything else stay ordinary code blocks, unchanged.
 - Several canvas fences in one message are fine. Each is independent and owns its own state.
 - Prose before and after the fence renders as normal markdown. Keep narrating around it.
 - A canvas fence **nested inside a larger fence is not extracted**. To show a spec as source instead of rendering it, wrap it in a four-backtick fence.
@@ -153,6 +153,14 @@ A canvas in a transcript renders at whatever width the pane happens to be, and t
 - **Need a different count per width?** `columns` takes container-width breakpoints, e.g. `{"base": 1, "sm": 2, "md": 3}` (`sm` from 400px, `md` 600, `lg` 800, `xl` 1000 of grid width, not window width).
 - **Side-by-side halves still want to be independent.** Two prose or form columns at half a chat pane's width are cramped; a single `Stack` reads better unless the halves genuinely stand alone. Tiles (metrics, small cards) are what grids are for.
 - Long free text belongs in a `Textarea`, which wraps, rather than a row of chips or badges, which don't.
+
+## HTML inside a canvas
+
+An `Html` block (`{"type": "Html", "props": {"page": "<hash>", "title": "…"}}`, or `"html": "<svg …>…</svg>"` for a small inline visual) puts a custom chart, timeline, diagram or pipeline inside the canvas. Details: the `Html` section of `notes-interactive-ui.md`.
+
+- **Use it for the drawing, not the conversation.** It is display-only: nothing inside it reaches you. Every question, choice and button for the user stays a native component, or it isn't tracked.
+- **Prefer native components when they can draw it** (metrics, bar and line graphs, tables). They stream as you write; an `Html` block appears as a snapshot once the canvas settles, and the user clicks it to interact.
+- **Use a bare ` ```html render ` fence instead** when the page is the whole message and there is nothing around it to structure.
 
 ## What happens to the user's input
 

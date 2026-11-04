@@ -280,7 +280,7 @@ Streaming patches are forgiving — you don't have to emit elements in strict de
 
 ## The component catalog
 
-atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus two atrium-specific additions: `Label` (for a11y pairing) and `Code` (Prism-highlighted source snippets). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
+atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus three atrium-specific additions: `Label` (for a11y pairing), `Code` (Prism-highlighted source snippets) and `Html` (a rich HTML visual inside the canvas). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
 
 **Layout & display:**
 
@@ -344,6 +344,17 @@ atrium implements the **full json-render standard catalog** — all 41 component
 | `Pagination` | `totalPages: number`, `page?` (bind, 1-indexed). Fires `change`. |
 | `BarGraph`   | `title?: string`, `data: { name, ...numericSeries }[]` |
 | `LineGraph`  | `title?: string`, `data: { name, ...numericSeries }[]` |
+| `Html`       | `page?: string` (a published page's hash) or `html?: string` (small inline HTML, up to 64 KB): exactly one. `title?: string`, `height?: number` (px) or `aspectRatio?: number` (width ÷ height); neither = the content's own height. Display-only; see below. |
+
+### HTML blocks inside a canvas
+
+An `Html` block puts a visual that canvas components can't draw (a custom chart, a timeline, a diagram, a pipeline) inside the canvas, with the canvas still the structure around it. It renders like a chat HTML page (`chat-html-pages.md`): sandboxed, in the user's theme tokens, transparent, full width. It shows a snapshot until the user clicks it, and only one HTML page or block in the app runs live at a time, so a dashboard can hold several.
+
+- **Native components first.** Metrics, bar and line graphs, tables, tabs and every input are native: they stream, work on every device, and read the same in any theme. Reach for `Html` only for a drawing they can't make.
+- **Never put questions, buttons or forms meant for the user inside it.** The block is display-only and nothing in it reaches you: answers and actions belong in native controls (`Select`, `Radio`, `Button` + `send_to_agent`), where they are tracked.
+- **`page` or `html`?** A larger or reusable visual: write the file, check it with `atrium html preview`, `atrium html publish` it, and pass the printed `page` hash. A small self-contained visual (an inline SVG, a short timeline) can go inline as `html`. Write either with the theme tokens from `chat-html-pages.md`.
+- **Keep a note's pages alive.** A published page is kept while a chat transcript references it; one referenced only from a canvas note expires 30 days after it was last published. For a long-lived note, prefer inline `html`, or publish again.
+- **Size it.** Give `height` or `aspectRatio` when the visual has a natural shape, so the canvas doesn't reflow when the snapshot arrives. Windows shows a placeholder card for now.
 
 For json-render conventions (visibility conditions, repeat, action bindings), see the catalog's upstream docs at https://json-render.dev — atrium implements the same vocabulary. Renderers use atrium tokens (`var(--accent)`, `var(--surface)`, `scaledPx()`, etc.) so canvas notes match the rest of atrium's chrome and pick up theme changes automatically.
 

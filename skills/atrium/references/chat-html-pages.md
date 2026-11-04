@@ -4,6 +4,8 @@ Read this when a custom page is the best way to show something: a diagram, a flo
 
 **Choosing the medium.** Pick whatever makes the best visual for this content; neither is the default. A ` ```canvas ` fence streams as you write and is native on every device: strong for metrics, standard bar and line graphs, tables, tabs, and anything that asks the user for input (choices, forms, values that come back to you). A page gives you full control: custom diagrams and charts, timelines, mockups, annotated layouts, animation. Use both in one reply when that helps. Either way, lean toward showing: when an answer has shape, a visual beats a paragraph.
 
+**Inside a canvas:** a published page can also sit in a canvas as an `Html` block (`{"type": "Html", "props": {"page": "<hash>"}}`), framed by native components that ask the questions. See "HTML inside a canvas" in `chat-canvas-fence.md`.
+
 **Where it renders:** agent chat panes (`agent-chat`), on desktop and the iPhone/iPad app. A terminal pane renders no markdown; there, make an HTML note instead (`notes-interactive-ui.md`).
 
 **Requires a current atrium.** Run `"$ATRIUM_CLI_PATH" html --help` once. If the command doesn't exist, this atrium is too old: use a canvas instead.
