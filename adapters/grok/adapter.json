@@ -5,7 +5,7 @@
   "description": "xAI's terminal coding agent",
   "accent": "#e11d48",
   "binary": "grok",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "updateCommand": [
     "grok",
     "update"
