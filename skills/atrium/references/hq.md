@@ -32,6 +32,7 @@ atrium's director and staff rules say what to do and name the command for it. Th
 - Your roster: the projects you oversee, one of them primary (where your delegations go by default), each with a one-line note. It starts seeded from where you've delegated; edit it freely. HQ and worktrees can't be on it (a project's card covers its worktrees).
 - Each session starts with a card per roster project: git state, open work, your running delegations there, the last day's and week's commits, pushes and finished tasks, the latest brief, and its instruction files. `hq project show` prints one in full, with each instruction file's headings.
 - Name a project's skills in a brief rather than loading them: `atrium skills list --project <p>` lists them; the worker loads them natively.
+- Commands that act in a project take `--project <p>` from HQ: `workspace-command`, `skills load` and `list`, `context`, `blackboard`, `memory remember`, `timeline`. Without it, `workspace-command` from HQ says HQ holds no code.
 
 ## The machine and parallel work
 

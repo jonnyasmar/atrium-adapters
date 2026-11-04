@@ -82,7 +82,7 @@
       "remotePath": "skills/atrium/references/hq.md",
       "target": "adapter-skill-reference",
       "destName": "hq.md",
-      "sha256": "1abfa16acbff02b9a3090fb720f80fa9d25807aca4bae34ef415d47dbfc84387"
+      "sha256": "749f69a6732c165a54d68804a9082f3afa3c958df835d96f1ad4bf1d227de276"
     },
     {
       "id": "atrium-create-brief",
