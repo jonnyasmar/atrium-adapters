@@ -12,7 +12,7 @@ atrium's director and staff rules say what to do and name the command for it. Th
 - `--to <slug>` hands it to a staff member (`hq staff` lists them). For a general worker, leave out `--to` and pass `--adapter <name>`: the CLI it runs on, e.g. `claude-code`. A name that isn't a staff member's is refused.
 - `--project <name>` (or `--workspace`): the project to work in, by id, prefix or name. A director that names none works in its roster's primary project; with a roster but no primary it is asked to name one, and with no roster the work stays in HQ and the answer says so.
 - `--path <subfolder>`: a folder inside the project (`atrium-mobile`). The worker starts there, so brains that read instructions only from their folder up (Codex, Pi, OpenCode, Antigravity) see that folder's own `AGENTS.md`.
-- `--also <project>` (repeatable): related projects the work touches. The worker gets their cards and a line naming the instruction file to read before editing there.
+- `--also <project>` (repeatable): related projects the work touches. The worker gets their cards, a line naming the instruction file to read before editing there, and their folders where its brain takes them: Claude Code loads their `CLAUDE.md`, rules and skills; Copilot their `AGENTS.md`; Codex may write there but reads only its own project's `AGENTS.md`; an ACP brain only when it offers extra folders; Pi and OpenCode get the card and the line alone. With `--path`, the project's own top folder is one of them, so the worker can still work across the project.
 - `--brief-file <path>` reads a long brief from a file (`-` for stdin).
 - The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `project`, `path`, `also`.
 - A worker's report ends with the command that accepts it: `task set-done --run-id <runId>`. While it awaits review it also says `Related follow-up? Message this worker before accepting.`: a follow-up close to what it just did goes to that worker (`agent message <pane> "…"`), which already has the context, and comes back as a new report.
@@ -26,11 +26,15 @@ atrium's director and staff rules say what to do and name the command for it. Th
 "$ATRIUM_CLI_PATH" hq projects [--director <slug>]
 "$ATRIUM_CLI_PATH" hq projects add <project> [--primary] [--note "<what it is to you>"]
 "$ATRIUM_CLI_PATH" hq projects remove <project> | note <project> "<note>" | primary <project>
+"$ATRIUM_CLI_PATH" hq projects folders on|off
 "$ATRIUM_CLI_PATH" hq project show <project>
 ```
 
 - Your roster: the projects you oversee, one of them primary (where your delegations go by default), each with a one-line note. It starts seeded from where you've delegated; edit it freely. HQ and worktrees can't be on it (a project's card covers its worktrees).
 - Each session starts with a card per roster project: git state, open work, your running delegations there, the last day's and week's commits, pushes and finished tasks, the latest brief, and its instruction files. `hq project show` prints one in full, with each instruction file's headings.
+- A project on another machine gets its card from that machine (one running this atrium or newer). When it doesn't answer in time, the card is the last one it sent, with its age, or says why there is none.
+- Briefs go stale as a project moves. The library's `atrium/project-briefs` routine refreshes each busy project's brief weekly through a worker there; the Projects header names stale ones until you run it.
+- `hq projects folders on` gives your own sessions your roster's folders the way `--also` gives a worker its related projects' (off by default: each project's instructions cost you context again after every compaction). `folders off` takes them away from your next session.
 - Name a project's skills in a brief rather than loading them: `atrium skills list --project <p>` lists them; the worker loads them natively.
 - Commands that act in a project take `--project <p>` from HQ: `workspace-command`, `skills load` and `list`, `context`, `blackboard`, `memory remember`, `timeline`. Without it, `workspace-command` from HQ says HQ holds no code.
 
