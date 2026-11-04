@@ -120,8 +120,9 @@ Any agent or script can find a director and work with it by its name, slug or sh
 
 - `hq directors` lists each director: name, slug, short name, state (its main chat's: working, waiting, resumable…), home pane, labels and location. `--archived` adds the ones let go.
 - `hq director <director>` is its dashboard and open asks: its dashboard note's text, its chats waiting on the owner, its delegations in review or failed, and connector asks waiting on the owner.
-- `agent message <director>` reaches its main chat, like any agent message. If the name also matches a pane id, say `director:<slug>`.
-- `hq chats --director <director> read main` reads its main chat. Its side chats are between the owner and the director, so only they can list or read them.
+- `agent message <director>` reaches its main chat, like any agent message. If the name also matches a pane id, say `director:<slug>`. A director who was let go takes no messages, by name or by pane id, until `hq bring-back`.
+- `hq chats --director <director> read main` reads its main chat. Its side chats are between the owner and the director: only they can list or read them, by any route (`pane read` included).
+- Only the director or the owner puts work into a director's chat: `task delegate --parent-pane <a director's chat>` is refused for anyone else; use `hq assign`.
 - `hq assign` makes a card for the director and tells its main chat about it; the director does it or delegates it, and reports on the card. It prints the card and whether the message got there.
 - Messages a director sends are signed with its name, and in its own chat another agent's message shows as one line with the sender's head.
 
