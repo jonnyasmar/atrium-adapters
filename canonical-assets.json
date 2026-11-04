@@ -12,7 +12,7 @@
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "c2a3d485d17bcde01c6751e4d8a69794585f91fae3b187f6128f9be0b1c8df63"
+      "sha256": "35a557c34af15238fe884f2f28ef3c02c815e404fae81afa7c5cd529539b35c9"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -26,21 +26,21 @@
       "remotePath": "skills/atrium/references/notes-interactive-ui.md",
       "target": "adapter-skill-reference",
       "destName": "notes-interactive-ui.md",
-      "sha256": "89bc7a61b83986757db372448d69ddd2a91ad76bccb7f73c0993a087377025fe"
+      "sha256": "a56fa7611fa0a53e979d5382a85dfa8e0fface537fe51d6dc939f5145520bce2"
     },
     {
       "id": "atrium-skill-chat-canvas-fence",
       "remotePath": "skills/atrium/references/chat-canvas-fence.md",
       "target": "adapter-skill-reference",
       "destName": "chat-canvas-fence.md",
-      "sha256": "b4ee19115bd3eeb7d185ca976bcbbc923a1e527a0851ccee1525d0f97533c1a9"
+      "sha256": "5b64dffb20686122a335af4a056eaa3252f1d8f20d950aab21eec70cb6d46c79"
     },
     {
       "id": "atrium-skill-chat-html-pages",
       "remotePath": "skills/atrium/references/chat-html-pages.md",
       "target": "adapter-skill-reference",
       "destName": "chat-html-pages.md",
-      "sha256": "0a892de92c228ee710e7a13f962d2624025db54de4ba1d6df44a8d3934aca14d"
+      "sha256": "fd4e5612f6991f5f304ce3fda11fac49a8fd26ac9cb6449ca00bd4d259ab0f73"
     },
     {
       "id": "atrium-skill-capture",
@@ -82,7 +82,14 @@
       "remotePath": "skills/atrium/references/hq.md",
       "target": "adapter-skill-reference",
       "destName": "hq.md",
-      "sha256": "5135d43921178db699b91465e03b8523b5f594c11175e60e69ef6acf5be04c10"
+      "sha256": "a5d201f2df12e2c7be20aab8b92acd3b97a51bd04f8b0d30df699da62e3dc884"
+    },
+    {
+      "id": "atrium-skill-dashboard-design",
+      "remotePath": "skills/atrium/references/dashboard-design.md",
+      "target": "adapter-skill-reference",
+      "destName": "dashboard-design.md",
+      "sha256": "9c2f0546dff64dc37cdfc7458c50c28987e224e824674cc15d1d386d86ec0fa3"
     },
     {
       "id": "atrium-create-brief",
@@ -115,7 +122,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "792f56e1679cdf3a770f3d4f5fb3f2ad9159e953",
-    "generation": 92
+    "commit": "aa34c98010454138b48fc45fe627beaa391965cf",
+    "generation": 93
   }
 }

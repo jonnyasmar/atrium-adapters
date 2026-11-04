@@ -110,9 +110,9 @@
     },
     "manifestSections": {
       "type": "array",
-      "description": "SDK v2. Optional. The SessionStart manifest sections this adapter's hooks request one per hook (`skills resolve-manifest --section <name>`). atrium gives an HQ director's or delegated staff member's rules a section of their own only when this names `director-rules`; otherwise the agent section carries them.",
+      "description": "SDK v2. Optional. The SessionStart manifest sections this adapter's hooks request one per hook (`skills resolve-manifest --section <name>`). atrium gives an HQ director's or delegated staff member's rules a section of their own only when this names `director-rules`; otherwise the agent section carries them. Likewise a director's project cards (and those of a worker given related projects) get their own section only when this names `projects`; otherwise they ride the context section, smaller.",
       "items": {
-        "enum": ["context", "agent", "director-rules", "skills"]
+        "enum": ["context", "agent", "director-rules", "skills", "projects"]
       },
       "uniqueItems": true
     },

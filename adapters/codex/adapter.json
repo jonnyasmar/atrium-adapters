@@ -5,7 +5,7 @@
   "description": "OpenAI's AI coding assistant",
   "accent": "#059669",
   "binary": "codex",
-  "version": "1.27.0",
+  "version": "1.28.0",
   "updateCommand": [
     "bash",
     "-c",
@@ -84,7 +84,7 @@
       "deep"
     ]
   },
-  "manifestSections": ["context", "agent", "director-rules", "skills"],
+  "manifestSections": ["context", "agent", "director-rules", "skills", "projects"],
   "hookEnvelopes": {
     "sessionStartManifest": {
       "kind": "identity"

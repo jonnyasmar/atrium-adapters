@@ -5,7 +5,7 @@
   "description": "Anthropic's AI coding assistant",
   "accent": "#d97757",
   "binary": "claude",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "updateCommand": [
     "bash",
     "-c",
@@ -108,7 +108,7 @@
       "deep"
     ]
   },
-  "manifestSections": ["context", "agent", "director-rules", "skills"],
+  "manifestSections": ["context", "agent", "director-rules", "skills", "projects"],
   "hookEnvelopes": {
     "sessionStartManifest": {
       "kind": "identity"
