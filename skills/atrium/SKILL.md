@@ -111,7 +111,7 @@ have to know about, because the default answers are scoped to this machine:
 
 **"Room" not "tab" in user-facing text.** The backend still says `tab` internally; the user sees "room" everywhere. Narrate with "room".
 
-**Agent-to-agent messaging is framed and asynchronous.** `agent message <pane-id> "<text>"` wraps your text with sender identity and a reply command before injecting it into the recipient's stdin. Three consequences:
+**Agent-to-agent messaging is framed and asynchronous.** `agent message <pane-id> "<text>"` wraps your text with sender identity and a reply command before injecting it into the recipient's stdin. The target can also be an HQ director's name or slug (`agent message vitruvius "…"`), which reaches its main chat; the sender is named as the best identity atrium knows: a director's or staff member's name, else the pane's title, else its adapter. Three consequences:
 
 1. **Don't introduce yourself or paste reply instructions** — atrium does both. Just write the content.
 2. **Don't poll `pane read` for the reply.** When the other agent replies via `agent message`, atrium injects the framed reply into your stdin as a fresh turn. Send, end your turn, and wait — like messaging a human collaborator, not screen-scraping their terminal.

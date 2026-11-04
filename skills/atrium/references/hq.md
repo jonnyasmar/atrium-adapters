@@ -8,7 +8,7 @@ atrium's director and staff rules say what to do and name the command for it. Th
 "$ATRIUM_CLI_PATH" task delegate --title "<title>" --brief "<goal, context, constraints, what done looks like>" (--to <staff-slug> | --adapter <name>) [--workspace <project>]
 ```
 
-- `--to <slug>` hands it to a staff member (`hq staff` lists them). For a general worker, leave out `--to` and pass `--adapter <name>`: the CLI it runs on, e.g. `claude-code`. A name that isn't a staff member's is refused.
+- `--to <slug>` hands it to a staff member (`hq staff` lists them). For a general worker, leave out `--to` and pass `--adapter <name>`: the CLI it runs on, e.g. `claude-code`. A name that isn't a staff member's is refused, and so is a director's: hand a director work with `hq assign` (below).
 - `--workspace <name>`: work that touches code names its project (`workspace list`).
 - `--brief-file <path>` reads a long brief from a file (`-` for stdin).
 - The `atrium_delegate` tool takes the same fields: `to` or `adapter`, `title`, `brief`, `workspace`.
@@ -105,6 +105,25 @@ Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`
 
 - `chat react 👍` reacts to the owner's latest message in the chat you're in. When a message only needs acknowledging (thanks, ok, got it), the reaction is your whole reply: react, then end your turn with that same emoji as your only text (`👍`, nothing else). atrium folds it into the reaction, so the owner sees only the reaction on their message. Use it sparingly: anything that needs an answer still gets one.
 - The owner's reactions to your messages reach you right away ("The owner reacted 👍 to your message …"), or as a note at your next turn when your chat isn't running. Take them as feedback; don't reply to them unless one changes something. Any single emoji works for `chat react`, not only 👍.
+
+## Other directors
+
+Any agent or script can find a director and work with it by its name, slug or short name:
+
+```bash
+"$ATRIUM_CLI_PATH" hq directors [--archived] [--json]
+"$ATRIUM_CLI_PATH" hq director <director> [--json]
+"$ATRIUM_CLI_PATH" agent message <director> "<text>" [--no-reply]
+"$ATRIUM_CLI_PATH" hq chats --director <director> [read <main|id> [--lines N]]
+"$ATRIUM_CLI_PATH" hq assign <director> --title "<title>" (--brief "<what done looks like>" | --brief-file <path>) [--priority <critical|high|medium|low>]
+```
+
+- `hq directors` lists each director: name, slug, short name, state (its main chat's: working, waiting, resumable…), home pane, labels and location. `--archived` adds the ones let go.
+- `hq director <director>` is its dashboard and open asks: its dashboard note's text, its chats waiting on the owner, its delegations in review or failed, and connector asks waiting on the owner.
+- `agent message <director>` reaches its main chat, like any agent message. If the name also matches a pane id, say `director:<slug>`.
+- `hq chats --director <director> read main` reads its main chat. Its side chats are between the owner and the director, so only they can list or read them.
+- `hq assign` makes a card for the director and tells its main chat about it; the director does it or delegates it, and reports on the card. It prints the card and whether the message got there.
+- Messages a director sends are signed with its name, and in its own chat another agent's message shows as one line with the sender's head.
 
 ## Memory and sessions
 
