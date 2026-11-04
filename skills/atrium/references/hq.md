@@ -31,6 +31,7 @@ atrium's director and staff rules say what to do and name the command for it. Th
 ```
 
 - Your roster: the projects you oversee, one of them primary (where your delegations go by default), each with a one-line note. It starts seeded from where you've delegated; edit it freely. HQ and worktrees can't be on it (a project's card covers its worktrees).
+- Keeping it current is your job, not the owner's. A delegation into a project off your roster ends with a line naming the `hq projects add` that adds it; `hq projects` names the command that makes another project primary when your primary had none of your last 30 days' delegations and that one had most. Neither edits the roster: run the command when it's right.
 - Each session starts with a card per roster project: git state, open work, your running delegations there, the last day's and week's commits, pushes and finished tasks, the latest brief, and its instruction files. `hq project show` prints one in full, with each instruction file's headings.
 - A project on another machine gets its card from that machine (one running this atrium or newer). When it doesn't answer in time, the card is the last one it sent, with its age, or says why there is none.
 - Briefs go stale as a project moves. The library's `atrium/project-briefs` routine refreshes each busy project's brief weekly through a worker there; the Projects header names stale ones until you run it.
