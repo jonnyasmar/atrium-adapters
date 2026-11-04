@@ -54,7 +54,7 @@
       "description": "Terminal/sandbox restrictions"
     },
     {
-      "flag": "--include-directories",
+      "flag": "--add-dir",
       "description": "Additional workspace directories"
     },
     {

@@ -137,9 +137,10 @@ build_hooks_json() {
 
   # SessionStart manifest. Split into a hook per section so each receives
   # Grok's per-hook output budget independently; director-rules prints nothing
-  # for anyone atrium gives no rules.
+  # for anyone atrium gives no rules, projects nothing for anyone with no
+  # project cards.
   local ctx_section ctx_cmd ctx_entry
-  for ctx_section in context agent director-rules skills; do
+  for ctx_section in context agent director-rules skills projects; do
     if [ -n "$WINDOWS_HOOK" ]; then
       ctx_cmd="$WINDOWS_HOOK manifest $ctx_section"
     else

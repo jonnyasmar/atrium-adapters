@@ -80,7 +80,7 @@
       "deep"
     ]
   },
-  "manifestSections": ["context", "agent", "director-rules", "skills"],
+  "manifestSections": ["context", "agent", "director-rules", "skills", "projects"],
   "hookEnvelopes": {
     "sessionStartManifest": {
       "kind": "hookSpecificOutput",
