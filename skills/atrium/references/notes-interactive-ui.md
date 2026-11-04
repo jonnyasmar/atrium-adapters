@@ -21,6 +21,7 @@ This gives you **two ways to mutate a note** — pick by what you're doing:
 | Bulk-replace a body in one shot | `atrium note write` (`--content` / `--from-file` / piped stdin) |
 | **Incremental body edits** — append a section, fix a typo, refactor a heading | **`Edit` / `Write` directly on the body file** |
 | **Stream a canvas spec into existence** live | `atrium note canvas-patch <id>` — see **Streaming a canvas spec** below |
+| **See a canvas note as atrium draws it** (PNGs per width, plus a check for walls of text) | `atrium note preview <id> [--width <px>]...` |
 
 atrium watches the notes tree and reconciles automatically: write the body file directly and the FTS index updates and any open notepad pane refetches in real-time. **Direct file edits are a first-class workflow, not a backdoor** — for incremental changes, `Edit` is much cheaper than `read` → mutate → `write` round-trips.
 
@@ -62,6 +63,8 @@ What the user enters in a canvas note is saved in the note's `state.json` and sh
 
 - **canvas** — declarative JSON spec rendered by `@json-render/react`. Safer (no agent-authored JS; components are predefined), more structured, and the user's form state lives in the renderer's state model (note-scoped). Use this for **everything except cases where the curated component set can't express what you need**.
 - **html** — agent-authored HTML in a sandboxed iframe (`sandbox="allow-scripts"`). Use when the canvas component set can't express your layout / interaction (custom CSS, agent-authored JS-driven flows). Stateless across pane reloads in v1 — the iframe has an opaque sandbox origin, so `localStorage` is isolated and there is no persistence layer behind the iframe yet.
+
+A board someone glances at (a director's dashboard, a status page) has its own guide: `dashboard-design.md` says how to lay it out so it reads in seconds, in a narrow dock and on the phone.
 
 ## CLI invocation
 

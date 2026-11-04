@@ -130,6 +130,16 @@ The dock is `{"tabs":[...],"hidden":[...]}`. Its sections are fixed: your dashbo
 
 Built-in names (`"dashboard"`, `"now"`, `"routines"`, `"notebook"`, `"identity"`, `"browser"`) and `hidden` are still accepted but no longer change the dock. The dock may also hold `"side":"left"`: the owner moved it to the left of your chat. Without it, the dock sits on the right. Save the whole dock, keeping `side` and the items you aren't changing. Which section is open is the owner's choice, not part of the dock.
 
+## Your dashboard
+
+```bash
+"$ATRIUM_CLI_PATH" note preview <dashboard id> [--width <px>]... [--density compact|regular]
+```
+
+- How to lay the board out and keep it current, with example sections: `references/dashboard-design.md`.
+- `note preview` draws the board with atrium's own canvas renderers, compact as the dock shows it, at 380 and 760 px unless you give `--width` (up to four), and prints the PNG paths: open them. It needs atrium open on this Mac.
+- It also prints the board check, as `note write` and `note canvas-patch` do after a write to your dashboard: warnings, never a refusal (`boardCheck` in `--json`).
+
 ## Your chats
 
 ```bash

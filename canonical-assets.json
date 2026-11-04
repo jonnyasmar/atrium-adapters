@@ -26,7 +26,7 @@
       "remotePath": "skills/atrium/references/notes-interactive-ui.md",
       "target": "adapter-skill-reference",
       "destName": "notes-interactive-ui.md",
-      "sha256": "aa0af6227ae567c1f2bfabe25cb4153745d64cec255a4f46d59b89c9e8ba67a1"
+      "sha256": "a56fa7611fa0a53e979d5382a85dfa8e0fface537fe51d6dc939f5145520bce2"
     },
     {
       "id": "atrium-skill-chat-canvas-fence",
@@ -82,7 +82,14 @@
       "remotePath": "skills/atrium/references/hq.md",
       "target": "adapter-skill-reference",
       "destName": "hq.md",
-      "sha256": "8352855e2a854fdcadfef73bd101e35190ef600c07dfe489901411edc6bd4527"
+      "sha256": "b38bffcd9dd51c905ab5cd241a1fcb39f8e481fbf48266b70608231349ddfd73"
+    },
+    {
+      "id": "atrium-skill-dashboard-design",
+      "remotePath": "skills/atrium/references/dashboard-design.md",
+      "target": "adapter-skill-reference",
+      "destName": "dashboard-design.md",
+      "sha256": "9c2f0546dff64dc37cdfc7458c50c28987e224e824674cc15d1d386d86ec0fa3"
     },
     {
       "id": "atrium-create-brief",
