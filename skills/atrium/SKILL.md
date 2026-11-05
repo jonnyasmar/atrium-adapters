@@ -195,7 +195,7 @@ An atrium HQ director, or a staff member on a run HQ delegated to it, gets atriu
 
 ## Task workflow
 
-When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUID) and `$ATRIUM_TASK_RUN_ID` (the run bound to this pane) in your shell, and sends an initial prompt. Read the task, do the work, then signal completion:
+When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUID) and `$ATRIUM_TASK_RUN_ID` (the run bound to this pane) in your shell, and sends an initial prompt. Read the task, do the work, and report progress while still working. Use `set-in-review` only when you are done:
 
 ```bash
 "$ATRIUM_CLI_PATH" task show "$ATRIUM_TASK_ID" --json   # 1. read details
@@ -203,7 +203,9 @@ When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUI
 "$ATRIUM_CLI_PATH" task set-done                        # 3. ONLY if the user said to skip review
 ```
 
-Both `set-in-review` and `set-done` read `$ATRIUM_TASK_RUN_ID` by default (override with `--run-id`). `set-in-review` moves the card to the configured review status so the user can approve your changes; `set-done` moves it to completion AND marks the run complete.
+**Progress without handing back:** post a comment with `task comment "$ATRIUM_TASK_ID" --kind report --source "adapter:<your adapter>" --body "<progress>"`, then run `task report-progress`. The director wakes with your progress report; the run stays Active and the card stays In Progress. Continue working. Use `set-in-review` only for a final report when you are done, not for interim updates.
+
+`report-progress`, `set-in-review` and `set-done` read `$ATRIUM_TASK_RUN_ID` by default (override with `--run-id`). `set-in-review` moves the card to the configured review status so the user can approve your changes; `set-done` moves it to completion AND marks the run complete.
 
 **Manual lifecycle** (rarely needed — atrium launches you): `task launch ATR-12 --pane-id "$ATRIUM_PANE_ID" --adapter <name>` (self-launch; `--adapter` required in piped/`--json` mode); `run show <id> --json`; `run complete <id>`; `run resume <id> --pane-id "$ATRIUM_PANE_ID"` (headless pickup of an interrupted run). Discover runs via `run list --task ATR-N` or `--workspace <id>`, with `--state interrupted`.
 
