@@ -73,6 +73,10 @@ if [ -z "$payload" ] || ! printf '%s' "$payload" | jq -e . >/dev/null 2>&1; then
   payload='{}'
 fi
 
+if [ "$EVENT" = "session-start" ]; then
+  payload="$(printf '%s' "$payload" | jq -c '. + {atriumNotebookHook: true}')"
+fi
+
 # Discover the hook server port (written by the running app, per data-dir).
 data_dir="${ATRIUM_DATA_DIR:-$HOME/.atrium}"
 port_file="${data_dir}/hook-port"
