@@ -111,7 +111,7 @@ have to know about, because the default answers are scoped to this machine:
 
 **"Room" not "tab" in user-facing text.** The backend still says `tab` internally; the user sees "room" everywhere. Narrate with "room".
 
-**Agent-to-agent messaging is framed and asynchronous.** `agent message <pane-id> "<text>"` wraps your text with sender identity and a reply command before injecting it into the recipient's stdin. The target can also be an HQ director's name or slug (`agent message vitruvius "…"`), which reaches its main chat; the sender is named as the best identity atrium knows: a director's or staff member's name, else the pane's title, else its adapter. Three consequences:
+**Agent-to-agent messaging is framed and asynchronous.** `agent message <pane-id> "<text>"` wraps your text with sender identity and a reply command before injecting it into the recipient's stdin. The target can also be an HQ director's name or slug (`agent message vitruvius "…"`), which reaches its main chat; the sender is named as the best identity atrium knows: a director's or staff member's name, else the pane's title, else its adapter. For long or code-bearing messages, pass `--file <path>` (`--file -` reads stdin) instead of inline text. The message keeps the same framing and transcript rendering. Three consequences:
 
 1. **Don't introduce yourself or paste reply instructions** — atrium does both. Just write the content.
 2. **Don't poll `pane read` for the reply.** When the other agent replies via `agent message`, atrium injects the framed reply into your stdin as a fresh turn. Send, end your turn, and wait — like messaging a human collaborator, not screen-scraping their terminal.
@@ -301,6 +301,8 @@ Notes are file-backed, and atrium reconciles direct file writes in real-time —
 **When authoring a canvas or HTML note, or editing a note body file directly, read `references/notes-interactive-ui.md`** (sibling to this file). It covers the canvas spec format and component catalog, custom actions (`send_to_agent`, `atrium_command`), the HTML postMessage protocol, framing-template syntax, live streaming via `canvas-patch`, the direct-file-edit path and its traps, and a worked PR-triage example. Don't load it for everyday CLI note work.
 
 ## Inline interactive canvases in chat
+
+When opening a canvas or another ask, review your open questions (`atrium ask list --mine`; `atrium ask close <id> --replaced`). Close any this replaces.
 
 A note isn't the only way to hand the user a UI. In an agent chat pane you can render an interactive canvas **inline in your own reply** — emit a fenced code block tagged `canvas` whose body is a canvas spec, and the transcript renders it live as you type it. No CLI call, no note file, no extra pane. It's the cheapest way to ask for a structured answer mid-turn (pick one of three, approve this plan, tweak these numbers before I apply them) — and the only way to show something markdown can't shape, like a trend as a chart or two screenshots side by side. What the user types is kept and survives a restart, but it lives in that transcript — an artifact that needs its own pane, or that another agent has to read, is still a canvas note.
 
