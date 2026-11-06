@@ -138,7 +138,9 @@ jobs:
         run: bash tests/hook-pane-guards.assert.sh
 
       - name: Validate Windows hook commands for grok and claude-code
-        run: bash tests/windows-hook-commands.assert.sh
+        run: |
+          bash tests/windows-hook-commands.assert.sh
+          bash tests/notebook-hook.assert.sh
 
       - name: Validate the catastrophic-command guard hooks
         run: |

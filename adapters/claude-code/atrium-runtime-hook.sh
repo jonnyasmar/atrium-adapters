@@ -54,6 +54,12 @@ case "${1:-}" in
     "$CLI" skills resolve-manifest --pane-id "${ATRIUM_PANE_ID:-}" --adapter claude-code --section "${2:-}" 2>/dev/null
     exit 0
     ;;
+  notebook)
+    [ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0
+    [ -n "${ATRIUM:-}" ] || exit 0
+    "$CLI" memory notebook --context 2>/dev/null
+    exit 0
+    ;;
   sigils)
     [ -z "${CURSOR_INVOKED_AS:-}" ] || exit 0
     [ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0

@@ -182,6 +182,10 @@ Any agent or script can find a director and work with it by its name, slug or sh
 
 ```bash
 "$ATRIUM_CLI_PATH" memory remember "<fact>" --pin    # loads every session; leave off --pin for the rest
+"$ATRIUM_CLI_PATH" memory remember "Tonight's plan" --pin --until 12h
+"$ATRIUM_CLI_PATH" memory pin <id> --until 2026-12-31  # local end of day
+"$ATRIUM_CLI_PATH" memory pin <id> --clear-until      # keep pinned indefinitely
+"$ATRIUM_CLI_PATH" memory notebook --reviewed        # explicitly record your review
 "$ATRIUM_CLI_PATH" pane read <pane>
 "$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --search "<words>" [--epoch <N>]
 "$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --around <@anchor> [--lines 40]
@@ -196,6 +200,18 @@ Any agent or script can find a director and work with it by its name, slug or sh
 - Before asking the owner to repeat something, look back: atrium_recall and your notebook, then `--search` your chapters and read `--around` a hit. Ask only when that finds nothing.
 - `--epochs` lists your chapters, each with its summary's first line; `--epoch <N>` reads one. A search that prints `partial:` ran out of budget: follow its advice (`--epoch <N>` for older chapters, or a bigger `--budget <MiB>`). SKILL.md's **Searching past sessions** has the rest.
 - If `pane read --help` doesn't list `--search`, or a read refuses it, page your chat with `--from-start` and `--offset` instead.
+
+Pin end dates accept YYYY-MM-DD (end of that day on the target machine) or a
+positive duration such as 12h, 2d or 1w. Expired pins become ordinary searchable
+facts, never deleted. `memory pin <id>` re-pins a fact; without expiry flags an
+existing pin keeps its end date. Use `--clear-until` to remove that date.
+Notebook review notices appear when pins only fit as stubs or are omitted,
+when pins have expired since the last review, or when a nonempty notebook was
+never reviewed or was reviewed more than seven days ago. Review even when
+nothing needs changing, then run `memory notebook --reviewed`. Directors also
+receive at most one reminder per day. These commands use the normal `--location`
+routing. Keep pins to one or two lines and put details in an unpinned fact named
+by the pin (`memory show <id>`).
 
 ## Playbook
 

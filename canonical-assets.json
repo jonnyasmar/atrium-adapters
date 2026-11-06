@@ -82,7 +82,7 @@
       "remotePath": "skills/atrium/references/hq.md",
       "target": "adapter-skill-reference",
       "destName": "hq.md",
-      "sha256": "a5d201f2df12e2c7be20aab8b92acd3b97a51bd04f8b0d30df699da62e3dc884"
+      "sha256": "44d2819a3fdd3347c294646a382390700709e5171d90def88c891f602707ac43"
     },
     {
       "id": "atrium-skill-dashboard-design",

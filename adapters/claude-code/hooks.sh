@@ -166,6 +166,17 @@ build_all_hooks() {
     hooks="$(jq --argjson ctx "$ctx_entry" '.SessionStart += $ctx' <<< "$hooks")"
   done
 
+  local notebook_cmd notebook_entry
+  if [ -n "$WINDOWS_HOOK" ]; then
+    notebook_cmd="$WINDOWS_HOOK notebook"
+  else
+    notebook_cmd="$(printf '%s; %s; [ -n "${ATRIUM:-}" ] && "${ATRIUM_CLI_PATH:-atrium}" memory notebook --context 2>/dev/null || true' \
+      "$ATRIUM_HOOK_MARKER_PREFIX" "$CURSOR_GUARD")"
+  fi
+  notebook_entry="$(jq -n --arg cmd "$notebook_cmd" --arg matcher "$CONTEXT_SESSION_MATCHER" \
+    '[{matcher: $matcher, hooks: [{type: "command", command: $cmd, timeout: 5}]}]')"
+  hooks="$(jq --argjson s "$notebook_entry" '.SessionStart += $s' <<< "$hooks")"
+
   # `+name@scope` sigil auto-resolve: appended to UserPromptSubmit so the
   # CLI scans the prompt for sigils, resolves bodies via the registry,
   # and emits `{"hookSpecificOutput": {"additionalContext": <bodies>},
