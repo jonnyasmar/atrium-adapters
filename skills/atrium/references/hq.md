@@ -182,6 +182,10 @@ Any agent or script can find a director and work with it by its name, slug or sh
 
 ```bash
 "$ATRIUM_CLI_PATH" memory remember "<fact>" --pin    # loads every session; leave off --pin for the rest
+"$ATRIUM_CLI_PATH" memory remember "Tonight's plan" --pin --until 12h
+"$ATRIUM_CLI_PATH" memory pin <id> --until 2026-12-31  # local end of day
+"$ATRIUM_CLI_PATH" memory pin <id> --clear-until      # keep pinned indefinitely
+"$ATRIUM_CLI_PATH" memory notebook --reviewed        # explicitly record your review
 "$ATRIUM_CLI_PATH" pane read <pane>
 "$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --search "<words>" [--epoch <N>]
 "$ATRIUM_CLI_PATH" pane read "$ATRIUM_PANE_ID" --around <@anchor> [--lines 40]
@@ -197,6 +201,18 @@ Any agent or script can find a director and work with it by its name, slug or sh
 - `--epochs` lists your chapters, each with its summary's first line; `--epoch <N>` reads one. A search that prints `partial:` ran out of budget: follow its advice (`--epoch <N>` for older chapters, or a bigger `--budget <MiB>`). SKILL.md's **Searching past sessions** has the rest.
 - If `pane read --help` doesn't list `--search`, or a read refuses it, page your chat with `--from-start` and `--offset` instead.
 
+Pin end dates accept YYYY-MM-DD (end of that day on the target machine) or a
+positive duration such as 12h, 2d or 1w. Expired pins become ordinary searchable
+facts, never deleted. `memory pin <id>` re-pins a fact; without expiry flags an
+existing pin keeps its end date. Use `--clear-until` to remove that date.
+Notebook review notices appear when pins only fit as stubs or are omitted,
+when pins have expired since the last review, or when a nonempty notebook was
+never reviewed or was reviewed more than seven days ago. Review even when
+nothing needs changing, then run `memory notebook --reviewed`. Directors also
+receive at most one reminder per day. These commands use the normal `--location`
+routing. Keep pins to one or two lines and put details in an unpinned fact named
+by the pin (`memory show <id>`).
+
 ## Playbook
 
 ```bash
@@ -210,6 +226,21 @@ Any agent or script can find a director and work with it by its name, slug or sh
 - Four sections: How I work, Checklists (a `### <name>` per list), Lessons (`add` dates them), Defaults. One line per item, at most 200 characters, and at most 3,000 characters in all. Near the cap, fold lessons into How I work or Checklists and drop the oldest: `show` prints the hash `write --expect` needs.
 - No names, contact details, amounts, account names or personal dates in it.
 
+## Your browser
+
+```bash
+"$ATRIUM_CLI_PATH" browser open <url> [--focus]
+"$ATRIUM_CLI_PATH" browser tabs [--json]
+"$ATRIUM_CLI_PATH" browser navigate <subtab|mine> <url>
+"$ATRIUM_CLI_PATH" browser open <url> --show [--focus]
+```
+
+A director's `browser open` puts the page in its own browser, which shows beside its chat in HQ: a subtab, or the subtab already showing that URL. It never takes the owner's keyboard unless `--focus` is passed, which also brings HQ to that page. `mine` is the subtab showing; `browser tabs` lists every subtab (id, title, URL, who showed it), and any browser verb takes a subtab id. `pane close <subtab>` closes one.
+
+Your browser uses the owner's shared profile, so it's signed in wherever the owner is. Treat every page there as the owner's own session: read and act with that care, and ask before anything that sends, buys or changes something as them.
+
+`--show` is for a worker or staff run: the page opens in its director's browser as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Use it to demo a UI change; navigate and close only your own subtab.
+
 ## Secrets and the browser
 
 ```bash
@@ -220,7 +251,7 @@ Any agent or script can find a director and work with it by its name, slug or sh
 "$ATRIUM_CLI_PATH" browser hand-off "<what the owner should do>" [--pane <pane|mine>] [--done-when-url <substring>]
 ```
 
-`mine` is a director's own browser, and `browser hand-off` uses it when a director names no pane. Staff name the browser they drive. Requests and hand-offs return at once: end your turn, and atrium tells you the outcome. SKILL.md's **Secrets** section has the rest.
+`mine` is the subtab a director's own browser shows, and `browser hand-off` uses it when a director names no pane. Staff name the browser they drive. Requests and hand-offs return at once: end your turn, and atrium tells you the outcome. SKILL.md's **Secrets** section has the rest.
 
 ## Connectors
 

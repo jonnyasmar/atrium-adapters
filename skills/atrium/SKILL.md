@@ -133,6 +133,8 @@ have to know about, because the default answers are scoped to this machine:
 
 A new page stays in your room: it opens as a subtab on your room's browser or, if your room has none, in a new browser to your right. `placed` says which (`reused` / `subtab` / `split` / `new-room`). Once a page leaves your room with 6 or more browsers, the answer adds `roomBrowserCount` and a line saying so. Treat that as a signal to navigate or close a browser instead of opening another. A reused page is whatever it last loaded, so after changing the code behind it run `browser reload <pane-id>` before you look. Don't hand-place browsers with `pane create --split`, and only pass `--new-room` when the user asked for a separate room.
 
+**In HQ, a page opens in the director's browser.** From an HQ director (its main chat or a side chat), `browser open <url>` opens the page in the director's own browser, beside its chat in HQ, as a subtab (`placed: "director-browser"`); a URL already open there is reused. It doesn't take the owner's keyboard unless you pass `--focus`. `mine` is the subtab showing, `browser tabs` lists the subtabs with their ids, and every browser verb takes a subtab id. A delegated worker or staff run shows the owner its work, like a UI change, with `browser open <url> --show`: the page opens in its director's browser as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Add `--focus` only when the owner asked to see it now. Navigate and close your own subtab like any browser.
+
 **Never take the user's focus.** Focusing a pane switches the user's room and takes their keyboard mid-sentence — they're usually typing to you while you work. It is opt-in everywhere for that reason: `pane create --focus`, `browser open --focus`, `agent launch --focus`, plus the explicit `pane focus` and `room switch`. Pass one of those ONLY when the user asked to be shown something.
 
 Nothing about driving a pane requires focus, so there's never an incidental reason to take it. Browser panes in particular: screenshots render from Chromium's own content model and a pane in another room is force-mounted offscreen on first use, so `snapshot` / `click` / `fill` / `screenshot` all work on a pane that was never visible. Don't focus a browser pane, or switch to its room, to drive it.
@@ -156,7 +158,7 @@ The user keeps API keys, env vars and logins in atrium. You use them by name and
 - `secret run --env <NAME> [--env VAR=NAME] -- <command> [args]` — runs a command with the secret in its environment. Non-interactive only (no stdin, no TTY), so not for tools that prompt. Its output comes back with each value replaced by `[secret:NAME]`, and the exit status is the command's.
 - `browser fill-login <pane-id> <login> [--submit]` — types a saved login into the page's sign-in form with real key events: only on the login's own site, over https, and not on a page you ran `eval`, `cdp` or `wait --function` on since it loaded (reload it first). `--otp` also types the code of a 1Password login. Password fields can't be read back.
 - `browser hand-off "<what the user should do>" --pane <pane-id>` — for a step only the user can take: a login you don't have, a 2FA code, a CAPTCHA. **Returns at once: end your turn**, and leave that browser alone until it's done. `--done-when-url <substring>` finishes it as soon as the page reaches that address.
-- An HQ director's own browser is `mine`, accepted wherever a browser verb takes a pane id (`browser fill-login mine <login>`; `browser hand-off` defaults to it for a director). Everyone else names a pane.
+- An HQ director's own browser is `mine` (the subtab it shows), accepted wherever a browser verb takes a pane id (`browser fill-login mine <login>`; `browser hand-off` defaults to it for a director). Everyone else names a pane.
 
 **The answer comes as a turn.** You don't poll: when the user answers, atrium wakes you with one line, `[atrium · secrets] The owner gave you OPENAI_API_KEY…` (or declined it, or it ran out), or `[atrium · browser] The owner finished: …`. Pick the work up from there. `--wait [--timeout <s>]` on `request` or `hand-off` waits in place instead (up to 600 s); the card stays up either way.
 
@@ -195,7 +197,7 @@ An atrium HQ director, or a staff member on a run HQ delegated to it, gets atriu
 
 ## Task workflow
 
-When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUID) and `$ATRIUM_TASK_RUN_ID` (the run bound to this pane) in your shell, and sends an initial prompt. Read the task, do the work, then signal completion:
+When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUID) and `$ATRIUM_TASK_RUN_ID` (the run bound to this pane) in your shell, and sends an initial prompt. Read the task, do the work, and report progress while still working. Use `set-in-review` only when you are done:
 
 ```bash
 "$ATRIUM_CLI_PATH" task show "$ATRIUM_TASK_ID" --json   # 1. read details
@@ -203,7 +205,9 @@ When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUI
 "$ATRIUM_CLI_PATH" task set-done                        # 3. ONLY if the user said to skip review
 ```
 
-Both `set-in-review` and `set-done` read `$ATRIUM_TASK_RUN_ID` by default (override with `--run-id`). `set-in-review` moves the card to the configured review status so the user can approve your changes; `set-done` moves it to completion AND marks the run complete.
+**Progress without handing back:** post a comment with `task comment "$ATRIUM_TASK_ID" --kind report --source "adapter:<your adapter>" --body "<progress>"`, then run `task report-progress`. The director wakes with your progress report; the run stays Active and the card stays In Progress. Continue working. Use `set-in-review` only for a final report when you are done, not for interim updates.
+
+`report-progress`, `set-in-review` and `set-done` read `$ATRIUM_TASK_RUN_ID` by default (override with `--run-id`). `set-in-review` moves the card to the configured review status so the user can approve your changes; `set-done` moves it to completion AND marks the run complete.
 
 **Manual lifecycle** (rarely needed — atrium launches you): `task launch ATR-12 --pane-id "$ATRIUM_PANE_ID" --adapter <name>` (self-launch; `--adapter` required in piped/`--json` mode); `run show <id> --json`; `run complete <id>`; `run resume <id> --pane-id "$ATRIUM_PANE_ID"` (headless pickup of an interrupted run). Discover runs via `run list --task ATR-N` or `--workspace <id>`, with `--state interrupted`.
 

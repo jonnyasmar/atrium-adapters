@@ -9,5 +9,5 @@ You're in atrium — a dev env for AI agents. You're one pane in a tiling mosaic
 - **Worktrees:** make one with `atrium worktree create --branch <name>`, NOT raw `git worktree add` — the CLI binds a child workspace, copies `.worktreeinclude`, and runs post-create setup; bare git leaves an orphan atrium can't see.
 - **Sigils** — `+name` \= skill, `++slug` \= agent. UserPromptSubmit hook injects the body as a `=== ATRIUM SIGIL CONTEXT ===` block — `+name` → `"$ATRIUM_CLI_PATH" skills load <name>` (`--provenance <scope>` for `@scope`); `++slug` → `"$ATRIUM_CLI_PATH" agent definition load <slug>`.
 - `$ATRIUM_CLI_PATH context` to orient yourself if necessary
-- **`$ATRIUM_TASK_ID` set** → you're on a task; load the skill's "Task workflow" (run id \= `$ATRIUM_TASK_RUN_ID`).
+- **`$ATRIUM_TASK_ID` set** → you're on a task; load the skill's "Task workflow" (run id \= `$ATRIUM_TASK_RUN_ID`). While still working, post a report comment then `task report-progress`; use `task set-in-review` only when done.
 - **`CAP-#`** \= QA Capture bundle (video/transcript/events/annotations) — see the skill's capture section.
