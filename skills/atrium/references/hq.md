@@ -221,6 +221,8 @@ Any agent or script can find a director and work with it by its name, slug or sh
 
 A director's `browser open` puts the page in its own browser, which shows beside its chat in HQ: a subtab, or the subtab already showing that URL. It never takes the owner's keyboard unless `--focus` is passed, which also brings HQ to that page. `mine` is the subtab showing; `browser tabs` lists every subtab (id, title, URL, who showed it), and any browser verb takes a subtab id. `pane close <subtab>` closes one.
 
+Your browser uses the owner's shared profile, so it's signed in wherever the owner is. Treat every page there as the owner's own session: read and act with that care, and ask before anything that sends, buys or changes something as them.
+
 `--show` is for a worker or staff run: the page opens in its director's browser as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Use it to demo a UI change; navigate and close only your own subtab.
 
 ## Secrets and the browser
