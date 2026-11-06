@@ -12,7 +12,7 @@
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "35a557c34af15238fe884f2f28ef3c02c815e404fae81afa7c5cd529539b35c9"
+      "sha256": "e44e8079875753c0a9e8aa9eb694fc39411bf502ec6f47f643a09b7a8b0c68c2"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -82,7 +82,7 @@
       "remotePath": "skills/atrium/references/hq.md",
       "target": "adapter-skill-reference",
       "destName": "hq.md",
-      "sha256": "a5d201f2df12e2c7be20aab8b92acd3b97a51bd04f8b0d30df699da62e3dc884"
+      "sha256": "dec43af158176b2b452cf85f6e377778941964657920211977032410760bbd59"
     },
     {
       "id": "atrium-skill-dashboard-design",
