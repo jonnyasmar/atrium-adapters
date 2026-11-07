@@ -1,0 +1,4 @@
+{"type":"session.start","id":"invented-start","timestamp":"2026-01-01T00:00:00.000Z","data":{"sessionId":"invented-session"}}
+{"type":"assistant.message","id":"invented-message","timestamp":"2026-01-01T00:00:01.000Z","data":{"messageId":"invented-message","content":"Synthetic reply only.","outputTokens":17}}
+{"type":"session.usage_checkpoint","id":"invented-checkpoint","data":{"totalNanoAiu":12345,"totalPremiumRequests":3}}
+{"type":"session.shutdown","id":"invented-shutdown","data":{"shutdownType":"routine","totalApiDurationMs":120,"sessionStartTime":1767225600000,"codeChanges":{"linesAdded":0,"linesRemoved":0,"filesModified":0},"modelMetrics":{"invented-model":{"requests":{"count":3},"usage":{"inputTokens":901,"outputTokens":73}}}}}
