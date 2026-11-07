@@ -202,6 +202,8 @@ When a canvas asks the owner something, put `"ask"` beside the `type` of the ele
 - `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
 - A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
 - A canvas with a send button and no markers is tracked as one question.
+- **Two or more marked questions make one form**, on desktop, iPhone and iPad. Put each question’s choice buttons and optional note inside its marked part. Pressing a choice selects it; the tab marks it chosen. atrium supplies one **Send answers (3 of 5)** footer that sends the selected answers in panel order, each as its own tracked answer. Do not author a second Send button outside the parts. Sending with unanswered parts asks for confirmation and leaves those parts open. A single-question canvas still sends on its choice button.
+- You may author `Tabs` with a marked question in each panel, or let atrium group the marked parts into tabs. On desktop, Cmd+Enter (Ctrl+Enter) sends the selections; Enter on the last tab does too. After answering, choice controls lock while Tabs, Collapsible and Accordion remain usable.
 - On a dashboard, give each new question a fresh element key: a finished one doesn't reopen when you edit it.
 - A plain question the owner could answer in a word or a pick from a short list goes through your harness's question tool, not a canvas.
 
