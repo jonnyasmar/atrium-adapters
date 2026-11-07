@@ -23,6 +23,64 @@ def write(path, rows):
 
 
 class ForkPrefixTests(unittest.TestCase):
+    def test_recorded_priority_survives_context_updates_and_resume(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rows = invented('root.jsonl')
+            rows[1]['payload'].pop('service_tier', None)
+            rows.insert(2, {'type': 'event_msg', 'payload': {'type': 'thread_settings_applied',
+                         'thread_settings': {'service_tier': 'priority'}}})
+            rows.insert(4, rows[1])
+            path = root / 'root.jsonl'
+            write(path, rows)
+            baseline = run_batch(ADAPTER, [dict(path=str(path))], root)
+            usage = [row for row in baseline if row['type'] == 'usage']
+            self.assertEqual([row['tier'] for row in usage], ['priority', 'priority'])
+            for boundary in range(1, len(rows)):
+                write(path, rows[:boundary])
+                before = run_batch(ADAPTER, [dict(path=str(path))], root)
+                write(path, rows)
+                after = run_batch(ADAPTER, [dict(path=str(path), resume=before[-1]['resume'])], root)
+                self.assertEqual([row for row in before + after if row['type'] == 'usage'], usage)
+
+    def test_unreported_model_preserves_tokens_and_later_context_is_not_guessed_backwards(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rows = invented('root.jsonl')
+            context = rows.pop(1)
+            rows.insert(2, context)
+            path = root / 'root.jsonl'
+            write(path, rows)
+            output = run_batch(ADAPTER, [dict(path=str(path))], root)
+            usage = [row for row in output if row['type'] == 'usage']
+            self.assertEqual([row['model'] for row in usage], ['__none', 'gpt-5'])
+            self.assertEqual([row['tokens']['output'] for row in usage], [5, 7])
+
+    def test_unmatched_inherited_history_keeps_family_key_and_child_credit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write(root / 'root.jsonl', invented('root.jsonl'))
+            paths = []
+            for name in ('child-b', 'child-a'):
+                rows = invented('child-a.jsonl')
+                rows[0]['payload']['id'] = name
+                rows[0]['payload']['subagent_history_start_ordinal'] = 8
+                write(root / (name + '.jsonl'), rows)
+                paths.append(dict(path=str(root / (name + '.jsonl'))))
+            for requests in (paths, list(reversed(paths))):
+                output = run_batch(ADAPTER, requests, root)
+                merged = {}
+                for row in output:
+                    if row['type'] == 'usage':
+                        merged[row['dedupe']] = fold(merged.get(row['dedupe']), row)
+                self.assertEqual(set(merged), {'root:105', 'root:214'})
+                self.assertEqual(merged['root:105']['session_id'], 'root')
+                orphan = merged['root:214']
+                self.assertEqual(orphan['session_id'], 'child-a')
+                self.assertEqual(orphan['fork_of'], 'root')
+                self.assertTrue(orphan['subagent'])
+                self.assertEqual(orphan['tokens']['output'], 9)
+
     def test_parent_siblings_and_grandchild_dedupe_in_either_scan_order(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

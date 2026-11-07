@@ -13,6 +13,7 @@ PATHS = {}
 SESSION_PATHS = {}
 SEQUENCES = {}
 PREFIXES = {}
+USAGE_KEYS = {}
 
 
 def header(path):
@@ -107,6 +108,7 @@ def sequence(session):
         if ancestor_metadata(session) is None or session not in SESSION_PATHS:
             raise DeferredUsage('fork ancestor unavailable')
         values = []
+        keys = set()
         try:
             with open_transcript(SESSION_PATHS[session]) as stream:
                 for line in stream:
@@ -117,11 +119,14 @@ def sequence(session):
                         value = signature(row)
                         if value is not None:
                             values.append((value, row.get('ordinal')))
+                            if row.get('timestamp'):
+                                keys.add(value[0].get('total_tokens'))
                     except (ValueError, TypeError, AttributeError):
                         continue
         except OSError as error:
             raise DeferredUsage('fork ancestor unavailable') from error
         SEQUENCES[session] = values
+        USAGE_KEYS[session] = keys
     return SEQUENCES[session]
 
 
@@ -138,11 +143,28 @@ def inherited_prefix(meta):
     return PREFIXES[session]
 
 
+def context_values(row):
+    payload = row.get('payload') or {}
+    if row.get('type') == 'turn_context':
+        return payload.get('model'), 'service_tier' in payload, payload.get('service_tier')
+    if row.get('type') == 'event_msg' and payload.get('type') == 'thread_settings_applied':
+        settings = payload.get('thread_settings') or {}
+        return None, 'service_tier' in settings, settings.get('service_tier')
+    return None, False, None
+
+
+def service_tier(value):
+    if value == 'default':
+        return 'standard'
+    return value if value in ('standard', 'priority', 'batch', 'flex', 'fast') else None
+
+
 class CodexUsage:
     def __init__(self, path, supplied_id):
         self.meta = header(path)
         self.session = self.meta.get('id') or supplied_id
         SEQUENCES.pop(self.session, None)
+        USAGE_KEYS.pop(self.session, None)
         PREFIXES.pop(self.session, None)
         self.model = self.meta.get('model')
         self.tier = None
@@ -159,10 +181,10 @@ class CodexUsage:
                 meta = ancestor_metadata(meta['forked_from_id'])
 
     def context(self, row):
-        if row.get('type') == 'turn_context':
-            payload = row.get('payload') or {}
-            self.model = payload.get('model') or self.model
-            self.tier = payload.get('service_tier')
+        model, has_tier, tier = context_values(row)
+        self.model = model or self.model
+        if has_tier:
+            self.tier = service_tier(tier)
 
     def restore_context(self, stream, offset):
         if self.needs_prefix:
@@ -177,18 +199,23 @@ class CodexUsage:
                     continue
             return
         remainder = b''
+        found_model = found_tier = False
         while offset:
             start = max(0, offset - 65536)
             stream.seek(start)
             parts = (stream.read(offset - start) + remainder).split(b'\n')
             remainder = parts[0]
             for line in reversed(parts[1:]):
-                if b'"turn_context"' not in line:
+                if b'"turn_context"' not in line and b'"thread_settings_applied"' not in line:
                     continue
                 try:
                     row = json.loads(line)
-                    if row.get('type') == 'turn_context':
-                        self.context(row)
+                    model, has_tier, tier = context_values(row)
+                    if model and not found_model:
+                        self.model, found_model = model, True
+                    if has_tier and not found_tier:
+                        self.tier, found_tier = service_tier(tier), True
+                    if found_model and found_tier:
                         return
                 except (ValueError, AttributeError):
                     continue
@@ -232,7 +259,7 @@ class CodexUsage:
         position = self.position
         if signature(row) is not None:
             self.position += 1
-        if not usage or not isinstance(cumulative, int) or not self.model:
+        if not usage or not isinstance(cumulative, int):
             return None
         owner = self.owner(row.get('ordinal'), position)
         if not owner or not row.get('timestamp'):
@@ -240,18 +267,23 @@ class CodexUsage:
         cached = count(usage.get('cached_input_tokens'))
         written = count(usage.get('cache_write_input_tokens'))
         output = count(usage.get('output_tokens'))
-        tier = payload.get('service_tier') or self.tier
-        owner_meta = METADATA.get(owner, self.meta)
+        tier = service_tier(payload['service_tier']) if 'service_tier' in payload else self.tier
+        unmatched = False
+        if owner != self.session:
+            sequence(owner)
+            unmatched = cumulative not in USAGE_KEYS[owner]
+        credited = self.session if unmatched else owner
+        owner_meta = METADATA.get(credited, self.meta)
         subagent = bool(parent_thread(owner_meta))
-        return dict(type='usage', at=row['timestamp'], session_id=owner, model=self.model,
+        return dict(type='usage', at=row['timestamp'], session_id=credited, model=self.model or '__none',
                     dedupe=f'{owner}:{cumulative}',
                     tokens=dict(input=max(0, count(usage.get('input_tokens')) - cached),
                                 output=output, cache_read=cached, cache_write_5m=written,
                                 cache_write_1h=0, reasoning=min(output, count(usage.get('reasoning_output_tokens')))),
                     tier=tier if tier in ('standard', 'priority', 'batch', 'flex', 'fast') else None,
                     cost_usd=None, subagent=subagent,
-                    agent_id=owner if subagent else None,
-                    fork_of=owner_meta.get('forked_from_id'))
+                    agent_id=credited if subagent else None,
+                    fork_of=owner if unmatched else owner_meta.get('forked_from_id'))
 
 
 if __name__ == '__main__':
