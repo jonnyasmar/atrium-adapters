@@ -4,21 +4,30 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
-from extract_session_usage import count, main, roots
+from extract_session_usage import DeferredUsage, count, main, roots
 from usage_stream import open_transcript, transcript_name
 
 METADATA = {}
 INDEXED = set()
 PATHS = {}
+SESSION_PATHS = {}
+SEQUENCES = {}
+PREFIXES = {}
 
 
 def header(path):
     try:
         with open_transcript(path) as stream:
             row = json.loads(stream.readline())
-        meta = row.get('payload', {}) if row.get('type') == 'session_meta' else {}
+        raw = row.get('payload', {}) if row.get('type') == 'session_meta' else {}
+        raw = raw if isinstance(raw, dict) else {}
+        meta = {key: raw[key] for key in ('id', 'model', 'forked_from_id',
+                                        'subagent_history_start_ordinal') if key in raw}
+        if parent_thread(raw):
+            meta['parent_thread_id'] = parent_thread(raw)
         if meta.get('id'):
             METADATA[meta['id']] = meta
+            SESSION_PATHS[meta['id']] = path
         return meta
     except (OSError, ValueError, AttributeError):
         return {}
@@ -66,6 +75,8 @@ def ancestor_metadata(session):
             meta = header(path)
             if meta.get('id') == session:
                 break
+        if session not in METADATA:
+            METADATA[session] = None
     return METADATA.get(session)
 
 
@@ -80,14 +91,72 @@ def parent_thread(meta):
             or spawn.get('parent_thread_id') or spawn.get('parentThreadId'))
 
 
+def signature(row):
+    payload = row.get('payload') or {}
+    if row.get('type') != 'event_msg' or payload.get('type') != 'token_count':
+        return None
+    info = payload.get('info') or {}
+    last, total = info.get('last_token_usage'), info.get('total_token_usage')
+    if isinstance(last, dict) and last and isinstance(total, dict):
+        return total, last
+    return None
+
+
+def sequence(session):
+    if session not in SEQUENCES:
+        if ancestor_metadata(session) is None or session not in SESSION_PATHS:
+            raise DeferredUsage('fork ancestor unavailable')
+        values = []
+        try:
+            with open_transcript(SESSION_PATHS[session]) as stream:
+                for line in stream:
+                    if not line.endswith(b'\n'):
+                        break
+                    try:
+                        row = json.loads(line)
+                        value = signature(row)
+                        if value is not None:
+                            values.append((value, row.get('ordinal')))
+                    except (ValueError, TypeError, AttributeError):
+                        continue
+        except OSError as error:
+            raise DeferredUsage('fork ancestor unavailable') from error
+        SEQUENCES[session] = values
+    return SEQUENCES[session]
+
+
+def inherited_prefix(meta):
+    session = meta['id']
+    if session not in PREFIXES:
+        child, parent = sequence(session), sequence(meta['forked_from_id'])
+        length = 0
+        for own, ancestor in zip(child, parent):
+            if own[0] != ancestor[0]:
+                break
+            length += 1
+        PREFIXES[session] = length
+    return PREFIXES[session]
+
+
 class CodexUsage:
     def __init__(self, path, supplied_id):
         self.meta = header(path)
         self.session = self.meta.get('id') or supplied_id
+        SEQUENCES.pop(self.session, None)
+        PREFIXES.pop(self.session, None)
         self.model = self.meta.get('model')
         self.tier = None
+        self.position = 0
+        self.needs_prefix = False
         if self.meta.get('forked_from_id'):
             ancestors(path)
+            meta, seen = self.meta, set()
+            while meta and meta.get('forked_from_id') and meta.get('id') not in seen:
+                seen.add(meta.get('id'))
+                if not isinstance(meta.get('subagent_history_start_ordinal'), int):
+                    self.needs_prefix = True
+                    break
+                meta = ancestor_metadata(meta['forked_from_id'])
 
     def context(self, row):
         if row.get('type') == 'turn_context':
@@ -96,6 +165,17 @@ class CodexUsage:
             self.tier = payload.get('service_tier')
 
     def restore_context(self, stream, offset):
+        if self.needs_prefix:
+            stream.seek(0)
+            while stream.tell() < offset:
+                try:
+                    row = json.loads(stream.readline())
+                    self.context(row)
+                    if signature(row) is not None:
+                        self.position += 1
+                except (ValueError, TypeError, AttributeError):
+                    continue
+            return
         remainder = b''
         while offset:
             start = max(0, offset - 65536)
@@ -114,23 +194,30 @@ class CodexUsage:
                     continue
             offset = start
 
-    def owner(self, ordinal):
+    def owner(self, ordinal, position):
         meta, seen = self.meta, set()
-        if meta.get('forked_from_id') and not isinstance(ordinal, int):
-            raise ValueError('fork usage has no ordinal')
-        while meta.get('forked_from_id') and isinstance(ordinal, int):
+        while meta.get('forked_from_id'):
             boundary = meta.get('subagent_history_start_ordinal')
             if not isinstance(boundary, int):
-                raise ValueError('fork has no history boundary')
-            if ordinal >= boundary:
-                break
+                own_sequence = sequence(meta['id'])
+                if position >= len(own_sequence):
+                    raise DeferredUsage('fork prefix changed during extraction')
+                if position >= inherited_prefix(meta):
+                    break
+            else:
+                if not isinstance(ordinal, int):
+                    raise ValueError('fork usage has no ordinal')
+                if ordinal >= boundary:
+                    break
             parent = meta['forked_from_id']
             if parent in seen:
                 raise ValueError('fork lineage cycle')
             seen.add(parent)
             ancestor = ancestor_metadata(parent)
             if ancestor is None:
-                raise ValueError('fork ancestor unavailable')
+                raise DeferredUsage('fork ancestor unavailable')
+            if not isinstance(boundary, int):
+                ordinal = sequence(parent)[position][1]
             meta = ancestor
         return meta.get('id') or self.session
 
@@ -142,9 +229,12 @@ class CodexUsage:
         info = payload.get('info') or {}
         usage = info.get('last_token_usage')
         cumulative = (info.get('total_token_usage') or {}).get('total_tokens')
+        position = self.position
+        if signature(row) is not None:
+            self.position += 1
         if not usage or not isinstance(cumulative, int) or not self.model:
             return None
-        owner = self.owner(row.get('ordinal'))
+        owner = self.owner(row.get('ordinal'), position)
         if not owner or not row.get('timestamp'):
             return None
         cached = count(usage.get('cached_input_tokens'))

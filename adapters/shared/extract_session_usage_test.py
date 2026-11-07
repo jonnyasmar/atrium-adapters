@@ -9,18 +9,21 @@ from pathlib import Path
 from extract_session_usage import fold
 
 
+def run_batch(adapter, items, root, **kwargs):
+    command = ['bash', str(adapter / 'extract_session.sh'), '--usage', '--batch']
+    result = subprocess.run(command, input=''.join(json.dumps(r) + '\n' for r in items),
+                            text=True, capture_output=True, check=True,
+                            env=dict(os.environ, ATRIUM_TEST_TRANSCRIPT_ROOT=str(root)), **kwargs)
+    return [json.loads(line) for line in result.stdout.splitlines()]
+
+
 def verify(adapter):
     fixture = adapter / 'tests/extractor/usage'
     requests = [json.loads(line) for line in (fixture / 'requests.jsonl').read_text().splitlines()]
     for request in requests:
         request['path'] = str(fixture / request['path'])
-    command = ['bash', str(adapter / 'extract_session.sh'), '--usage', '--batch']
-
     def batch(items, **kwargs):
-        result = subprocess.run(command, input=''.join(json.dumps(r) + '\n' for r in items),
-                                text=True, capture_output=True, check=True,
-                                env=dict(os.environ, ATRIUM_TEST_TRANSCRIPT_ROOT=str(fixture / 'input')), **kwargs)
-        return [json.loads(line) for line in result.stdout.splitlines()]
+        return run_batch(adapter, items, fixture / 'input', **kwargs)
 
     actual = batch(requests)
     usage = lambda rows: [r for r in rows if r['type'] == 'usage']

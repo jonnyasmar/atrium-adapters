@@ -7,3 +7,5 @@ The test also compresses these invented files in memory and checks archive repla
 Sibling and grandchild copies have later timestamps than their ancestors. `expected-merged.jsonl` pins the final UTC-millisecond timestamps in both scan orders: equal totals retain the earlier record and its model/tier.
 
 The invented forks use `source.subagent.thread_spawn.parent_thread_id`. Inherited events retain the owning ancestor's subagent flag, agent ID and fork parent, including the grandchild's copy of child-a's usage.
+
+For paginated forks without an ordinal boundary, the additional synthetic tests remove the boundary from the invented family and compare both complete token-usage objects against the parent sequence. The longest matching prefix retains ancestor ownership; equal cumulative totals with different last-token usage end the prefix. A missing parent produces an incomplete checkpoint with `fork-ancestry-unavailable:<count>` and preserves the previous resume token. Adding the invented parent later resolves the same unchanged child.

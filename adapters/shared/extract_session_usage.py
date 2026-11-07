@@ -10,6 +10,10 @@ from usage_stream import open_transcript, compressed_token, transcript_name
 TOKEN_KEYS = ('input', 'output', 'cache_read', 'cache_write_5m', 'cache_write_1h', 'reasoning')
 
 
+class DeferredUsage(ValueError):
+    pass
+
+
 def emit(value):
     print(json.dumps(value, separators=(',', ':'), allow_nan=False))
 
@@ -85,7 +89,7 @@ def extract(request, parser_factory):
                 parser.restore_context(stream, offset)
             if not compressed:
                 stream.seek(offset)
-            events, malformed = {}, 0
+            events, malformed, deferred = {}, 0, 0
             while True:
                 line = stream.readline()
                 if not line or not line.endswith(b'\n'):
@@ -103,12 +107,19 @@ def extract(request, parser_factory):
                             raise ValueError('usage timestamp has no timezone')
                         event['at'] = timestamp.astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
                         events[event['dedupe']] = fold(events.get(event['dedupe']), event)
+                except DeferredUsage:
+                    deferred += 1
+                    malformed += 1
                 except (ValueError, TypeError, KeyError, AttributeError):
                     malformed += 1
             for event in events.values():
                 emit(event)
-            emit(dict(type='checkpoint', path=path, resume=archive_token or f'o:{offset}:{crc:08x}',
-                      complete=True, events=len(events), malformed=malformed, reset=reset))
+            checkpoint = dict(type='checkpoint', path=path,
+                              resume=token if deferred else archive_token or f'o:{offset}:{crc:08x}',
+                              complete=not deferred, events=len(events), malformed=malformed, reset=reset)
+            if deferred:
+                checkpoint['error'] = f'fork-ancestry-unavailable:{deferred}'
+            emit(checkpoint)
     except OSError as error:
         emit(dict(type='checkpoint', path=path, resume=token, complete=False,
                   error=type(error).__name__))
