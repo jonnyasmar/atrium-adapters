@@ -15,8 +15,12 @@ from pathlib import Path
 
 script = Path(sys.argv[1])
 fixture_root = Path(sys.argv[2])
+sys.path.insert(0, str(script.parent.parent / 'shared'))
+from extract_session_usage import fold
+
 session = 'synthetic-grok-session-716'
 source = fixture_root / session / 'updates.jsonl'
+fork = fixture_root / 'synthetic-grok-fork-716' / 'updates.jsonl'
 expected = [json.loads(line) for line in (fixture_root / 'expected.jsonl').read_text().splitlines()]
 
 
@@ -46,6 +50,13 @@ assert checkpoint['events'] == len(expected) and checkpoint['malformed'] == 0
 assert checkpoint['complete'] is True
 print('[PASS] response usage golden, duplicate fold, ordinal fallback, aggregate ignored')
 
+fork_copy = invoke('--batch', [{'path': str(fork), 'session_id': 'synthetic-grok-fork-716'}])
+fork_events = [row for row in fork_copy if row['type'] == 'usage']
+assert len(fork_events) == 1 and fork_events[0]['dedupe'] == expected[1]['dedupe'], fork_events
+folded_copy = fold(expected[1], fork_events[0])
+assert folded_copy == expected[1], folded_copy
+print('[PASS] fork copy keeps eventId and folds to the original response')
+
 lines = source.read_bytes().splitlines(keepends=True)
 expected_keys = {row['dedupe'] for row in expected}
 with tempfile.TemporaryDirectory() as temporary:
@@ -70,9 +81,8 @@ with tempfile.TemporaryDirectory() as temporary:
 print('[PASS] partial tail is deferred without advancing the checkpoint')
 
 listed = invoke('--list', extra_env={'ATRIUM_TEST_TRANSCRIPT_ROOT': str(fixture_root)})
-assert len(listed) == 1, listed
-assert listed[0]['path'] == str(source)
-assert listed[0]['session_id'] == session
+assert {row['path'] for row in listed} == {str(source), str(fork)}, listed
+assert {row['session_id'] for row in listed} == {session, 'synthetic-grok-fork-716'}, listed
 print('[PASS] discovery includes updates.jsonl and excludes chat_history.jsonl')
 
 requests = [request] * 200

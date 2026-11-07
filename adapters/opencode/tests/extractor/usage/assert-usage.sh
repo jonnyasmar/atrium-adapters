@@ -87,10 +87,35 @@ with tempfile.TemporaryDirectory() as temporary:
             (json.dumps(data),),
         )
     resumed = invoke('--batch', [{'path': str(updated), 'resume': resume}])
-    changed = [row for row in resumed if row.get('dedupe') == 'msg_synthetic_assistant_001']
+    changed = [row for row in resumed if row.get('dedupe') == 'ses_synthetic_opencode_716:1']
     assert len(changed) == 1 and changed[0]['tokens']['input'] == 250
     assert resumed[-1]['resume'] == 'r:1794000007000'
 print('[PASS] updated rows are recovered by the inclusive timestamp cursor')
+
+with tempfile.TemporaryDirectory() as temporary:
+    fork_database = Path(temporary) / 'opencode-forks.db'
+    subprocess.run([sys.executable, str(fixtures / 'build_fork_fixture.py'), str(fork_database)], check=True)
+    fork_result = invoke('--batch', [{'path': str(fork_database), 'resume': None}], extra_args=('--page-size', '64'))
+    fork_events = [row for row in fork_result if row['type'] == 'usage']
+    by_key = {row['dedupe']: row for row in fork_events}
+    expected_fork_keys = {
+        'ses_fork_parent:1',
+        'ses_fork_child:2',
+        'ses_deleted_parent:1',
+        'ses_surviving_grandparent:1',
+        'ses_deleted_intermediate:1',
+    }
+    assert set(by_key) == expected_fork_keys, (by_key, expected_fork_keys)
+    assert by_key['ses_fork_parent:1']['session_id'] == 'ses_fork_parent'
+    assert by_key['ses_fork_parent:1']['fork_of'] is None
+    assert by_key['ses_fork_child:2']['session_id'] == 'ses_fork_child'
+    assert by_key['ses_deleted_parent:1']['fork_of'] == 'ses_deleted_parent'
+    assert by_key['ses_deleted_parent:1']['session_id'] == 'ses_sibling_a'
+    assert by_key['ses_deleted_intermediate:1']['fork_of'] == 'ses_deleted_intermediate'
+    assert by_key['ses_deleted_intermediate:1']['session_id'] == 'ses_grandchild_after_delete'
+    assert by_key['ses_surviving_grandparent:1']['tokens'] == by_key['ses_deleted_intermediate:1']['tokens']
+    assert fork_result[-1]['complete'] is True and fork_result[-1]['malformed'] == 0
+print('[PASS] present ancestry resolves to origin; deleted-parent siblings fold; deleted intermediate retains disclosed duplicate marker')
 
 with tempfile.TemporaryDirectory() as temporary:
     root = Path(temporary)

@@ -53,7 +53,10 @@ class GrokUsage:
         candidate_session = params.get('sessionId')
         session = candidate_session if isinstance(candidate_session, str) and candidate_session else self.session
         message_id = update.get('message_id')
-        dedupe = message_id if isinstance(message_id, str) and message_id else f'{session}:{self.ordinal}'
+        meta = params.get('_meta') or {}
+        event_id = meta.get('eventId') if isinstance(meta, dict) else None
+        dedupe = next((identity for identity in (message_id, event_id)
+                       if isinstance(identity, str) and identity), f'{session}:{self.ordinal}')
         output = count(usage.get('output_tokens'))
         return dict(
             type='usage',

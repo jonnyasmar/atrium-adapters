@@ -3,6 +3,7 @@ import math
 import os
 import sqlite3
 import sys
+from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,7 +11,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
 from sqlite_usage import count, main, usage_roots
 
 
-REQUIRED_COLUMNS = {'id', 'session_id', 'type', 'time_created', 'time_updated', 'data'}
+REQUIRED_COLUMNS = {'id', 'session_id', 'type', 'seq', 'time_created', 'time_updated', 'data'}
+SESSION_COLUMNS = {'id', 'fork_session_id', 'fork_boundary'}
+
+
+class BoundedCache:
+    def __init__(self, limit):
+        self.limit = limit
+        self.values = OrderedDict()
+
+    def get(self, key):
+        if key not in self.values:
+            return False, None
+        value = self.values.pop(key)
+        self.values[key] = value
+        return True, value
+
+    def put(self, key, value):
+        self.values.pop(key, None)
+        self.values[key] = value
+        if len(self.values) > self.limit:
+            self.values.popitem(last=False)
 
 
 def data_directory():
@@ -37,6 +58,11 @@ def database_files(root, recursive):
 
 
 class OpenCodeUsage:
+    def __init__(self):
+        self.connection = None
+        self.sessions = BoundedCache(512)
+        self.parent_rows = BoundedCache(4096)
+
     def discover(self, since):
         test_root = os.environ.get('ATRIUM_TEST_TRANSCRIPT_ROOT')
         if test_root:
@@ -59,11 +85,15 @@ class OpenCodeUsage:
     def has_usage_schema(self, conn):
         try:
             columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_message)')}
-            return REQUIRED_COLUMNS <= columns
+            session_columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_v2)')}
+            return REQUIRED_COLUMNS <= columns and SESSION_COLUMNS <= session_columns
         except sqlite3.Error:
             return False
 
     def select(self, conn, resume):
+        self.connection = conn
+        self.parent_rows = BoundedCache(4096)
+        self.sessions = BoundedCache(512)
         reset = False
         timestamp = 0
         if resume is not None:
@@ -77,7 +107,7 @@ class OpenCodeUsage:
             except ValueError:
                 timestamp, reset = 0, True
         cursor = conn.execute(
-            'SELECT id, session_id, type, time_created, time_updated, data '
+            'SELECT id, session_id, type, seq, time_created, time_updated, data '
             'FROM session_message WHERE time_updated >= ? ORDER BY time_updated, id',
             (timestamp,),
         )
@@ -85,6 +115,120 @@ class OpenCodeUsage:
 
     def resume_after(self, row):
         return f"r:{int(row['time_updated'])}"
+
+    @staticmethod
+    def fork_copy_seq(identity):
+        if not isinstance(identity, str):
+            return None
+        prefix, separator, suffix = identity.rpartition('_')
+        if not separator or not suffix.isdecimal() or (len(suffix) > 1 and suffix.startswith('0')):
+            return None
+        if not prefix.startswith('msg_'):
+            return None
+        native_id = prefix[4:]
+        valid = (
+            len(native_id) == 26
+            and all(character in '0123456789abcdef' for character in native_id[:12])
+            and all(character in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' for character in native_id[12:])
+        )
+        return int(suffix) if valid else None
+
+    @classmethod
+    def is_fork_copy(cls, identity, seq):
+        return (
+            isinstance(seq, int) and not isinstance(seq, bool) and seq >= 0
+            and cls.fork_copy_seq(identity) == seq
+        )
+
+    @classmethod
+    def boundary_cutoff(cls, info):
+        cutoff = info.get('boundary_seq')
+        if isinstance(cutoff, int) and not isinstance(cutoff, bool):
+            return cutoff
+        return cls.fork_copy_seq(info.get('boundary_message_id'))
+
+    def parent_row_id(self, session, seq):
+        key = (session, seq)
+        found, cached = self.parent_rows.get(key)
+        if not found:
+            row = self.connection.execute(
+                'SELECT id FROM session_message WHERE session_id=? AND seq=?', key
+            ).fetchone()
+            cached = row['id'] if row else None
+            self.parent_rows.put(key, cached)
+        return cached
+
+    def session_info(self, session):
+        found, cached = self.sessions.get(session)
+        if found:
+            return cached
+        row = self.connection.execute(
+            'SELECT s.fork_session_id, s.fork_boundary, boundary.seq AS boundary_seq '
+            'FROM session_v2 AS s LEFT JOIN session_message AS boundary '
+            'ON boundary.session_id=s.fork_session_id '
+            "AND boundary.id=json_extract(s.fork_boundary, '$.messageID') "
+            'WHERE s.id=?',
+            (session,),
+        ).fetchone()
+        if row is None:
+            self.sessions.put(session, None)
+            return None
+        boundary = None
+        if row['fork_boundary']:
+            try:
+                boundary = json.loads(row['fork_boundary'])
+            except (TypeError, json.JSONDecodeError):
+                boundary = None
+        cached = dict(
+            parent=row['fork_session_id'],
+            boundary_type=boundary.get('type') if isinstance(boundary, dict) else None,
+            boundary_message_id=boundary.get('messageID') if isinstance(boundary, dict) else None,
+            boundary_seq=row['boundary_seq'],
+        )
+        self.sessions.put(session, cached)
+        return cached
+
+    def origin(self, identity, session, seq):
+        original_session = session
+        current_id = identity
+        seen = set()
+        while True:
+            info = self.session_info(session)
+            if info is None:
+                if self.is_fork_copy(current_id, seq):
+                    raise ValueError('forked message has no session metadata')
+                return session, f'{session}:{seq}', None
+            parent = info['parent']
+            if not isinstance(parent, str) or not parent:
+                return session, f'{session}:{seq}', None
+
+            cutoff = self.boundary_cutoff(info)
+            boundary_type = info['boundary_type']
+            if isinstance(cutoff, int) and boundary_type in ('before', 'through'):
+                inherited_by_boundary = seq < cutoff if boundary_type == 'before' else seq <= cutoff
+            else:
+                inherited_by_boundary = None
+            inherited_by_id = self.is_fork_copy(current_id, seq)
+
+            if inherited_by_boundary is False:
+                if inherited_by_id:
+                    raise ValueError('forked message ID conflicts with its stored boundary')
+                return session, f'{session}:{seq}', None
+            if inherited_by_boundary is None and not inherited_by_id:
+                return session, f'{session}:{seq}', None
+
+            if session in seen:
+                raise ValueError('session fork ancestry contains a cycle')
+            seen.add(session)
+            parent_info = self.session_info(parent)
+            if parent_info is None:
+                return original_session, f'{parent}:{seq}', parent
+
+            parent_id = self.parent_row_id(parent, seq)
+            if parent_id is None:
+                session, current_id = parent, None
+                continue
+            session, current_id = parent, parent_id
 
     def event(self, row, item):
         message_type = row['type']
@@ -132,15 +276,18 @@ class OpenCodeUsage:
         at = datetime.fromtimestamp(created / 1000, timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
         session = row['session_id']
         identity = row['id']
-        if not isinstance(session, str) or not session or not isinstance(identity, str) or not identity:
+        seq = row['seq']
+        if (not isinstance(session, str) or not session or not isinstance(identity, str) or not identity
+                or not isinstance(seq, int) or isinstance(seq, bool) or seq < 0):
             raise ValueError('assistant/compaction identity is invalid')
+        origin_session, dedupe, fork_of = self.origin(identity, session, seq)
         visible_output = count(tokens.get('output'))
         return dict(
             type='usage',
             at=at,
-            session_id=session,
+            session_id=origin_session,
             model=model if isinstance(model, str) and model else '__none',
-            dedupe=identity,
+            dedupe=dedupe,
             tokens=dict(
                 input=count(tokens.get('input')),
                 output=visible_output + reasoning,
@@ -153,7 +300,7 @@ class OpenCodeUsage:
             cost_usd=None,
             subagent=False,
             agent_id=None,
-            fork_of=None,
+            fork_of=fork_of,
         )
 
 

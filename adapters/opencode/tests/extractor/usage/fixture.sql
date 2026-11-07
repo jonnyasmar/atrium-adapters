@@ -7,8 +7,15 @@ CREATE TABLE session_message (
   time_updated INTEGER NOT NULL,
   data TEXT NOT NULL
 );
+CREATE TABLE session_v2 (
+  id TEXT PRIMARY KEY NOT NULL,
+  fork_session_id TEXT,
+  fork_boundary TEXT
+);
 CREATE UNIQUE INDEX session_message_session_seq_idx ON session_message(session_id, seq);
 CREATE INDEX session_message_session_time_created_id_idx ON session_message(session_id, time_created, id);
+
+INSERT INTO session_v2 VALUES ('ses_synthetic_opencode_716', NULL, NULL);
 
 INSERT INTO session_message VALUES
 ('msg_synthetic_assistant_001', 'ses_synthetic_opencode_716', 'assistant', 1, 1794000001123, 1794000001123,

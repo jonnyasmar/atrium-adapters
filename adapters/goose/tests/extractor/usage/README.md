@@ -6,8 +6,11 @@ Only `cost_source = 'provider_reported'` is preserved as `cost_usd`. `estimated`
 
 The fixture database is built from this synthetic SQL at test time. No real Goose session database or transcript is used.
 
+The native ACP fork calls `SessionStorage::copy_session`, which copies the conversation and selected session metadata but does not copy `usage_ledger` rows or usage totals. Copied conversation messages therefore do not create new billable records in this extractor.
+
 Primary sources:
 
 - https://github.com/aaif-goose/goose/blob/main/crates/goose/src/session/session_manager.rs (migration 15, ledger schema, per-call insert, and carried-forward reconciliation)
 - https://github.com/aaif-goose/goose/blob/main/crates/goose-provider-types/src/conversation/token_usage.rs (input includes cached tokens; cache counters are subsets)
 - https://github.com/aaif-goose/goose/blob/main/crates/goose/src/providers/canonical_cost.rs (provider-reported versus estimated cost semantics)
+- https://github.com/aaif-goose/goose/blob/main/crates/goose/src/acp/server/fork_session.rs (native fork delegates to `copy_session`)

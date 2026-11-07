@@ -26,7 +26,7 @@ def fold(old, new):
     if old is None:
         return new
     total = lambda e: sum(e['tokens'][k] for k in TOKEN_KEYS if k != 'reasoning')
-    order = lambda e: (e['at'], e['session_id'])
+    order = lambda e: (e.get('fork_of') is not None, e['at'], e['session_id'])
     result = dict(new if total(new) > total(old) or (total(new) == total(old) and order(new) < order(old)) else old)
     result['tokens'] = {k: max(old['tokens'][k], new['tokens'][k]) for k in TOKEN_KEYS}
     costs = [e['cost_usd'] for e in (old, new) if e.get('cost_usd') is not None]

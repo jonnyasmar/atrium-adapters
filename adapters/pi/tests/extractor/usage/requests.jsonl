@@ -1,1 +1,4 @@
-{"path":"input/2026-11-07T000000000Z_pi-synthetic.jsonl","session_id":"supplied-pi-id","resume":null}
+{"path":"input/2026-11-07T000000000Z_pi-synthetic.jsonl","session_id":"supplied-pi-synthetic","resume":null}
+{"path":"input/2026-11-07T000004000Z_pi-fork-synthetic.jsonl","session_id":"supplied-pi-fork-synthetic","resume":null}
+{"path":"input/2026-11-07T000007000Z_pi-sibling-synthetic.jsonl","session_id":"supplied-pi-sibling-synthetic","resume":null}
+{"path":"input/2026-11-07T000009000Z_pi-unrelated-synthetic.jsonl","session_id":"supplied-pi-unrelated-synthetic","resume":null}
