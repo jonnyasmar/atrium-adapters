@@ -281,7 +281,8 @@
         "launch": {
           "oneOf": [
             { "$ref": "#/$defs/packageLaunch" },
-            { "$ref": "#/$defs/dockerLaunch" }
+            { "$ref": "#/$defs/dockerLaunch" },
+            { "$ref": "#/$defs/commandLaunch" }
           ]
         },
         "env": {
@@ -294,6 +295,17 @@
           "description": "Local servers run in the pane's current working directory (D3), so relative args such as \".\" mean the session's project."
         }
       }
+    },
+    "commandLaunch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "command", "args"],
+      "properties": {
+        "kind": { "const": "command" },
+        "command": { "type": "string", "minLength": 1 },
+        "args": { "type": "array", "items": { "type": "string" } }
+      },
+      "description": "An atrium-owned command installed locally before adding this preset; no runtime package download."
     },
     "packageLaunch": {
       "type": "object",
