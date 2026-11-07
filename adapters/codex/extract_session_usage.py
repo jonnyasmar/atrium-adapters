@@ -69,6 +69,17 @@ def ancestor_metadata(session):
     return METADATA.get(session)
 
 
+def parent_thread(meta):
+    source = meta.get('source')
+    source = source if isinstance(source, dict) else {}
+    subagent = source.get('subagent', source.get('subAgent', {}))
+    subagent = subagent if isinstance(subagent, dict) else {}
+    spawn = subagent.get('thread_spawn', subagent.get('threadSpawn', {}))
+    spawn = spawn if isinstance(spawn, dict) else {}
+    return (meta.get('parent_thread_id') or meta.get('parentThreadId')
+            or spawn.get('parent_thread_id') or spawn.get('parentThreadId'))
+
+
 class CodexUsage:
     def __init__(self, path, supplied_id):
         self.meta = header(path)
@@ -119,8 +130,6 @@ class CodexUsage:
             seen.add(parent)
             ancestor = ancestor_metadata(parent)
             if ancestor is None:
-                # The immediate parent is still a valid stable identity when its
-                # rollout has been retained elsewhere; do not guess deeper lineage.
                 raise ValueError('fork ancestor unavailable')
             meta = ancestor
         return meta.get('id') or self.session
@@ -142,15 +151,17 @@ class CodexUsage:
         written = count(usage.get('cache_write_input_tokens'))
         output = count(usage.get('output_tokens'))
         tier = payload.get('service_tier') or self.tier
+        owner_meta = METADATA.get(owner, self.meta)
+        subagent = bool(parent_thread(owner_meta))
         return dict(type='usage', at=row['timestamp'], session_id=owner, model=self.model,
                     dedupe=f'{owner}:{cumulative}',
                     tokens=dict(input=max(0, count(usage.get('input_tokens')) - cached),
                                 output=output, cache_read=cached, cache_write_5m=written,
                                 cache_write_1h=0, reasoning=min(output, count(usage.get('reasoning_output_tokens')))),
                     tier=tier if tier in ('standard', 'priority', 'batch', 'flex', 'fast') else None,
-                    cost_usd=None, subagent=bool(self.meta.get('parent_thread_id')) and owner == self.session,
-                    agent_id=self.session if self.meta.get('parent_thread_id') and owner == self.session else None,
-                    fork_of=self.meta.get('forked_from_id') if owner == self.session else None)
+                    cost_usd=None, subagent=subagent,
+                    agent_id=owner if subagent else None,
+                    fork_of=owner_meta.get('forked_from_id'))
 
 
 if __name__ == '__main__':
