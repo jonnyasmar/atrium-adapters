@@ -196,9 +196,26 @@ with tempfile.TemporaryDirectory() as temporary:
         connection.execute('CREATE TABLE message (id TEXT PRIMARY KEY, data TEXT NOT NULL)')
     result = invoke('--batch', [{'path': str(legacy), 'resume': 'r:123'}])
     assert not [row for row in result if row['type'] == 'usage']
+    assert result[-1]['complete'] is True and result[-1]['resume'] == 'unsupported-schema'
+    assert result[-1]['unrecorded'] == {'reason': 'unsupported-schema', 'count': 1}
+    assert 'error' not in result[-1]
+    resumed = invoke('--batch', [{'path': str(legacy), 'resume': result[-1]['resume']}])
+    assert resumed[-1] == result[-1]
+    with sqlite3.connect(legacy) as connection:
+        connection.executescript((fixtures / 'fixture.sql').read_text())
+    recovered = invoke('--batch', [{'path': str(legacy), 'resume': result[-1]['resume']}])
+    assert [row for row in recovered if row['type'] == 'usage'] == expected
+    assert recovered[-1]['complete'] is True and recovered[-1]['reset'] is True
+    assert 'unrecorded' not in recovered[-1]
+print('[PASS] readable unsupported schema finishes with one unrecorded history and a stable sentinel')
+
+with tempfile.TemporaryDirectory() as temporary:
+    corrupt = Path(temporary) / 'corrupt.db'
+    corrupt.write_bytes(b'invented bytes that are not a SQLite database')
+    result = invoke('--batch', [{'path': str(corrupt), 'resume': 'r:123'}])
     assert result[-1]['complete'] is False and result[-1]['resume'] == 'r:123'
-    assert result[-1].get('error')
-print('[PASS] incomplete native schema reports no supported usage data')
+    assert result[-1]['error'] == 'DatabaseError' and 'unrecorded' not in result[-1]
+print('[PASS] corrupt SQLite remains an incomplete read failure, never unsupported history')
 
 legacy_expected = [json.loads(line) for line in (fixtures / 'legacy_expected.jsonl').read_text().splitlines()]
 with tempfile.TemporaryDirectory() as temporary:

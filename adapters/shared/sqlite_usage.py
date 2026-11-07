@@ -81,11 +81,13 @@ def file_entry(path: Path, session_id=None, since=0) -> dict | None:
         return None
 
 
-def _checkpoint(item, resume, *, complete, events=0, malformed=0, reset=False, error=None):
+def _checkpoint(item, resume, *, complete, events=0, malformed=0, reset=False, error=None, unrecorded=None):
     result = {"type": "checkpoint", "path": item["path"], "resume": resume,
               "complete": complete, "events": events, "malformed": malformed, "reset": reset}
     if error:
         result["error"] = error
+    if unrecorded:
+        result["unrecorded"] = unrecorded
     emit(result)
 
 
@@ -95,7 +97,8 @@ def _extract(item, request, adapter, page_size):
     try:
         connection = open_ro(item["path"])
         if not adapter.has_usage_schema(connection):
-            _checkpoint(item, resume, complete=False, error="unsupported-native-schema")
+            _checkpoint(item, "unsupported-schema", complete=True,
+                        unrecorded={"reason": "unsupported-schema", "count": 1})
             return
         cursor, reset = adapter.select(connection, resume)
         event_count = 0

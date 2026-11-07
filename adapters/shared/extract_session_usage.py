@@ -72,6 +72,13 @@ def checkpoint_offset(stream, token):
         return 0, 0, True
 
 
+def attach_unrecorded(checkpoint, parser):
+    if hasattr(parser, 'checkpoint_unrecorded'):
+        unrecorded = parser.checkpoint_unrecorded()
+        if unrecorded:
+            checkpoint['unrecorded'] = unrecorded
+
+
 def extract(request, parser_factory):
     path, token = request['path'], request.get('resume')
     try:
@@ -120,6 +127,7 @@ def extract(request, parser_factory):
                               complete=not deferred, events=len(events), malformed=malformed, reset=reset)
             if deferred:
                 checkpoint['error'] = f'fork-ancestry-unavailable:{deferred}'
+            attach_unrecorded(checkpoint, parser)
             emit(checkpoint)
     except OSError as error:
         emit(dict(type='checkpoint', path=path, resume=token, complete=False,

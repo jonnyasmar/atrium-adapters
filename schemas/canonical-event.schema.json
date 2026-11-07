@@ -196,6 +196,14 @@
         },
         "error": {
           "type": "string"
+        },
+        "unrecorded": {
+          "type": "object",
+          "required": ["reason", "count"],
+          "properties": {
+            "reason": { "type": "string" },
+            "count": { "type": "integer", "minimum": 0 }
+          }
         }
       }
     }

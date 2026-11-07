@@ -1,7 +1,6 @@
 import json
 import math
 import os
-import sqlite3
 import sys
 from collections import OrderedDict
 from datetime import datetime, timezone
@@ -85,17 +84,14 @@ class OpenCodeUsage:
         return sorted({path for path in candidates if path and path.is_file()}, key=str)
 
     def has_usage_schema(self, conn):
-        try:
-            columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_message)')}
-            session_columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_v2)')}
-            if REQUIRED_COLUMNS <= columns and SESSION_COLUMNS <= session_columns:
-                self.legacy = False
-                return True
-            columns = {row['name'] for row in conn.execute('PRAGMA table_info(message)')}
-            self.legacy = LEGACY_COLUMNS <= columns
-            return self.legacy
-        except sqlite3.Error:
-            return False
+        columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_message)')}
+        session_columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_v2)')}
+        if REQUIRED_COLUMNS <= columns and SESSION_COLUMNS <= session_columns:
+            self.legacy = False
+            return True
+        columns = {row['name'] for row in conn.execute('PRAGMA table_info(message)')}
+        self.legacy = LEGACY_COLUMNS <= columns
+        return self.legacy
 
     def select(self, conn, resume):
         self.connection = conn

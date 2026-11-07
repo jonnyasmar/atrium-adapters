@@ -5,6 +5,8 @@ ADAPTER_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 FIXTURE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 python3 - "$ADAPTER_DIR/extract_session.sh" "$FIXTURE_DIR" <<'PY'
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -12,11 +14,13 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from unittest.mock import patch
 
 script = Path(sys.argv[1])
 fixture_root = Path(sys.argv[2])
 sys.path.insert(0, str(script.parent.parent / 'shared'))
 from extract_session_usage import fold
+import extract_session_usage as shared_usage
 
 session = 'synthetic-grok-session-716'
 source = fixture_root / session / 'updates.jsonl'
@@ -48,6 +52,7 @@ assert events == expected, (events, expected)
 assert checkpoint['type'] == 'checkpoint'
 assert checkpoint['events'] == len(expected) and checkpoint['malformed'] == 0
 assert checkpoint['complete'] is True
+assert 'unrecorded' not in checkpoint
 print('[PASS] response usage golden, duplicate fold, ordinal fallback, aggregate ignored')
 
 fork_copy = invoke('--batch', [{'path': str(fork), 'session_id': 'synthetic-grok-fork-716'}])
@@ -70,6 +75,63 @@ with tempfile.TemporaryDirectory() as temporary:
         combined_keys = {row['dedupe'] for row in first + rest if row['type'] == 'usage'}
         assert combined_keys == expected_keys, (boundary, combined_keys, expected_keys)
 print(f'[PASS] resume at all {len(lines) + 1} line boundaries')
+
+for name, count_expected, requests_expected in (
+    ('legacy-only.jsonl', 1, 0),
+    ('mixed-history.jsonl', 1, 1),
+    ('modern-only.jsonl', 0, 2),
+    ('empty-turns.jsonl', 0, 0),
+    ('model-call-only.jsonl', 1, 0),
+    ('cost-only.jsonl', 1, 0),
+):
+    path = fixture_root / name
+    result = invoke('--batch', [{'path': str(path), 'resume': None}])
+    assert len([row for row in result if row['type'] == 'usage']) == requests_expected
+    expected_unrecorded = {'reason': 'legacy-turn-totals', 'count': 1} if count_expected else None
+    assert result[-1].get('unrecorded') == expected_unrecorded, (name, result)
+    assert result[-1]['complete'] is True and 'error' not in result[-1]
+    lines = path.read_bytes().splitlines(keepends=True)
+    with tempfile.TemporaryDirectory() as temporary:
+        prefix = Path(temporary) / 'updates.jsonl'
+        for boundary in range(len(lines) + 1):
+            prefix.write_bytes(b''.join(lines[:boundary]))
+            first = invoke('--batch', [{'path': str(prefix), 'resume': None}])
+            resumed = invoke('--batch', [{'path': str(path), 'resume': first[-1]['resume']}])
+            assert resumed[-1].get('unrecorded') == expected_unrecorded, (name, boundary, resumed)
+            assert resumed[-1]['complete'] is True and 'error' not in resumed[-1]
+print('[PASS] legacy/mixed histories retain counted notes across resumes; modern and empty/zero aggregates stay covered')
+
+compress = None
+try:
+    from compression import zstd
+    compress = zstd.compress
+except ImportError:
+    try:
+        import zstandard
+        compress = zstandard.ZstdCompressor().compress
+    except ImportError:
+        pass
+if compress:
+    with tempfile.TemporaryDirectory() as temporary:
+        archive = Path(temporary) / 'updates.jsonl.zst'
+        archive.write_bytes(compress((fixture_root / 'mixed-history.jsonl').read_bytes()))
+        first = invoke('--batch', [{'path': str(archive), 'resume': None}])
+        resumed = invoke('--batch', [{'path': str(archive), 'resume': first[-1]['resume']}])
+        assert resumed[-1]['events'] == 0 and resumed[-1]['complete'] is True
+        assert first[-1]['unrecorded'] == {'reason': 'legacy-turn-totals', 'count': 1}
+        assert 'unrecorded' not in resumed[-1]
+        assert resumed[-1]['resume'] == first[-1]['resume'] and resumed[-1]['reset'] is False
+
+        def unexpected_parser(*_args):
+            raise AssertionError('unchanged archive constructed a parser')
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), patch.object(
+            shared_usage, 'open_transcript', side_effect=AssertionError('unchanged archive was decompressed')
+        ):
+            shared_usage.extract({'path': str(archive), 'resume': first[-1]['resume']}, unexpected_parser)
+        assert json.loads(output.getvalue()) == resumed[-1]
+    print('[PASS] unchanged compressed history is a true no-op: no parser, decompression, usage, or optional diagnostics')
 
 with tempfile.TemporaryDirectory() as temporary:
     torn = Path(temporary) / 'updates.jsonl'
