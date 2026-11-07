@@ -13,6 +13,7 @@ from sqlite_usage import count, main, usage_roots
 
 REQUIRED_COLUMNS = {'id', 'session_id', 'type', 'seq', 'time_created', 'time_updated', 'data'}
 SESSION_COLUMNS = {'id', 'fork_session_id', 'fork_boundary'}
+LEGACY_COLUMNS = {'id', 'session_id', 'time_created', 'time_updated', 'data'}
 
 
 class BoundedCache:
@@ -60,6 +61,7 @@ def database_files(root, recursive):
 class OpenCodeUsage:
     def __init__(self):
         self.connection = None
+        self.legacy = False
         self.sessions = BoundedCache(512)
         self.parent_rows = BoundedCache(4096)
 
@@ -86,7 +88,12 @@ class OpenCodeUsage:
         try:
             columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_message)')}
             session_columns = {row['name'] for row in conn.execute('PRAGMA table_info(session_v2)')}
-            return REQUIRED_COLUMNS <= columns and SESSION_COLUMNS <= session_columns
+            if REQUIRED_COLUMNS <= columns and SESSION_COLUMNS <= session_columns:
+                self.legacy = False
+                return True
+            columns = {row['name'] for row in conn.execute('PRAGMA table_info(message)')}
+            self.legacy = LEGACY_COLUMNS <= columns
+            return self.legacy
         except sqlite3.Error:
             return False
 
@@ -106,11 +113,18 @@ class OpenCodeUsage:
                     raise ValueError()
             except ValueError:
                 timestamp, reset = 0, True
-        cursor = conn.execute(
-            'SELECT id, session_id, type, seq, time_created, time_updated, data '
-            'FROM session_message WHERE time_updated >= ? ORDER BY time_updated, id',
-            (timestamp,),
-        )
+        if self.legacy:
+            cursor = conn.execute(
+                'SELECT id, session_id, time_created, time_updated, data '
+                'FROM message WHERE time_updated >= ? ORDER BY time_updated, id',
+                (timestamp,),
+            )
+        else:
+            cursor = conn.execute(
+                'SELECT id, session_id, type, seq, time_created, time_updated, data '
+                'FROM session_message WHERE time_updated >= ? ORDER BY time_updated, id',
+                (timestamp,),
+            )
         return cursor, reset
 
     def resume_after(self, row):
@@ -231,6 +245,8 @@ class OpenCodeUsage:
             session, current_id = parent, parent_id
 
     def event(self, row, item):
+        if self.legacy:
+            return self.legacy_event(row)
         message_type = row['type']
         if message_type not in ('assistant', 'compaction'):
             return None
@@ -301,6 +317,64 @@ class OpenCodeUsage:
             subagent=False,
             agent_id=None,
             fork_of=fork_of,
+        )
+
+    @staticmethod
+    def legacy_event(row):
+        data = json.loads(row['data'])
+        if not isinstance(data, dict):
+            raise ValueError('legacy message data is not an object')
+        if data.get('role') != 'assistant':
+            return None
+        time_data = data.get('time')
+        if not isinstance(time_data, dict):
+            raise ValueError('legacy assistant time is invalid')
+        completed = time_data.get('completed')
+        if completed is None:
+            return None
+        created = time_data.get('created')
+        if any(not isinstance(value, int) or isinstance(value, bool) or value < 0
+               for value in (created, completed)):
+            raise ValueError('legacy assistant time is not integer milliseconds')
+        tokens = data.get('tokens')
+        if tokens is None:
+            return None
+        if not isinstance(tokens, dict):
+            raise ValueError('legacy assistant tokens are invalid')
+        cache = tokens.get('cache') or {}
+        if not isinstance(cache, dict):
+            raise ValueError('legacy token cache usage is invalid')
+        reasoning = count(tokens.get('reasoning'))
+        normalized = dict(
+            input=count(tokens.get('input')),
+            output=count(tokens.get('output')) + reasoning,
+            cache_read=count(cache.get('read')),
+            cache_write_5m=count(cache.get('write')),
+            cache_write_1h=0,
+            reasoning=reasoning,
+        )
+        if not any(normalized.values()):
+            return None
+        session = row['session_id']
+        if not isinstance(session, str) or not session:
+            raise ValueError('legacy assistant session is invalid')
+        model = data.get('modelID')
+        model = model if isinstance(model, str) and model else '__none'
+        vector = ':'.join(str(normalized[key]) for key in (
+            'input', 'output', 'cache_read', 'cache_write_5m', 'reasoning'
+        ))
+        return dict(
+            type='usage',
+            at=datetime.fromtimestamp(created / 1000, timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
+            session_id=session,
+            model=model,
+            dedupe=f'opencode1:{created}:{model}:{vector}',
+            tokens=normalized,
+            tier=None,
+            cost_usd=None,
+            subagent=False,
+            agent_id=None,
+            fork_of=None,
         )
 
 

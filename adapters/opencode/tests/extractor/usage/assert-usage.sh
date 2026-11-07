@@ -198,7 +198,88 @@ with tempfile.TemporaryDirectory() as temporary:
     assert not [row for row in result if row['type'] == 'usage']
     assert result[-1]['complete'] is False and result[-1]['resume'] == 'r:123'
     assert result[-1].get('error')
-print('[PASS] unverified v1 message schema reports no supported usage data')
+print('[PASS] incomplete native schema reports no supported usage data')
+
+legacy_expected = [json.loads(line) for line in (fixtures / 'legacy_expected.jsonl').read_text().splitlines()]
+with tempfile.TemporaryDirectory() as temporary:
+    database = Path(temporary) / 'opencode-legacy.db'
+    subprocess.run([sys.executable, str(fixtures / 'build_legacy_fixture.py'), str(database)], check=True)
+    original_digest = hashlib.sha256(database.read_bytes()).hexdigest()
+    result = invoke('--batch', [{'path': str(database), 'resume': None}], extra_args=('--page-size', '64'))
+    legacy_events = [row for row in result if row['type'] == 'usage']
+    assert legacy_events == legacy_expected, (legacy_events, legacy_expected)
+    assert result[-1]['complete'] is True and result[-1]['malformed'] == 0
+    assert hashlib.sha256(database.read_bytes()).hexdigest() == original_digest
+    assert sum(row['tokens']['input'] for row in legacy_events) == 311
+    assert sum(row['tokens']['output'] for row in legacy_events) == 73
+    assert all(row['fork_of'] is None and row['cost_usd'] is None for row in legacy_events)
+    paged = invoke('--batch', [{'path': str(database), 'resume': None}], extra_args=('--page-size', '1'))
+    assert {row['dedupe'] for row in paged if row['type'] == 'usage'} == {row['dedupe'] for row in legacy_expected}
+    with sqlite3.connect(database) as connection:
+        connection.execute("DELETE FROM message WHERE session_id='ses_a_origin'")
+    copied_only = invoke('--batch', [{'path': str(database), 'resume': None}])
+    copy = next(row for row in copied_only if row.get('dedupe') == legacy_expected[0]['dedupe'])
+    assert copy['session_id'] == 'ses_z_fork' and copy['tokens'] == legacy_expected[0]['tokens']
+    assert copy['at'] == legacy_expected[0]['at']
+    with sqlite3.connect(database) as connection:
+        connection.execute('CREATE TABLE session_message (id TEXT,session_id TEXT,type TEXT,seq INTEGER,time_created INTEGER,time_updated INTEGER,data TEXT)')
+    experimental = invoke('--batch', [{'path': str(database), 'resume': None}])
+    assert {row['dedupe'] for row in experimental if row['type'] == 'usage'} == {row['dedupe'] for row in legacy_expected}
+print('[PASS] v1 fork copies fold by original millisecond time/model/tokens; parallel token vectors remain distinct')
+
+with tempfile.TemporaryDirectory() as temporary:
+    database = Path(temporary) / 'opencode-legacy-updated.db'
+    subprocess.run([sys.executable, str(fixtures / 'build_legacy_fixture.py'), str(database)], check=True)
+    first = invoke('--batch', [{'path': str(database), 'resume': None}])
+    assert not any(row.get('session_id') == 'ses_streaming' for row in first)
+    with sqlite3.connect(database) as connection:
+        row = connection.execute("SELECT data FROM message WHERE id='msg_legacy_incomplete'").fetchone()
+        data = json.loads(row[0])
+        data['time']['completed'] = 1794000022137
+        data['tokens']['output'] = 9
+        connection.execute(
+            "UPDATE message SET data=?,time_updated=? WHERE id='msg_legacy_incomplete'",
+            (json.dumps(data), 1794000022137),
+        )
+    resumed = invoke('--batch', [{'path': str(database), 'resume': first[-1]['resume']}])
+    completed = [row for row in resumed if row.get('session_id') == 'ses_streaming']
+    assert len(completed) == 1 and completed[0]['tokens']['output'] == 10
+    assert completed[0]['dedupe'] == 'opencode1:1794000007131:gpt-5:30:10:0:0:1'
+    assert resumed[-1]['resume'] == 'r:1794000022137'
+print('[PASS] v1 partial assistant usage waits for completion, then resumes to the final token vector')
+
+with tempfile.TemporaryDirectory() as temporary:
+    database = Path(temporary) / 'opencode-legacy-malformed.db'
+    subprocess.run([sys.executable, str(fixtures / 'build_legacy_fixture.py'), str(database)], check=True)
+    with sqlite3.connect(database) as connection:
+        row = connection.execute("SELECT data FROM message WHERE id='msg_legacy_original'").fetchone()
+        data = json.loads(row[0])
+        data['time']['created'] = 1794000001123.5
+        connection.execute("UPDATE message SET data=? WHERE id='msg_legacy_original'", (json.dumps(data),))
+    invalid = invoke('--batch', [{'path': str(database), 'resume': None}])
+    assert invalid[-1]['malformed'] == 1
+    assert not any(row.get('session_id') == 'ses_a_origin' for row in invalid)
+print('[PASS] v1 identity rejects fractional timestamps rather than rounding away precision')
+
+with tempfile.TemporaryDirectory() as temporary:
+    database = Path(temporary) / 'opencode-both-ledgers.db'
+    build(database)
+    with sqlite3.connect(database) as connection:
+        connection.executescript((fixtures / 'legacy_fixture.sql').read_text())
+    mixed = invoke('--batch', [{'path': str(database), 'resume': None}], extra_args=('--page-size', '64'))
+    assert [row for row in mixed if row['type'] == 'usage'] == expected
+print('[PASS] a verified v2 ledger takes precedence over retained legacy messages')
+
+with tempfile.TemporaryDirectory() as temporary:
+    database = Path(temporary) / 'opencode-legacy-batch.db'
+    subprocess.run([sys.executable, str(fixtures / 'build_legacy_fixture.py'), str(database)], check=True)
+    requests = [{'path': str(database), 'resume': None}] * 200
+    started = time.perf_counter()
+    batch = invoke('--batch', requests)
+    elapsed = time.perf_counter() - started
+    assert len([row for row in batch if row['type'] == 'checkpoint']) == 200
+    assert elapsed / 200 <= 0.05, f'{elapsed * 1000 / 200:.3f} ms/file'
+    print(f'[PASS] one 200-file legacy batch: {elapsed * 1000 / 200:.3f} ms/file')
 
 with tempfile.TemporaryDirectory() as temporary:
     database = Path(temporary) / 'batch.db'
