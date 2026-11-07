@@ -24,6 +24,7 @@ You're running inside **atrium**, a resumable development environment for AI cod
 
 Each bucket is one top-level verb. Run `<verb> --help` for its full surface.
 
+- **`usage`** — Query usage, inspect coverage, ask for a query, and manage Usage boards and widgets. Read `references/usage.md` for chart frames, snapshot vs. live data, formulas and provenance.
 - **`task`** — Kanban task cards with statuses, priorities, labels, comments, workspace scoping. Human IDs like `ATR-12` alongside UUIDs.
 - **`pane`** — Create, read, write, focus, close, rename, resize, split panes (terminals, editors, browsers, agent sessions). `pane read` returns what the user sees: a terminal's rendered text, or an agent chat's whole transcript, compactions included. `--lines N` (default 200), `--offset N` to page back, `--from-start` to read from the oldest line. Your own chat's earlier chapters: **Searching past sessions** below.
 - **`note`** — Workspace-scoped notes in four modes (markdown, sketch, canvas, html): new / list / read / write / search / open / delete / `canvas-patch` / history. Markdown supports mermaid via fenced code blocks. See **Notes** below.
