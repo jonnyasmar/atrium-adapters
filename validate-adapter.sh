@@ -279,6 +279,15 @@ validate_session_extractor() {
   depths_str="$(jq -r '.sessionExtractor.supportsDepths | join(",")' "$MANIFEST")"
   pass "sessionExtractor declared: script=$script schemaVersion=$schema_version depths=[$depths_str]"
 
+  local usage_assert="$ADAPTER_DIR/tests/extractor/usage/assert-usage.sh"
+  if [[ -f "$usage_assert" ]]; then
+    if bash "$usage_assert"; then
+      pass "sessionExtractor usage fixtures passed"
+    else
+      fail "sessionExtractor usage fixtures failed"
+    fi
+  fi
+
   # Non-fatal smoke-test if the fixture exists
   local fixture_assert="$ADAPTER_DIR/tests/extractor/assert.sh"
   if [[ -x "$fixture_assert" ]]; then

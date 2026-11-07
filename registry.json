@@ -48,8 +48,8 @@
         "windows"
       ],
       "official": true,
-      "version": "1.21.1",
-      "minAppVersion": "0.357.0",
+      "version": "1.22.0",
+      "minAppVersion": "0.363.0",
       "models": [
         "fable",
         "opus",

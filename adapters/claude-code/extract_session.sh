@@ -15,9 +15,12 @@ set -euo pipefail
 SESSION_ID=""
 CWD=""
 DEPTH="standard"
+USAGE_MODE=0
+USAGE_ARGS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --usage) USAGE_MODE=1; USAGE_ARGS=("$@"); break ;;
     --session-id) SESSION_ID="$2"; shift 2 ;;
     --cwd)        CWD="$2";        shift 2 ;;
     --depth)      DEPTH="$2";      shift 2 ;;
@@ -25,7 +28,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$SESSION_ID" ]]; then
+if [[ -z "$SESSION_ID" && "$USAGE_MODE" == 0 ]]; then
   echo "extract_session: --session-id required" >&2
   exit 10
 fi
@@ -63,8 +66,12 @@ if ! find_python; then
   exit 3
 fi
 
+if [[ "$USAGE_MODE" == 1 ]]; then
+  exec "${PYTHON[@]}" "$(dirname "$0")/extract_session_usage.py" "${USAGE_ARGS[@]}"
+fi
+
 # CI fixture override; production uses ~/.claude/projects
-CC_ROOT="${ATRIUM_TEST_TRANSCRIPT_ROOT:-${HOME}/.claude/projects}"
+CC_ROOT="${ATRIUM_TEST_TRANSCRIPT_ROOT:-${CLAUDE_CONFIG_DIR:-${HOME}/.claude}/projects}"
 if [[ ! -d "$CC_ROOT" ]]; then
   echo "extract_session: claude projects root not found: $CC_ROOT" >&2
   exit 1
