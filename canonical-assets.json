@@ -33,7 +33,7 @@
       "remotePath": "skills/atrium/references/chat-canvas-fence.md",
       "target": "adapter-skill-reference",
       "destName": "chat-canvas-fence.md",
-      "sha256": "5b64dffb20686122a335af4a056eaa3252f1d8f20d950aab21eec70cb6d46c79"
+      "sha256": "2ded2f3a5221e64aa6649dfa3af274703fb1d97ab8ead78e2b47e269fd1af8a2"
     },
     {
       "id": "atrium-skill-chat-html-pages",
@@ -122,7 +122,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "8f800c7e48bd087757699eb0ce455e475f50e134",
-    "generation": 95
+    "commit": "482efcb62d59632387f70a8f2a7340d8e22d3284",
+    "generation": 96
   }
 }
