@@ -2481,62 +2481,6 @@
           "The MCP Registry entry still lists 2.1.0."
         ]
       }
-    },
-    {
-      "id": "discord",
-      "revision": 1,
-      "name": "Discord",
-      "category": "productivity",
-      "description": "Read Discord channels and threads, reply and react through your own bot.",
-      "docsUrl": "https://atrium.ws/docs/agents/discord",
-      "setupNote": "Install atrium-discord from the atrium source first (Python 3.11+). Create a bot and enable Message Content intent.",
-      "logo": null,
-      "server": {
-        "transport": "stdio",
-        "launch": {
-          "kind": "command",
-          "command": "atrium-discord",
-          "args": [
-            "mcp"
-          ]
-        },
-        "env": {
-          "DISCORD_BOT_TOKEN": {
-            "input": "token"
-          }
-        },
-        "cwd": "session"
-      },
-      "inputs": [
-        {
-          "name": "token",
-          "label": "Bot token",
-          "secret": true,
-          "required": true,
-          "help": "The bot token from Discord Developer Portal → Bot, never a personal user token.",
-          "helpUrl": "https://discord.com/developers/applications"
-        }
-      ],
-      "toolPolicyDefaults": {
-        "send_message": "ask",
-        "start_thread": "ask",
-        "add_reaction": "ask",
-        "delete_own_message": "ask"
-      },
-      "verified": {
-        "date": "2026-11-07",
-        "status": "verified",
-        "checks": [
-          "In-house standard-library REST implementation; fixed Discord origin, redirects refused, no telemetry or runtime package downloads",
-          "Synthetic stdio initialize, tools/list and tools/call; REST request and rate-limit tests"
-        ],
-        "toolNamesSource": "atrium/scripts/discord-integration/atrium_discord/tools.py",
-        "notes": [
-          "Local source installation required; this is not a published PyPI package.",
-          "atrium pins tool definitions when the user enables the connector; changed definitions require review.",
-          "The separate listener uses discord.py and an atrium Secrets grant on the director's machine or an always-on host. Connector credentials stay in the Connectors vault."
-        ]
-      }
     }
   ]
 }
