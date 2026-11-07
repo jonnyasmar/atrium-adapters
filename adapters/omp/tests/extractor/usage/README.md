@@ -1,0 +1,5 @@
+# Synthetic OMP usage fixtures
+
+Every record, model name, timestamp and token count is invented. The dedupe key is `<session_id>:<entry.id>`; when an entry has no id it falls back to `<session_id>:<usage-record ordinal>`. Repeated assistant entries pin per-field-max folding, the metadata winner, and stable ordinal counting across resume boundaries. The session header id takes precedence over the supplied id. OMP v16.5 stores normalized `Usage` fields: input excludes cache-read and cache-write tokens, output includes thinking and tool-call arguments, and reasoning is an optional subset of output. Its v16.5 format has no cache TTL split, so aggregate cache writes map to 5m. Missing model IDs become `__none`; catalog-estimated `usage.cost` remains `cost_usd: null`.
+
+Official format and semantics: [OMP v16.5 session format](https://github.com/can1357/oh-my-pi/blob/v16.5.0/docs/session.md#message), [OMP v16.5 Usage type](https://github.com/can1357/oh-my-pi/blob/v16.5.0/packages/catalog/src/types.ts#L89-L143).

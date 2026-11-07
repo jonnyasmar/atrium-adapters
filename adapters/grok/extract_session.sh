@@ -14,24 +14,6 @@ set -euo pipefail
 #
 # Exit codes: 0=ok, 1=source-not-found, 2=parse-error, 3=IO error, >=10=usage.
 
-SESSION_ID=""
-CWD=""
-DEPTH="standard"
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --session-id) SESSION_ID="$2"; shift 2 ;;
-    --cwd)        CWD="$2";        shift 2 ;;
-    --depth)      DEPTH="$2";      shift 2 ;;
-    *) echo "extract_session: unknown arg $1" >&2; exit 10 ;;
-  esac
-done
-
-if [[ -z "$SESSION_ID" ]]; then
-  echo "extract_session: --session-id required" >&2
-  exit 10
-fi
-
 # Resolve a runnable Python 3 into PYTHON. On Windows `python3` is often the
 # Microsoft Store app-execution alias (...\Microsoft\WindowsApps\python3): it
 # exists but runs nothing, while python.org and conda installs answer to
@@ -63,6 +45,29 @@ find_python() {
 if ! find_python; then
   echo "extract_session: no runnable Python 3 (tried python3, python, py -3)" >&2
   exit 3
+fi
+
+if [[ "${1:-}" == "--usage" ]]; then
+  shift
+  exec "${PYTHON[@]}" "$(dirname "$0")/extract_session_usage.py" --usage "$@"
+fi
+
+SESSION_ID=""
+CWD=""
+DEPTH="standard"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --session-id) SESSION_ID="$2"; shift 2 ;;
+    --cwd)        CWD="$2";        shift 2 ;;
+    --depth)      DEPTH="$2";      shift 2 ;;
+    *) echo "extract_session: unknown arg $1" >&2; exit 10 ;;
+  esac
+done
+
+if [[ -z "$SESSION_ID" ]]; then
+  echo "extract_session: --session-id required" >&2
+  exit 10
 fi
 
 GROK_ROOT="${ATRIUM_TEST_TRANSCRIPT_ROOT:-${HOME}/.grok/sessions}"

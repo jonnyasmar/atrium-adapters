@@ -5,7 +5,7 @@
   "description": "Open-source AI coding agent built for the terminal (opencode.ai)",
   "accent": "#a855f7",
   "binary": "opencode",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "updateCommand": [
     "bash",
     "-c",
@@ -78,7 +78,13 @@
       "quick",
       "standard",
       "deep"
-    ]
+    ],
+    "usage": {
+      "source": "transcript",
+      "batch": true,
+      "roots": ["~/.local/share/opencode"],
+      "rootEnv": ["XDG_DATA_HOME", "OPENCODE_DB"]
+    }
   },
   "hookEnvelopes": {
     "sessionStartManifest": {

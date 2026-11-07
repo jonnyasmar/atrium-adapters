@@ -5,7 +5,7 @@
   "description": "xAI's terminal coding agent",
   "accent": "#e11d48",
   "binary": "grok",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "updateCommand": [
     "grok",
     "update"
@@ -78,7 +78,13 @@
       "quick",
       "standard",
       "deep"
-    ]
+    ],
+    "usage": {
+      "source": "transcript",
+      "batch": true,
+      "roots": ["~/.grok/sessions", "~/.grok/archived_sessions"],
+      "rootEnv": ["GROK_HOME"]
+    }
   },
   "manifestSections": ["context", "agent", "director-rules", "skills", "projects"],
   "hookEnvelopes": {

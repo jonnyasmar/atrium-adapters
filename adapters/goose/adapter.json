@@ -5,7 +5,7 @@
   "description": "Block's open-source AI agent CLI (BYOK, OpenRouter and 20+ providers)",
   "accent": "#f59e0b",
   "binary": "goose",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "binaryDiscovery": {
     "commands": [
       "goose"
@@ -101,7 +101,13 @@
       "quick",
       "standard",
       "deep"
-    ]
+    ],
+    "usage": {
+      "source": "transcript",
+      "batch": true,
+      "roots": ["~/.local/share/goose/sessions"],
+      "rootEnv": ["GOOSE_PATH_ROOT", "XDG_DATA_HOME"]
+    }
   },
   "skillInstallPath": "~/.config/goose/skills/atrium/SKILL.md",
   "skillsDir": "~/.config/goose/skills"

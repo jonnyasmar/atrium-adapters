@@ -136,13 +136,13 @@ def roots(defaults):
     return list(dict.fromkeys(Path(p).expanduser() for p in defaults + extras))
 
 
-def discover(defaults, since, session_id):
+def discover(defaults, since, session_id, discovery_filter=None):
     seen = set()
     for root in roots(defaults):
         for directory, dirs, files in os.walk(root, followlinks=False):
             dirs.sort()
             for name in sorted(files):
-                if not transcript_name(name):
+                if not (discovery_filter(name) if discovery_filter else transcript_name(name)):
                     continue
                 path = Path(directory) / name
                 try:
@@ -157,7 +157,7 @@ def discover(defaults, since, session_id):
                     continue
 
 
-def main(parser_factory, defaults, session_id):
+def main(parser_factory, defaults, session_id, discovery_filter=None):
     args = argparse.ArgumentParser()
     args.add_argument('--usage', action='store_true', required=True)
     mode = args.add_mutually_exclusive_group(required=True)
@@ -170,7 +170,7 @@ def main(parser_factory, defaults, session_id):
         if options.max_files < 1:
             raise ValueError('--max-files must be positive')
         if options.list:
-            discover(defaults, options.since, session_id)
+            discover(defaults, options.since, session_id, discovery_filter)
         else:
             for index, line in enumerate(sys.stdin):
                 if index >= options.max_files:
