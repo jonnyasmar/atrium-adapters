@@ -5,14 +5,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
 from extract_session_usage import count, main, roots
+from usage_stream import open_transcript, transcript_name
 
 METADATA = {}
 INDEXED = set()
+PATHS = {}
 
 
 def header(path):
     try:
-        with path.open('rb') as stream:
+        with open_transcript(path) as stream:
             row = json.loads(stream.readline())
         meta = row.get('payload', {}) if row.get('type') == 'session_meta' else {}
         if meta.get('id'):
@@ -51,8 +53,20 @@ def ancestors(path):
         INDEXED.add(root)
         for directory, _, files in os.walk(root, followlinks=False):
             for name in files:
-                if name.endswith('.jsonl'):
-                    header(Path(directory) / name)
+                if transcript_name(name):
+                    PATHS[name] = Path(directory) / name
+
+
+def ancestor_metadata(session):
+    if session not in METADATA:
+        matching = [path for name, path in PATHS.items()
+                    if name.endswith((session + '.jsonl', session + '.jsonl.zst'))]
+        # Invented fixture names and nonstandard rollout names may omit the UUID.
+        for path in matching or PATHS.values():
+            meta = header(path)
+            if meta.get('id') == session:
+                break
+    return METADATA.get(session)
 
 
 class CodexUsage:
@@ -103,7 +117,7 @@ class CodexUsage:
             if parent in seen:
                 raise ValueError('fork lineage cycle')
             seen.add(parent)
-            ancestor = METADATA.get(parent)
+            ancestor = ancestor_metadata(parent)
             if ancestor is None:
                 # The immediate parent is still a valid stable identity when its
                 # rollout has been retained elsewhere; do not guess deeper lineage.
@@ -130,7 +144,7 @@ class CodexUsage:
         tier = payload.get('service_tier') or self.tier
         return dict(type='usage', at=row['timestamp'], session_id=owner, model=self.model,
                     dedupe=f'{owner}:{cumulative}',
-                    tokens=dict(input=max(0, count(usage.get('input_tokens')) - cached - written),
+                    tokens=dict(input=max(0, count(usage.get('input_tokens')) - cached),
                                 output=output, cache_read=cached, cache_write_5m=written,
                                 cache_write_1h=0, reasoning=min(output, count(usage.get('reasoning_output_tokens')))),
                     tier=tier if tier in ('standard', 'priority', 'batch', 'flex', 'fast') else None,

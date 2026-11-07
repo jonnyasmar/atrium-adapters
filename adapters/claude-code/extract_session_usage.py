@@ -7,14 +7,14 @@ from extract_session_usage import count, main
 
 
 def session_id(path):
-    return path.parent.parent.name if path.parent.name == 'subagents' else path.stem
+    return path.parent.parent.name if path.parent.name == 'subagents' else path.name.removesuffix('.zst').removesuffix('.jsonl')
 
 
 class ClaudeUsage:
     def __init__(self, path, supplied_id):
         self.subagent = path.parent.name == 'subagents'
         self.session = session_id(path) if self.subagent else supplied_id or session_id(path)
-        self.agent = path.stem.removeprefix('agent-') if self.subagent else None
+        self.agent = path.name.removesuffix('.zst').removesuffix('.jsonl').removeprefix('agent-') if self.subagent else None
 
     def event(self, row):
         if row.get('type') != 'assistant':

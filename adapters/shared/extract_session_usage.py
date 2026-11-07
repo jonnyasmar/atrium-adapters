@@ -4,6 +4,7 @@ import os
 import sys
 import zlib
 from pathlib import Path
+from usage_stream import open_transcript, compressed_token, transcript_name
 
 TOKEN_KEYS = ('input', 'output', 'cache_read', 'cache_write_5m', 'cache_write_1h', 'reasoning')
 
@@ -68,20 +69,27 @@ def checkpoint_offset(stream, token):
 def extract(request, parser_factory):
     path, token = request['path'], request.get('resume')
     try:
-        with open(path, 'rb') as stream:
-            offset, crc, reset = checkpoint_offset(stream, token)
+        compressed = str(path).endswith('.zst')
+        archive_token = compressed_token(path) if compressed else None
+        if archive_token and token == archive_token:
+            emit(dict(type='checkpoint', path=path, resume=token, complete=True,
+                      events=0, malformed=0, reset=False))
+            return
+        with open_transcript(path) as stream:
+            offset, crc, reset = (0, 0, token is not None) if compressed else checkpoint_offset(stream, token)
             parser = parser_factory(Path(path), request.get('session_id'))
             # Context-only replay is needed by rollouts whose model/session metadata
             # precedes the checkpoint; usage records themselves are never replayed.
             if offset and hasattr(parser, 'restore_context'):
                 parser.restore_context(stream, offset)
-            stream.seek(offset)
+            if not compressed:
+                stream.seek(offset)
             events, malformed = {}, 0
             while True:
                 line = stream.readline()
                 if not line or not line.endswith(b'\n'):
                     break
-                offset = stream.tell()
+                offset += len(line)
                 crc = zlib.crc32(line)
                 try:
                     row = json.loads(line)
@@ -94,7 +102,7 @@ def extract(request, parser_factory):
                     malformed += 1
             for event in events.values():
                 emit(event)
-            emit(dict(type='checkpoint', path=path, resume=f'o:{offset}:{crc:08x}',
+            emit(dict(type='checkpoint', path=path, resume=archive_token or f'o:{offset}:{crc:08x}',
                       complete=True, events=len(events), malformed=malformed, reset=reset))
     except OSError as error:
         emit(dict(type='checkpoint', path=path, resume=token, complete=False,
@@ -117,7 +125,7 @@ def discover(defaults, since, session_id):
         for directory, dirs, files in os.walk(root, followlinks=False):
             dirs.sort()
             for name in sorted(files):
-                if not name.endswith('.jsonl'):
+                if not transcript_name(name):
                     continue
                 path = Path(directory) / name
                 try:

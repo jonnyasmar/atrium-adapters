@@ -48,6 +48,21 @@ def verify(adapter):
             target.parent.mkdir(parents=True, exist_ok=True)
             copied = dict(request, path=str(target))
             baseline = usage(batch([request]))
+            try:
+                from compression import zstd
+            except ImportError:
+                zstd = None
+            if zstd is not None:
+                archive = Path(str(target) + '.zst')
+                archive.write_bytes(zstd.compress(data))
+                archived = dict(copied, path=str(archive))
+                full = batch([archived])
+                assert usage(full) == baseline
+                resumed = batch([dict(archived, resume=full[-1]['resume'])])
+                assert usage(resumed) == [] and resumed[-1]['complete']
+                archive.write_bytes(zstd.compress(data + b'{}\n'))
+                reset = batch([dict(archived, resume=full[-1]['resume'])])
+                assert reset[-1]['reset'] and usage(reset) == baseline
             boundaries = [0] + [i + 1 for i, b in enumerate(data) if b == 10]
             for boundary in boundaries:
                 target.write_bytes(data[:boundary])
