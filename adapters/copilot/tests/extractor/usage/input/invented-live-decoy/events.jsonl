@@ -1,0 +1,2 @@
+{"type":"assistant.usage","id":"invented-live-only","timestamp":"2026-01-01T00:00:02.000Z","data":{"model":"invented-model","apiCallId":"invented-call","inputTokens":111,"outputTokens":22,"cacheReadTokens":33,"cost":1}}
+{"type":"session.usage_info","data":{"tokenLimit":10000,"currentTokens":444,"messagesLength":2}}

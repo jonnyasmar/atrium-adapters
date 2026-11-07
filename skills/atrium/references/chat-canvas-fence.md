@@ -154,6 +154,28 @@ A canvas in a transcript renders at whatever width the pane happens to be, and t
 - **Side-by-side halves still want to be independent.** Two prose or form columns at half a chat pane's width are cramped; a single `Stack` reads better unless the halves genuinely stand alone. Tiles (metrics, small cards) are what grids are for.
 - Long free text belongs in a `Textarea`, which wraps, rather than a row of chips or badges, which don't.
 
+## Usage charts: keep explanations reproducible
+
+Read [usage.md](usage.md) before showing usage numbers. The chart kit includes
+`Kpi`, `BarChart`, `LineChart`, `AreaChart`, `RankedBars`, `ColumnChart`, `DataTable`,
+`Pivot`, `Heatmap`, `CalendarHeatmap`, `ScatterPlot`, `RangePlot`, `Skyline`, `Meter`,
+`Records`, `Recap` and `UsageBoard`. The older `BarGraph`/`LineGraph` still accept
+legacy rows.
+
+**Default to a snapshot in chat.** Run `atrium usage query --json`; use the returned
+frame as `props.data` and the exact spec as `props.query`. The explanation then
+refers to the numbers the user sees. Keep the whole frame, including provenance,
+coverage, units, nulls, estimates, formula and as-of time. The query enables
+**Show live** and **Pin to board**; pinning turns it into a live board query.
+
+When the user wants a live view, `props.data` can instead be
+`{"$computed":"usage","args":{"v":1,"source":"spend","measure":"tokens","x":"dim:model","range":"30d"}}`.
+It shows a skeleton while pending and refreshes with usage changes. This works in
+notes too. Don't silently turn a historical explanation into changing numbers.
+Use the native chart for its supported frame/view; custom HTML remains useful for
+shapes outside the kit. See usage.md for the shape-to-component table and complete
+live canvas example. `AreaChart` takes `normalize`, not an `eras` prop.
+
 ## HTML inside a canvas
 
 An `Html` block (`{"type": "Html", "props": {"page": "<hash>", "title": "…"}}`, or `"html": "<svg …>…</svg>"` for a small inline visual) puts a custom chart, timeline, diagram or pipeline inside the canvas. Details: the `Html` section of `notes-interactive-ui.md`.

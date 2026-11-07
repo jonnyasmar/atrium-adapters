@@ -31,6 +31,27 @@ Keep this order. A new board starts with every section saying it's empty; once y
 
 A section is a `Card` with a short `title`; use its `description` only when the title needs a word of help. Give elements stable, readable ids (`ask-store`, `goal-launch`, `decided-accounts`), so a later `canvas-patch` can find them. Every button of an ask sends the same shape, `{"ask": "<id>", "answer": "<value>", "note": {"$state": "/asks/<id>"}}` (a to-do's button answers `"done"`), so the owner's answers read the same way every time.
 
+## Usage inside a director's dashboard
+
+A director's dashboard stays a canvas note. A **Usage board** is a separate,
+versioned document managed by `atrium usage board` and `atrium usage widget`.
+Don't use those commands to patch the director's note.
+
+For a live usage section in the note, use a chart whose `data` is
+`{"$computed":"usage","args":<spec>}`. Use `Kpi` for one scalar, `RankedBars` for
+models or directors, `LineChart` for a time trend, `AreaChart` for shares, and
+`DataTable` for detail. The full chart set and valid specs are in
+[usage.md](usage.md). `UsageBoard` provides a board container; keep the dashboard's
+existing responsive `Grid` for its mixed content and narrow dock.
+
+Scope a director query with the `director` dimension's `<slug>@<homePaneId>` key;
+`role` distinguishes its home, side chats, workers and routines. Discover valid
+source/dimension pairs with `usage schema`. Show evidence the owner needs, not
+another copy of the dock's work and chat lists. Keep source coverage, estimated
+spend labels, nulls and as-of time in the returned frame. For a historical report,
+use a snapshot frame with its spec in `query`; a live dashboard deliberately uses
+`$computed`. Don't insert guessed values while data is pending.
+
 ## Keeping it current
 
 - **Update when something changes, not every turn:** a question comes up or is answered, a goal moves a stage, a decision is made, the plan's order changes. Touch the "Updated" line each time.

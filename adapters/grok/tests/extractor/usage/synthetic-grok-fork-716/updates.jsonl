@@ -1,0 +1,1 @@
+{"timestamp":1794000010,"method":"_x.ai/session/update","params":{"sessionId":"synthetic-grok-fork-716","_meta":{"eventId":"synthetic-grok-event-716-003"},"update":{"sessionUpdate":"response_completed","stop_reason":"end_turn","usage":{"input_tokens":3,"output_tokens":2,"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"reasoning_tokens":8}}}}

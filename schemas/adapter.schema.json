@@ -414,6 +414,38 @@
       "description": "SDK v2. Optional. Declares an adapter-owned script that extracts native-transcript content into the canonical event stream consumed by atrium's session FTS index. When present, atrium's indexer invokes the script per session at backfill + live-watch time. See canonical-event.schema.json for the JSONL contract.",
       "required": ["script", "schemaVersion", "supportsDepths"],
       "properties": {
+        "usage": {
+          "type": "object",
+          "required": [
+            "source",
+            "batch",
+            "roots"
+          ],
+          "properties": {
+            "source": {
+              "enum": [
+                "transcript",
+                "journal"
+              ]
+            },
+            "batch": {
+              "const": true
+            },
+            "roots": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rootEnv": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
         "script": {
           "type": "string",
           "minLength": 1,

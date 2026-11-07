@@ -1,0 +1,2 @@
+{"type":"session","version":3,"id":"pi-unrelated-synthetic","timestamp":"2026-11-07T05:00:09+05:00","cwd":"/synthetic/pi-unrelated"}
+{"type":"message","id":"a1b2c3d4","parentId":null,"timestamp":"2026-11-07T05:00:10+05:00","message":{"role":"assistant","provider":"invented-provider","model":"invented-model-unrelated","usage":{"input":2,"output":40,"cacheRead":100,"cacheWrite":30,"cacheWrite1h":10,"reasoning":99,"totalTokens":180,"cost":{"input":0.01,"output":0.02,"cacheRead":0.003,"cacheWrite":0.004,"total":0.037}},"timestamp":1794009610000}}

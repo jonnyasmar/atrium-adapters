@@ -12,7 +12,7 @@
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "2fb5ef30534e332c0981c78185ee12fdd5c7825a9749e40931bfcc37589e51e2"
+      "sha256": "83869f98c78b01d3b93707c4905da5bb517b2f6a5723da6a71e727b217034323"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -33,7 +33,7 @@
       "remotePath": "skills/atrium/references/chat-canvas-fence.md",
       "target": "adapter-skill-reference",
       "destName": "chat-canvas-fence.md",
-      "sha256": "2ded2f3a5221e64aa6649dfa3af274703fb1d97ab8ead78e2b47e269fd1af8a2"
+      "sha256": "6db78699aaf40efb7b8572bc43bcc54fd86fa586639dc5cad44659e59e42f1f3"
     },
     {
       "id": "atrium-skill-chat-html-pages",
@@ -89,7 +89,7 @@
       "remotePath": "skills/atrium/references/dashboard-design.md",
       "target": "adapter-skill-reference",
       "destName": "dashboard-design.md",
-      "sha256": "9c2f0546dff64dc37cdfc7458c50c28987e224e824674cc15d1d386d86ec0fa3"
+      "sha256": "6bc519906d88783a311068e03eddcb8a71fa074cbf6b1bea1553d24626e83555"
     },
     {
       "id": "atrium-create-brief",
@@ -118,6 +118,13 @@
       "target": "bundled-skill",
       "skillName": "atrium-bug-report",
       "sha256": "74c0ab3b63e6bd4fd4af740d5b4f023f090497daf98ded39b0efe663c6a496c0"
+    },
+    {
+      "id": "atrium-skill-usage",
+      "remotePath": "skills/atrium/references/usage.md",
+      "target": "adapter-skill-reference",
+      "destName": "usage.md",
+      "sha256": "546352e67a6b1d6d94bfd7e407ef2a6bc7217d58a7f5ae7905ca6756e3daa9e5"
     }
   ],
   "source": {

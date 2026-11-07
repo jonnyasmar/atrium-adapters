@@ -1,0 +1,3 @@
+{"type":"USER_INPUT","source":"USER","content":"Invented fixture prompt."}
+{"type":"PLANNER_RESPONSE","source":"MODEL","content":"Invented fixture reply."}
+{"type":"SYNTHETIC_AGGREGATE_DECOY","usage":{"input_tokens":901,"output_tokens":73,"total_tokens":974}}

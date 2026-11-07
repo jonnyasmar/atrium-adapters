@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "sha256": "7068f0768cc4af28ce33f0c767286e05d55a55420f73786d1426c12ad5e1c1fa",
+  "records": [
+    {
+      "at": "2026-11-06T21:20:03.000Z",
+      "session_id": "synthetic-grok-session-716",
+      "model": "__none",
+      "dedupe": "synthetic-grok-event-716-003",
+      "type": "usage",
+      "tokens": {
+        "input": 3,
+        "output": 2,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:20:10.000Z",
+      "session_id": "synthetic-grok-fork-716",
+      "model": "__none",
+      "dedupe": "synthetic-grok-event-716-003",
+      "type": "usage",
+      "tokens": {
+        "input": 3,
+        "output": 2,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:23:21.000Z",
+      "session_id": "synthetic-mixed-grok",
+      "model": "__none",
+      "dedupe": "synthetic-mixed-message",
+      "type": "usage",
+      "tokens": {
+        "input": 12,
+        "output": 8,
+        "cache_read": 4,
+        "cache_write_5m": 2,
+        "cache_write_1h": 0,
+        "reasoning": 3
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:25:00.000Z",
+      "session_id": "synthetic-modern-grok",
+      "model": "__none",
+      "dedupe": "synthetic-modern-message-a",
+      "type": "usage",
+      "tokens": {
+        "input": 9,
+        "output": 3,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:25:01.000Z",
+      "session_id": "synthetic-modern-grok",
+      "model": "__none",
+      "dedupe": "synthetic-modern-message-b",
+      "type": "usage",
+      "tokens": {
+        "input": 7,
+        "output": 2,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:20:01.000Z",
+      "session_id": "synthetic-grok-session-716",
+      "model": "__none",
+      "dedupe": "synthetic-msg-001",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 55,
+        "cache_read": 20,
+        "cache_write_5m": 7,
+        "cache_write_1h": 0,
+        "reasoning": 10
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:20:05.000Z",
+      "session_id": "synthetic-grok-session-716",
+      "model": "__none",
+      "dedupe": "synthetic-msg-002",
+      "type": "usage",
+      "tokens": {
+        "input": 4,
+        "output": 5,
+        "cache_read": 2,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 1
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    }
+  ]
+}
