@@ -6,7 +6,7 @@ export function buildDigest(bytes) {
   const models = {};
   for (const name of Object.keys(source).sort()) {
     const row = source[name];
-    if (row.mode !== 'chat' || !/^(claude-|gpt-|o[134](?:-|$)|grok-|gemini-|deepseek-|kimi-|muse-)/i.test(name)) continue;
+    if (!['chat', 'responses'].includes(row.mode) || !/^(claude-|gpt-|o[134](?:-|$)|grok-|gemini-|deepseek-|kimi-|muse-)/i.test(name)) continue;
     const rates = Object.fromEntries(Object.entries(row).filter(([key, value]) =>
       /^(input_cost_per_token|output_cost_per_token|cache_read_input_token_cost|cache_creation_input_token_cost)(_|$)/.test(key)
       && typeof value === 'number' && Number.isFinite(value) && value >= 0));
@@ -15,7 +15,7 @@ export function buildDigest(bytes) {
   }
   return {
     v: 1,
-    version: createHash('sha256').update(bytes).digest('hex'),
+    version: createHash('sha256').update(JSON.stringify({ v: 1, models })).digest('hex'),
     source: 'https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json',
     license: 'MIT',
     models,

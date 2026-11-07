@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "version": "68fb94bb2376e1cc5399a43553af2d771f0afd2b7db24dd1add54bed06513b52",
+  "version": "4b95886a06a1f0c535f835571f9692fd28c6f0ef54d256b1bc48982f7203da26",
   "source": "https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json",
   "license": "MIT",
   "models": {
@@ -832,6 +832,11 @@
       "input_cost_per_token": 0.00000125,
       "output_cost_per_token": 0.00001
     },
+    "gpt-5-codex": {
+      "cache_read_input_token_cost": 1.25e-7,
+      "input_cost_per_token": 0.00000125,
+      "output_cost_per_token": 0.00001
+    },
     "gpt-5-mini": {
       "cache_read_input_token_cost": 2.5e-8,
       "cache_read_input_token_cost_batches": 1.25e-8,
@@ -882,6 +887,18 @@
       "output_cost_per_token_batches": 2e-7,
       "output_cost_per_token_flex": 2e-7
     },
+    "gpt-5-pro": {
+      "input_cost_per_token": 0.000015,
+      "input_cost_per_token_batches": 0.0000075,
+      "output_cost_per_token": 0.00012,
+      "output_cost_per_token_batches": 0.00006
+    },
+    "gpt-5-pro-2025-10-06": {
+      "input_cost_per_token": 0.000015,
+      "input_cost_per_token_batches": 0.0000075,
+      "output_cost_per_token": 0.00012,
+      "output_cost_per_token_batches": 0.00006
+    },
     "gpt-5-search-api": {
       "cache_read_input_token_cost": 1.25e-7,
       "input_cost_per_token": 0.00000125,
@@ -925,6 +942,21 @@
       "input_cost_per_token": 0.00000125,
       "output_cost_per_token": 0.00001
     },
+    "gpt-5.1-codex": {
+      "cache_read_input_token_cost": 1.25e-7,
+      "input_cost_per_token": 0.00000125,
+      "output_cost_per_token": 0.00001
+    },
+    "gpt-5.1-codex-max": {
+      "cache_read_input_token_cost": 1.25e-7,
+      "input_cost_per_token": 0.00000125,
+      "output_cost_per_token": 0.00001
+    },
+    "gpt-5.1-codex-mini": {
+      "cache_read_input_token_cost": 2.5e-8,
+      "input_cost_per_token": 2.5e-7,
+      "output_cost_per_token": 0.000002
+    },
     "gpt-5.2": {
       "cache_read_input_token_cost": 1.75e-7,
       "cache_read_input_token_cost_batches": 8.75e-8,
@@ -958,10 +990,35 @@
       "input_cost_per_token": 0.00000175,
       "output_cost_per_token": 0.000014
     },
+    "gpt-5.2-codex": {
+      "cache_read_input_token_cost": 1.75e-7,
+      "input_cost_per_token": 0.00000175,
+      "output_cost_per_token": 0.000014
+    },
+    "gpt-5.2-pro": {
+      "input_cost_per_token": 0.000021,
+      "input_cost_per_token_batches": 0.0000105,
+      "output_cost_per_token": 0.000168,
+      "output_cost_per_token_batches": 0.000084
+    },
+    "gpt-5.2-pro-2025-12-11": {
+      "input_cost_per_token": 0.000021,
+      "input_cost_per_token_batches": 0.0000105,
+      "output_cost_per_token": 0.000168,
+      "output_cost_per_token_batches": 0.000084
+    },
     "gpt-5.3-chat-latest": {
       "cache_read_input_token_cost": 1.75e-7,
       "input_cost_per_token": 0.00000175,
       "output_cost_per_token": 0.000014
+    },
+    "gpt-5.3-codex": {
+      "cache_read_input_token_cost": 1.75e-7,
+      "cache_read_input_token_cost_priority": 3.5e-7,
+      "input_cost_per_token": 0.00000175,
+      "input_cost_per_token_priority": 0.0000035,
+      "output_cost_per_token": 0.000014,
+      "output_cost_per_token_priority": 0.000028
     },
     "gpt-5.4": {
       "cache_read_input_token_cost": 2.5e-7,
@@ -1059,6 +1116,34 @@
       "output_cost_per_token_flex": 6.25e-7,
       "output_cost_per_token_batches": 6.25e-7
     },
+    "gpt-5.4-pro": {
+      "input_cost_per_token": 0.00003,
+      "input_cost_per_token_above_272k_tokens": 0.00006,
+      "input_cost_per_token_flex": 0.000015,
+      "input_cost_per_token_batches": 0.000015,
+      "input_cost_per_token_above_272k_tokens_batches": 0.00003,
+      "output_cost_per_token": 0.00018,
+      "output_cost_per_token_above_272k_tokens": 0.00027,
+      "output_cost_per_token_flex": 0.00009,
+      "output_cost_per_token_batches": 0.00009,
+      "output_cost_per_token_above_272k_tokens_batches": 0.000135,
+      "input_cost_per_token_above_272k_tokens_flex": 0.00003,
+      "output_cost_per_token_above_272k_tokens_flex": 0.000135
+    },
+    "gpt-5.4-pro-2026-03-05": {
+      "input_cost_per_token": 0.00003,
+      "input_cost_per_token_above_272k_tokens": 0.00006,
+      "input_cost_per_token_flex": 0.000015,
+      "input_cost_per_token_batches": 0.000015,
+      "input_cost_per_token_above_272k_tokens_batches": 0.00003,
+      "output_cost_per_token": 0.00018,
+      "output_cost_per_token_above_272k_tokens": 0.00027,
+      "output_cost_per_token_flex": 0.00009,
+      "output_cost_per_token_batches": 0.00009,
+      "output_cost_per_token_above_272k_tokens_batches": 0.000135,
+      "input_cost_per_token_above_272k_tokens_flex": 0.00003,
+      "output_cost_per_token_above_272k_tokens_flex": 0.000135
+    },
     "gpt-5.5": {
       "cache_read_input_token_cost": 5e-7,
       "cache_read_input_token_cost_above_272k_tokens": 0.000001,
@@ -1114,6 +1199,30 @@
       "cache_read_input_token_cost": 0.00000125,
       "input_cost_per_token": 0.0000125,
       "output_cost_per_token": 0.000075
+    },
+    "gpt-5.5-pro": {
+      "input_cost_per_token": 0.00003,
+      "input_cost_per_token_above_272k_tokens": 0.00006,
+      "input_cost_per_token_flex": 0.000015,
+      "input_cost_per_token_batches": 0.000015,
+      "input_cost_per_token_above_272k_tokens_batches": 0.00003,
+      "output_cost_per_token": 0.00018,
+      "output_cost_per_token_above_272k_tokens": 0.00027,
+      "output_cost_per_token_flex": 0.00009,
+      "output_cost_per_token_batches": 0.00009,
+      "output_cost_per_token_above_272k_tokens_batches": 0.000135
+    },
+    "gpt-5.5-pro-2026-04-23": {
+      "input_cost_per_token": 0.00003,
+      "input_cost_per_token_above_272k_tokens": 0.00006,
+      "input_cost_per_token_flex": 0.000015,
+      "input_cost_per_token_batches": 0.000015,
+      "input_cost_per_token_above_272k_tokens_batches": 0.00003,
+      "output_cost_per_token": 0.00018,
+      "output_cost_per_token_above_272k_tokens": 0.00027,
+      "output_cost_per_token_flex": 0.00009,
+      "output_cost_per_token_batches": 0.00009,
+      "output_cost_per_token_above_272k_tokens_batches": 0.000135
     },
     "gpt-5.6": {
       "cache_creation_input_token_cost": 0.000005,
@@ -1578,6 +1687,26 @@
       "input_cost_per_token": 6e-7,
       "output_cost_per_token": 0.0000024
     },
+    "gpt-daybreak-blue-latest": {
+      "cache_creation_input_token_cost": 0.000005,
+      "cache_creation_input_token_cost_above_272k_tokens": 0.00001,
+      "cache_read_input_token_cost": 4e-7,
+      "cache_read_input_token_cost_above_272k_tokens": 8e-7,
+      "input_cost_per_token": 0.000004,
+      "input_cost_per_token_above_272k_tokens": 0.000008,
+      "output_cost_per_token": 0.00002,
+      "output_cost_per_token_above_272k_tokens": 0.00003
+    },
+    "gpt-daybreak-red-latest": {
+      "cache_creation_input_token_cost": 0.000015625,
+      "cache_creation_input_token_cost_above_272k_tokens": 0.00003125,
+      "cache_read_input_token_cost": 0.00000125,
+      "cache_read_input_token_cost_above_272k_tokens": 0.0000025,
+      "input_cost_per_token": 0.0000125,
+      "input_cost_per_token_above_272k_tokens": 0.000025,
+      "output_cost_per_token": 0.000075,
+      "output_cost_per_token_above_272k_tokens": 0.0001125
+    },
     "gpt-rosalind-discovery": {
       "cache_read_input_token_cost": 5e-7,
       "input_cost_per_token": 0.000005,
@@ -1606,6 +1735,18 @@
       "output_cost_per_token": 0.00006,
       "output_cost_per_token_batches": 0.00003
     },
+    "o1-pro": {
+      "input_cost_per_token": 0.00015,
+      "input_cost_per_token_batches": 0.000075,
+      "output_cost_per_token": 0.0006,
+      "output_cost_per_token_batches": 0.0003
+    },
+    "o1-pro-2025-03-19": {
+      "input_cost_per_token": 0.00015,
+      "input_cost_per_token_batches": 0.000075,
+      "output_cost_per_token": 0.0006,
+      "output_cost_per_token_batches": 0.0003
+    },
     "o3": {
       "cache_read_input_token_cost": 5e-7,
       "cache_read_input_token_cost_flex": 2.5e-7,
@@ -1632,6 +1773,16 @@
       "output_cost_per_token_flex": 0.000004,
       "output_cost_per_token_priority": 0.000014
     },
+    "o3-deep-research": {
+      "cache_read_input_token_cost": 0.0000025,
+      "input_cost_per_token": 0.00001,
+      "output_cost_per_token": 0.00004
+    },
+    "o3-deep-research-2025-06-26": {
+      "cache_read_input_token_cost": 0.0000025,
+      "input_cost_per_token": 0.00001,
+      "output_cost_per_token": 0.00004
+    },
     "o3-mini": {
       "cache_read_input_token_cost": 5.5e-7,
       "input_cost_per_token": 0.0000011,
@@ -1645,6 +1796,18 @@
       "input_cost_per_token_batches": 5.5e-7,
       "output_cost_per_token": 0.0000044,
       "output_cost_per_token_batches": 0.0000022
+    },
+    "o3-pro": {
+      "input_cost_per_token": 0.00002,
+      "input_cost_per_token_batches": 0.00001,
+      "output_cost_per_token": 0.00008,
+      "output_cost_per_token_batches": 0.00004
+    },
+    "o3-pro-2025-06-10": {
+      "input_cost_per_token": 0.00002,
+      "input_cost_per_token_batches": 0.00001,
+      "output_cost_per_token": 0.00008,
+      "output_cost_per_token_batches": 0.00004
     },
     "o4-mini": {
       "cache_read_input_token_cost": 2.75e-7,
@@ -1671,6 +1834,16 @@
       "output_cost_per_token_batches": 0.0000022,
       "output_cost_per_token_flex": 0.0000022,
       "output_cost_per_token_priority": 0.000008
+    },
+    "o4-mini-deep-research": {
+      "cache_read_input_token_cost": 5e-7,
+      "input_cost_per_token": 0.000002,
+      "output_cost_per_token": 0.000008
+    },
+    "o4-mini-deep-research-2025-06-26": {
+      "cache_read_input_token_cost": 5e-7,
+      "input_cost_per_token": 0.000002,
+      "output_cost_per_token": 0.000008
     }
   }
 }
