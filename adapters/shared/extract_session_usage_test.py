@@ -26,6 +26,17 @@ def verify(adapter):
     usage = lambda rows: [r for r in rows if r['type'] == 'usage']
     expected = [json.loads(line) for line in (fixture / 'expected-usage.jsonl').read_text().splitlines()]
     assert usage(actual) == expected, (usage(actual), expected)
+    totals_file = fixture / 'expected-totals.json'
+    if totals_file.exists():
+        merged = {}
+        for event in usage(actual):
+            merged[event['dedupe']] = fold(merged.get(event['dedupe']), event)
+        totals = {}
+        for event in merged.values():
+            record = totals.setdefault(event['session_id'], dict(requests=0, tokens=0))
+            record['requests'] += 1
+            record['tokens'] += sum(v for k, v in event['tokens'].items() if k != 'reasoning')
+        assert totals == json.loads(totals_file.read_text())
     assert len([r for r in actual if r['type'] == 'checkpoint']) == len(requests)
     with tempfile.TemporaryDirectory() as directory:
         temp = Path(directory)

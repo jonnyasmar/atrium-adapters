@@ -1,0 +1,4 @@
+{"type": "session_meta", "payload": {"id": "child-b", "forked_from_id": "root", "subagent_history_start_ordinal": 3}}
+{"type": "turn_context", "payload": {"model": "gpt-5", "service_tier": "priority"}}
+{"type": "event_msg", "ordinal": 2, "timestamp": "2026-01-02T12:00:00Z", "payload": {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 105}, "last_token_usage": {"input_tokens": 100, "cached_input_tokens": 30, "output_tokens": 5, "reasoning_output_tokens": 2}}}}
+{"type": "event_msg", "ordinal": 4, "timestamp": "2026-01-02T12:00:00Z", "payload": {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 216}, "last_token_usage": {"input_tokens": 100, "cached_input_tokens": 30, "output_tokens": 11, "reasoning_output_tokens": 2}}}}
