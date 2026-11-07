@@ -2534,7 +2534,7 @@
         "notes": [
           "Local source installation required; this is not a published PyPI package.",
           "atrium pins tool definitions when the user enables the connector; changed definitions require review.",
-          "The separate listener uses discord.py and an atrium Secrets grant on its Linux host. Connector credentials stay in the Connectors vault."
+          "The separate listener uses discord.py and an atrium Secrets grant on the director's machine or an always-on host. Connector credentials stay in the Connectors vault."
         ]
       }
     }
