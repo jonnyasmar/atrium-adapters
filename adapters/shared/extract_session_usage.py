@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import zlib
+from datetime import datetime, timezone
 from pathlib import Path
 from usage_stream import open_transcript, compressed_token, transcript_name
 
@@ -21,7 +22,7 @@ def fold(old, new):
     if old is None:
         return new
     total = lambda e: sum(e['tokens'][k] for k in TOKEN_KEYS if k != 'reasoning')
-    result = dict(new if total(new) > total(old) else old)
+    result = dict(new if total(new) > total(old) or (total(new) == total(old) and new['at'] < old['at']) else old)
     result['tokens'] = {k: max(old['tokens'][k], new['tokens'][k]) for k in TOKEN_KEYS}
     costs = [e['cost_usd'] for e in (old, new) if e.get('cost_usd') is not None]
     result['cost_usd'] = max(costs) if costs else None
@@ -97,6 +98,10 @@ def extract(request, parser_factory):
                         raise ValueError()
                     event = parser.event(row)
                     if event:
+                        timestamp = datetime.fromisoformat(event['at'].replace('Z', '+00:00'))
+                        if timestamp.tzinfo is None:
+                            raise ValueError('usage timestamp has no timezone')
+                        event['at'] = timestamp.astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
                         events[event['dedupe']] = fold(events.get(event['dedupe']), event)
                 except (ValueError, TypeError, KeyError, AttributeError):
                     malformed += 1

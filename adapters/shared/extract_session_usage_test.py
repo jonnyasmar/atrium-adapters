@@ -26,6 +26,15 @@ def verify(adapter):
     usage = lambda rows: [r for r in rows if r['type'] == 'usage']
     expected = [json.loads(line) for line in (fixture / 'expected-usage.jsonl').read_text().splitlines()]
     assert usage(actual) == expected, (usage(actual), expected)
+    assert all(len(e['at']) == 24 and e['at'].endswith('Z') for e in usage(actual))
+    merged_file = fixture / 'expected-merged.jsonl'
+    if merged_file.exists():
+        expected_merged = [json.loads(line) for line in merged_file.read_text().splitlines()]
+        for order in (usage(actual), list(reversed(usage(actual)))):
+            merged = {}
+            for event in order:
+                merged[event['dedupe']] = fold(merged.get(event['dedupe']), event)
+            assert [merged[k] for k in sorted(merged)] == expected_merged
     totals_file = fixture / 'expected-totals.json'
     if totals_file.exists():
         merged = {}
