@@ -26,13 +26,16 @@ def canonical(value):
 
 def output_version(adapter):
     module = ast.parse((adapter / 'extract_session_usage.py').read_text())
-    values = [node.value.value for node in module.body
-              if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant)
-              and any(isinstance(target, ast.Name) and target.id == 'USAGE_OUTPUT_VERSION'
-                      for target in node.targets)]
-    if len(values) != 1 or type(values[0]) is not int or values[0] < 1:
+    assignments = []
+    for node in module.body:
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, (ast.AnnAssign, ast.AugAssign)) else []
+        if any(isinstance(target, ast.Name) and target.id == 'USAGE_OUTPUT_VERSION' for target in targets):
+            assignments.append(node)
+    if (len(assignments) != 1 or not isinstance(assignments[0], ast.Assign)
+            or len(assignments[0].targets) != 1 or not isinstance(assignments[0].value, ast.Constant)
+            or type(assignments[0].value.value) is not int or assignments[0].value.value < 1):
         raise ValueError('declare one positive integer USAGE_OUTPUT_VERSION in extract_session_usage.py')
-    return values[0]
+    return assignments[0].value.value
 
 
 def corpus(adapter, destination):

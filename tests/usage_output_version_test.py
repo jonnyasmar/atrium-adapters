@@ -78,6 +78,12 @@ class SemanticVersionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'versions above 1 need app-side reconciliation'):
             usage.check(self.adapter, record=True)
 
+    def test_only_one_literal_assignment_can_declare_the_version(self):
+        for addition in ['USAGE_OUTPUT_VERSION = 1 + 0', 'USAGE_OUTPUT_VERSION += 1']:
+            self.script.write_text(PROGRAM + '\n' + addition + '\n')
+            with self.assertRaisesRegex(ValueError, 'declare one positive integer'):
+                usage.check(self.adapter)
+
     def test_fixture_only_addition_does_not_require_a_bump(self):
         (self.fixtures / 'another.jsonl').write_text('{"id":"another-invented-request"}\n')
         usage.check(self.adapter, record=True)
