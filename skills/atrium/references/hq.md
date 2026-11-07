@@ -237,6 +237,8 @@ by the pin (`memory show <id>`).
 
 A director's `browser open` puts the page in its own browser, which shows beside its chat in HQ: a subtab, or the subtab already showing that URL. It never takes the owner's keyboard unless `--focus` is passed, which also brings HQ to that page. `mine` is the subtab showing; `browser tabs` lists every subtab (id, title, URL, who showed it), and any browser verb takes a subtab id. `pane close <subtab>` closes one.
 
+**When the owner takes over, reads still work.** `tabs`, `annotations list`, `snapshot`, `screenshot`, `get`, `is`, `find`, `console`, cookie reads and ordinary `wait` conditions remain available without taking focus or moving the page. Acting commands wait for **Give back**: navigation, clicks, typing, filling (including `fill-login`), key presses, selection, scrolling, cookie deletion, and `annotations resolve` / `delete`. `eval`, raw `cdp` and `wait --function` also count as acting because they run arbitrary code. A blocked command returns `browser_owner_driving` with the read-only alternatives; atrium tells blocked agents when the owner gives the browser back.
+
 Your browser uses the owner's shared profile, so it's signed in wherever the owner is. Treat every page there as the owner's own session: read and act with that care, and ask before anything that sends, buys or changes something as them.
 
 `--show` is for a worker or staff run: the page opens in its director's browser as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Use it to demo a UI change; navigate and close only your own subtab.
