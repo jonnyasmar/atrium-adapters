@@ -368,6 +368,38 @@ Clone this repo and run `./validate-adapter.sh adapters/claude-code/` for a refe
 
 ---
 
+## Usage output versions
+
+Native usage parsers declare a positive integer `USAGE_OUTPUT_VERSION` in
+`extract_session_usage.py`. Increase it only when existing files emit different
+request keys, tokens, model/pricing identity, timestamps or attribution. Shared
+runtime refactors, comments and diagnostics keep the same version. This release
+supports version 1 only: higher versions are blocked until atrium can reconcile
+previously stored rows and shared fork-family keys.
+
+Invented fixtures pin normalized usage fields in
+`tests/extractor/usage/semantic-output.json`. Re-record its version and SHA-256 together:
+
+```bash
+python3 scripts/usage-output-version.py record codex
+python3 scripts/usage-output-version.py check codex
+python3 tests/usage_output_version_test.py
+python3 scripts/install-usage-hook.py
+```
+
+The validator runs both the previous full extractor and the current one, including
+shared runtime, over the same current fixture corpus. Changed output requires a
+version bump; a bump requires a differing fixture witness. A previous reader that
+errors or skips a newly supported shape counts as different. Adding a fixture alone
+requires no bump when both readers produce the same output. Paths, checkpoint timing
+and diagnostics do not enter the usage hash. Never use real or sanitized transcripts.
+
+CI and the tracked pre-commit guard enforce this. The guard checks a mirror of the
+Git index, so unstaged code cannot validate a different staged extractor. Installing
+the dispatcher preserves existing hooks; it refuses to overwrite a different
+pre-commit hook. History lookup follows the last golden-changing commit, so a later
+metadata-only commit cannot hide an unversioned semantic change.
+
 ## Publishing
 
 1. Fork this repository

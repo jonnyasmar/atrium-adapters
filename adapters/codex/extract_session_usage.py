@@ -3,6 +3,8 @@ import os
 import sys
 from pathlib import Path
 
+USAGE_OUTPUT_VERSION = 1
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
 from extract_session_usage import DeferredUsage, count, main, roots
 from usage_stream import open_transcript, transcript_name

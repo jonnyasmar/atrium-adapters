@@ -6,6 +6,8 @@ import sqlite3
 import sys
 from pathlib import Path
 
+USAGE_OUTPUT_VERSION = 1
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
 from sqlite_usage import count, main, usage_roots
 

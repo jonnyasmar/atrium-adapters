@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "sha256": "ad5ccf2ff9e1eadbbc4a56581859350d34b88a4577083c3f7741c94405b758fd",
+  "records": [
+    {
+      "at": "2026-11-06T21:20:00.000Z",
+      "session_id": "synthetic-session",
+      "model": "provider/model-alpha",
+      "dedupe": "goose:synthetic-session:11",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 40,
+        "cache_read": 100,
+        "cache_write_5m": 20,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": 0.0125,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:20:01.000Z",
+      "session_id": "synthetic-session",
+      "model": "__none",
+      "dedupe": "goose:synthetic-session:12",
+      "type": "usage",
+      "tokens": {
+        "input": 10,
+        "output": 3,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    }
+  ]
+}

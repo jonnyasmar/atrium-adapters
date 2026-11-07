@@ -67,12 +67,13 @@ if [[ ! -d "$ADAPTER_DIR" ]]; then
   exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Resolve schema location: env var > ~/.atrium/sdk/schemas/ > script-relative
 if [[ -n "${atrium_SDK_SCHEMAS:-}" ]] && [[ -d "$atrium_SDK_SCHEMAS" ]]; then
   SCHEMAS_DIR="$atrium_SDK_SCHEMAS"
 else
   # Try relative to this script first (for bundled SDK)
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   if [[ -d "$SCRIPT_DIR/schemas" ]]; then
     SCHEMAS_DIR="$SCRIPT_DIR/schemas"
   elif [[ -d "$HOME/.atrium/sdk/schemas" ]]; then
@@ -285,6 +286,14 @@ validate_session_extractor() {
       pass "sessionExtractor usage fixtures passed"
     else
       fail "sessionExtractor usage fixtures failed"
+    fi
+  fi
+
+  if jq -e '.sessionExtractor.usage.source == "transcript" and .sessionExtractor.usage.batch == true' "$MANIFEST" >/dev/null; then
+    if python3 "$SCRIPT_DIR/scripts/usage-output-version.py" check "$ADAPTER_DIR"; then
+      pass "sessionExtractor semantic output version and golden passed"
+    else
+      fail "sessionExtractor semantic output version or golden differs"
     fi
   fi
 

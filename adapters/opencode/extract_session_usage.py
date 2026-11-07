@@ -6,6 +6,8 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 
+USAGE_OUTPUT_VERSION = 1
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
 from sqlite_usage import count, main, usage_roots
 

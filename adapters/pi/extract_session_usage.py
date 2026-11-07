@@ -4,6 +4,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+USAGE_OUTPUT_VERSION = 1
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
 from extract_session_usage import count, main
 
