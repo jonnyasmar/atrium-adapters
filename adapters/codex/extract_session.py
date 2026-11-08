@@ -247,7 +247,7 @@ def main() -> int:
 
         path = find_transcript(args.session_id, args.cwd)
         if path is None:
-            print(f"extract_session: session not indexed: {args.session_id}", file=sys.stderr)
+            print(f"extract_session: session not found: {args.session_id}", file=sys.stderr)
             return 1
         args.transcript = str(path)
     transcript = Path(args.transcript)

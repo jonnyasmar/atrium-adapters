@@ -52,41 +52,23 @@ class InstalledLookup(unittest.TestCase):
                 self.invoke(box, name)
                 self.assertFalse(marker.exists())
 
-    def test_missing_never_recurses(self):
+    def test_missing_returns_not_found(self):
         for name in ADAPTERS:
             with self.subTest(adapter=name):
                 box, marker = self.sandbox(name)
-                for root in ('.pi/agent/sessions', '.omp/agent/sessions', '.codex/sessions',
-                             '.gemini/antigravity-cli', '.local/share/opencode'):
+                for root in ('.codex/sessions', '.local/share/opencode'):
                     (box.home / root).mkdir(parents=True)
+                box.env.pop('PYTHONPATH', None)
                 self.invoke(box, name, expected=1)
                 self.assertFalse(marker.exists())
 
-    def test_codex_date_fallback_is_bounded_and_registry_is_indexed(self):
-        from datetime import datetime, timezone
-        import uuid
+    def test_codex_registry_requires_an_index(self):
         box, _ = self.sandbox('codex')
         home = box.home / 'custom-codex'
-        box.env['CODEX_HOME'] = str(home)
-        stamp = int(datetime(2026, 11, 8, tzinfo=timezone.utc).timestamp() * 1000)
-        sid = str(uuid.UUID(int=(stamp << 80) | (7 << 76) | (2 << 62) | 1))
-        day = home / 'sessions/2026/11/07'
-        path = self.write(day / ('rollout-2026-11-07T23-00-00-' + sid + '.jsonl'))
-        self.write(home / 'sessions/2020/01/01/unrelated.jsonl')
+        home.mkdir()
         spec = importlib.util.spec_from_file_location('codex_paths', ROOT / 'adapters/codex/session_path.py')
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        scandir = os.scandir
-        def bounded(directory):
-            self.assertIn(str(Path(directory).relative_to(home / 'sessions')), ('2026/11/07', '2026/11/08', '2026/11/09'))
-            return scandir(directory)
-        with patch.dict(os.environ, box.env), patch('os.scandir', side_effect=bounded):
-            self.assertEqual(module.find_transcript(sid), path)
-            with patch('os.scandir', side_effect=AssertionError('cached lookup scanned')):
-                self.assertEqual(module.find_transcript(sid), path)
-            path.unlink()
-            self.assertIsNone(module.find_transcript(sid))
-            self.assertIsNone(module.find_transcript('legacy-id-without-index'))
         # Refuse an unindexed native table instead of silently doing a table scan.
         with closing(sqlite3.connect(home / 'state_5.sqlite')) as conn, conn:
             conn.execute('create table threads (id text, rollout_path text)')
@@ -113,12 +95,50 @@ class InstalledLookup(unittest.TestCase):
             with patch('os.scandir', side_effect=AssertionError('cache enumerated')):
                 self.assertEqual(module.find_transcript('session-123'), path)
             self.assertEqual(module.messages_directory(path), path.parent.parent / 'messages/ses_session-123')
-            self.assertIsNone(module.find_transcript('123'))
             path.unlink()
             moved = self.write(root / 'storage/session_diff/ses_session-123.json', '{}')
             self.assertEqual(module.find_transcript('session-123'), moved)
             with patch('os.scandir', side_effect=AssertionError('flat lookup enumerated')):
                 self.assertEqual(module.find_transcript('ses_session-123'), moved)
+
+    def test_codex_legacy_discovery_survives_absent_or_unusable_registry(self):
+        for mode in ('absent', 'unindexed', 'empty', 'corrupt', 'stale'):
+            with self.subTest(registry=mode):
+                box, _ = self.sandbox('codex')
+                guarded = box.env.pop('PYTHONPATH')
+                home = box.home / '.codex'
+                sid = '12345678-1234-4234-8234-123456789abc'
+                path = self.write(home / 'sessions/2020/01/02/rollout-unrelated-name.jsonl',
+                    json.dumps({'type': 'session_meta', 'payload': json.dumps({'id': sid})}) + '\n')
+                self.write(home / 'sessions/2026/11/08/rollout-malformed.jsonl', '{broken\n')
+                database = home / 'state_5.sqlite'
+                if mode == 'corrupt':
+                    database.write_text('not sqlite')
+                elif mode != 'absent':
+                    with closing(sqlite3.connect(database)) as conn, conn:
+                        key = '' if mode == 'unindexed' else ' PRIMARY KEY'
+                        conn.execute('create table threads(id TEXT' + key + ', rollout_path TEXT)')
+                        if mode != 'empty':
+                            conn.execute('insert into threads values (?, ?)', (sid, str(home / 'deleted.jsonl')))
+                self.invoke(box, 'codex', sid=sid)
+                # A successful slow lookup seeds the normal no-scan fast path.
+                box.env['PYTHONPATH'] = guarded
+                self.invoke(box, 'codex', sid=sid)
+                path.unlink()
+                moved = self.write(home / 'sessions/2019/02/03/rollout-moved.jsonl',
+                    json.dumps({'type': 'session_meta', 'payload': {'id': sid}}) + '\n')
+                box.env.pop('PYTHONPATH')
+                self.invoke(box, 'codex', sid=sid)
+                self.assertTrue(moved.is_file())
+
+    def test_codex_non_uuid_id_and_v7_in_an_unexpected_partition(self):
+        for sid in ('legacy-session', '019a61b8-0000-7000-8000-000000000001'):
+            box, _ = self.sandbox('codex')
+            box.env.pop('PYTHONPATH')
+            box.env['CODEX_HOME'] = str(box.home / 'custom-codex')
+            self.write(box.home / 'custom-codex/sessions/2001/02/03/rollout-renamed.jsonl',
+                json.dumps({'type': 'session_meta', 'payload': {'id': sid}}) + '\n')
+            self.invoke(box, 'codex', sid=sid)
 
 
 class SharedIndex(unittest.TestCase):

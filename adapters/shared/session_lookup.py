@@ -66,34 +66,6 @@ class PathIndex:
             write_cache(self.key('session:' + sid), str(path))
         return path
 
-    def in_directory(self, directory, sid, identify):
-        directory = Path(directory)
-        try:
-            info = directory.stat()
-        except OSError:
-            return None
-        stamp = [info.st_dev, info.st_ino, info.st_mtime_ns, info.st_ctime_ns]
-        key = self.key('directory:' + str(directory))
-        cached = read_cache(key)
-        if not isinstance(cached, dict) or cached.get('stamp') != stamp or not isinstance(cached.get('files'), dict):
-            files = {}
-            try:
-                with os.scandir(directory) as entries:
-                    for entry in entries:
-                        identity = identify(entry.name)
-                        if identity and entry.is_file(follow_symlinks=False):
-                            files[identity] = entry.name
-            except OSError:
-                return None
-            cached = {'stamp': stamp, 'files': files}
-            write_cache(key, cached)
-        filename = cached['files'].get(sid)
-        if component(filename) and identify(filename) == sid:
-            path = directory / filename
-            if path.is_file():
-                return self.put(sid, path)
-        return None
-
 
 def fixture(sid, suffix='.jsonl'):
     root = os.environ.get('ATRIUM_TEST_TRANSCRIPT_ROOT')

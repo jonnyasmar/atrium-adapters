@@ -1,7 +1,5 @@
-from datetime import datetime, timedelta, timezone
 import os
 from pathlib import Path
-import re
 import sys
 
 adapter = Path(__file__).resolve().parent
@@ -36,9 +34,24 @@ def registry_path(home, sid):
     return None
 
 
-def rollout_id(filename):
-    match = re.fullmatch(r'rollout-.+-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl', filename)
-    return match[1] if match else None
+def legacy_path(home, sid):
+    import glob
+    import json
+
+    for path in sorted(glob.glob(str(home / 'sessions/*/*/*/rollout-*.jsonl')), reverse=True):
+        try:
+            with open(path, encoding='utf-8', errors='replace') as stream:
+                meta = json.loads(stream.readline())
+            if not isinstance(meta, dict) or meta.get('type') != 'session_meta':
+                continue
+            payload = meta.get('payload')
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+            if isinstance(payload, dict) and payload.get('id') == sid:
+                return Path(path)
+        except (OSError, ValueError):
+            continue
+    return None
 
 
 def find_transcript(sid, cwd=''):
@@ -53,22 +66,7 @@ def find_transcript(sid, cwd=''):
     if cached:
         return cached
     path = registry_path(home, sid)
-    if path:
-        return index.put(sid, path)
-    import uuid
-
-    try:
-        identity = uuid.UUID(sid)
-        if identity.version != 7:
-            return None
-        day = datetime.fromtimestamp((identity.int >> 80) / 1000, timezone.utc).date()
-    except (ValueError, OverflowError, OSError):
-        return None
-    # UUIDv7 supplies the creation date, not the filename's timestamp. Probe
-    # adjacent dates for a producer in another timezone; never walk partitions.
-    for delta in (0, -1, 1):
-        directory = home / 'sessions' / (day + timedelta(days=delta)).strftime('%Y/%m/%d')
-        path = index.in_directory(directory, sid, rollout_id)
-        if path:
-            return path
-    return None
+    if path is None:
+        # Older sessions and incomplete native indexes still need discovery.
+        path = legacy_path(home, sid)
+    return index.put(sid, path) if path else None
