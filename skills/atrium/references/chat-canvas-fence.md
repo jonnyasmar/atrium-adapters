@@ -200,6 +200,7 @@ When a canvas asks the owner something, put `"ask"` beside the `type` of the ele
 
 - atrium then tracks each marked part on its own: it counts as waiting on the owner, locks on the answer they send with their choice lit, and offers Later and Decline. Every decision line gets its own part, so the owner can answer one and leave the rest.
 - `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
+- Keep a form to about five questions: past that, group related ones into one part or split them across turns. Give each a `title` of one to three words. The titles label the form's tabs, and a form whose tabs won't fit shows one question at a time under its title.
 - A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
 - A canvas with a send button and no markers is tracked as one question.
 - On a dashboard, give each new question a fresh element key: a finished one doesn't reopen when you edit it.
