@@ -5,7 +5,20 @@ from pathlib import Path
 
 USAGE_OUTPUT_VERSION = 1
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'shared'))
+
+def shared_dir():
+    # <data>/adapters/<name> links to .managed/<name>/generations/<id>, whose
+    # resolved parent is not the adapters dir: try the logical path first.
+    for adapter in (Path(os.path.abspath(__file__)).parent, Path(__file__).resolve().parent):
+        parts = adapter.parts
+        managed = len(parts) > 4 and parts[-4] == '.managed' and parts[-2] == 'generations'
+        shared = (Path(*parts[:-4]) if managed else adapter.parent) / 'shared'
+        if shared.is_dir():
+            return str(shared)
+    sys.exit(f'extract_session: no shared/ runtime found from {__file__}')
+
+
+sys.path.insert(0, shared_dir())
 from extract_session_usage import DeferredUsage, count, main, roots
 from usage_stream import open_transcript, transcript_name
 

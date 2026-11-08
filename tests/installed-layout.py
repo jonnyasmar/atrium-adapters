@@ -213,6 +213,42 @@ class HookEntrypointsFromInstalledLayout(unittest.TestCase):
         self.assertEqual(offenders, [])
 
 
+class UsageReadersFromInstalledLayout(unittest.TestCase):
+    def test_every_usage_reader_starts_through_managed_symlinks(self):
+        # A reader that misses shared/ imports its own file under the shared
+        # module's name and dies before reading anything.
+        readers = sorted(
+            path.parent.name
+            for path in ADAPTERS.glob("*/extract_session_usage.py")
+            if path.parent.name != "shared"
+        )
+        self.assertIn("codex", readers)
+        box = Sandbox(self, adapters=("shared", *readers))
+        empty = box.home / "no-transcripts"
+        empty.mkdir()
+        env = {**box.env, "ATRIUM_USAGE_ROOTS": json.dumps([str(empty)])}
+        for adapter in readers:
+            for entry in ("logical", "physical"):
+                with self.subTest(adapter=adapter, entry=entry):
+                    script = box.script(adapter, "extract_session.sh")
+                    if entry == "physical":
+                        script = Path(os.path.realpath(script))
+                        self.assertIn("/.managed/", str(script))
+                    result = run(script, "--usage", "--list", "--since", "0", env=env, stdin="")
+                    self.assertEqual(result.stderr, "")
+
+    def test_python_reaches_shared_only_through_the_managed_layout_resolver(self):
+        offenders = []
+        for script in sorted(ADAPTERS.glob("*/**/*.py")):
+            relative = script.relative_to(ADAPTERS)
+            if relative.parts[0] == "shared" or "tests" in relative.parts:
+                continue
+            text = script.read_text(encoding="utf-8")
+            if re.search(r"""/ *['"]shared['"]""", text) and "'.managed'" not in text.replace('"', "'"):
+                offenders.append(f"adapters/{relative}")
+        self.assertEqual(offenders, [])
+
+
 class ClaudeSettingsWrites(unittest.TestCase):
     def test_steady_state_passes_leave_settings_untouched(self):
         for layout in ("plain", "symlinked"):
