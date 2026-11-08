@@ -222,6 +222,7 @@ When a canvas asks the owner something, put `"ask"` beside the `type` of the ele
 
 - atrium then tracks each marked part on its own: it counts as waiting on the owner, locks on the answer they send with their choice lit, and offers Later and Decline. Every decision line gets its own part, so the owner can answer one and leave the rest.
 - `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
+- Keep a form to about five questions: past that, group related ones into one part or split them across turns. Give each a `title` of one to three words. The titles label the form's tabs, and a form whose tabs won't fit shows one question at a time under its title.
 - A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
 - A canvas with a send button and no markers is tracked as one question.
 - **Two or more marked questions make one form**, on desktop, iPhone and iPad. Put each question’s choice buttons and optional note inside its marked part. Pressing a choice selects it; the tab marks it chosen. atrium supplies one **Send answers (3 of 5)** footer that sends the selected answers in panel order, each as its own tracked answer. Do not author a second Send button outside the parts. Sending with unanswered parts asks for confirmation and leaves those parts open. A single-question canvas still sends on its choice button.
@@ -248,7 +249,15 @@ Work down this list before assuming the feature is broken:
 - **Nested in an outer fence.** Four-backtick wrappers suppress it deliberately.
 - **Inline artifact rendering is switched off.** It's on by default; the user can turn it off in Settings › Appearance › Chat ("Inline canvases and pages"), and the phone has its own "Inline canvases" switch.
 
-A spec whose JSON never parses is a different failure: you get an error in the artifact frame, not a code block. Use the frame's **Show source** toggle to read back exactly what you emitted.
+A spec whose JSON never parses is a different failure: you get an error in the artifact frame, not a code block. Use the frame's **Show source** toggle to read back exactly what you emitted. A spec that parses but breaks the catalog (a missing or misnamed prop, an unknown component) gets a note in the frame naming the first problem, and atrium tells you on your next turn; fix it in your next canvas.
+
+## Common mistakes
+
+The three slips behind most broken canvases in a week of real chats. The first one hid a new director's very first question.
+
+- **`Text` takes `content`, not `text`.** Heading, Label and Badge take `text`; `Text` takes `content`. atrium 0.364 and later reads a `Text`'s `text` as its `content` (`content` wins when both are given), but older versions don't draw it, so write `content`.
+- **There is no `Ask` component.** A question is the element you mark with `"ask"` beside its `type` (see [Mark each question](#mark-each-question)), usually a `Stack` holding the question's text, its fields and its send buttons. `"type": "Ask"` is an unknown component and draws nothing.
+- **`Text`'s `tone` is `default`, `muted`, `success`, `destructive` or `warning`.** Nothing else: no `info`, no `error`. `warning` draws in atrium 0.364 and later; older versions reject it, so use `muted` or a `Badge` with `variant: "warning"` when in doubt.
 
 ## What NOT to do
 
