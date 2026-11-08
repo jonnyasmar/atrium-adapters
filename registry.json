@@ -32,7 +32,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "593f53023de52291b2aeb5b933213be9f2f579c2d1a0b2f315dd15ba0423254c",
+      "contentSha256": "f2672dcb7736936523b432680a8a5dffe49e4f59da4679e3707de3509d8964b7",
       "maxAppVersion": null
     },
     {
@@ -71,7 +71,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "76a8af68b4577f89fea8db1010c02f67b7b9efc7f342878128912677dbff51d5",
+      "contentSha256": "60ad8075328dff36098023779693f1a4ae4976811bcde6cae5b6547c4fdfbe7c",
       "maxAppVersion": null
     },
     {
@@ -115,7 +115,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "21bfa25223ccf8af92e54d87bfecb020a726b8482563173e7b02abb97c1a7b11",
+      "contentSha256": "273049a752e9e2a3fea11723525f2721e8a0545803d4259015783e2afdad757a",
       "maxAppVersion": null
     },
     {
@@ -148,7 +148,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "0454cd6c099972d7317bc4d7fb26cb65a614d0a0cb250510d95e3409bfeec2a6",
+      "contentSha256": "6c124ba9796e30207c0e3b3a929696afa963ba50f13cae1d414f4a56366c0c8b",
       "maxAppVersion": null
     },
     {
@@ -247,7 +247,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "5ea238b4beed54dd639c645f3e0b9536ef088be8b4bb1576b4bb3bcf61268e9a",
+      "contentSha256": "4d1cdf70ade047d0bf349253a1b77071f17b1f9605a78e59d1b61688e81f732e",
       "maxAppVersion": null
     },
     {
@@ -280,7 +280,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "74041fd9ab5c8d672b7d2d91cad17f430458042b35727d5d68ad7df3d5c5a799",
+      "contentSha256": "25e9086f5000138e455759946b4cf80e103db2526cd558cd49d6dcf157e93ac1",
       "maxAppVersion": null
     },
     {
@@ -314,7 +314,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "b79a19e3b30f44a19f09603cff685d3bc86608e5b6c924cd1c65cad1d6e45e06"
+      "contentSha256": "96db317804344ff4b91ad922360b3c10ab67da822bd43bf9fc5026a9bd7918e1"
     },
     {
       "name": "hermes",
@@ -379,7 +379,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "aa64d5b723d73890950c11638dd1ab2557fe552ce59d0a3f66a95b0879942ee6",
+      "contentSha256": "e011268cfa902e6fdef15616761372e9837d398fc48c6eb7029be61b027ea69c",
       "maxAppVersion": null
     },
     {
@@ -446,12 +446,12 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "73703d27684d9e51d4bd64eb7afa6e130c20990b9ea6cde3b37f0c26030907bc"
+      "contentSha256": "7b1dec9281c8ce2c57510314574d53d251213b00649b1da561d193f74be6c3c2"
     }
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "0abb470a067a6386d53fff794a18f984cba39ced",
+    "commit": "53532acd66180244ebc73ce1e7efbfc62dbb2e2d",
     "sharedSha256": "cb854fbbee546af2587c0c71704b56d5879b2f01b6f3cc511f8ab4b2e72b5ae3",
     "schemaSha256": "5e2f322d91fe996a521173ffe7c8d414dbf5aaf2a5388ca31ab66b774bae5420",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
