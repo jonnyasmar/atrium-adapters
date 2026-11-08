@@ -154,6 +154,28 @@ A canvas in a transcript renders at whatever width the pane happens to be, and t
 - **Side-by-side halves still want to be independent.** Two prose or form columns at half a chat pane's width are cramped; a single `Stack` reads better unless the halves genuinely stand alone. Tiles (metrics, small cards) are what grids are for.
 - Long free text belongs in a `Textarea`, which wraps, rather than a row of chips or badges, which don't.
 
+## Usage charts: keep explanations reproducible
+
+Read [usage.md](usage.md) before showing usage numbers. The chart kit includes
+`Kpi`, `BarChart`, `LineChart`, `AreaChart`, `RankedBars`, `ColumnChart`, `DataTable`,
+`Pivot`, `Heatmap`, `CalendarHeatmap`, `ScatterPlot`, `RangePlot`, `Skyline`, `Meter`,
+`Records`, `Recap` and `UsageBoard`. The older `BarGraph`/`LineGraph` still accept
+legacy rows.
+
+**Default to a snapshot in chat.** Run `atrium usage query --json`; use the returned
+frame as `props.data` and the exact spec as `props.query`. The explanation then
+refers to the numbers the user sees. Keep the whole frame, including provenance,
+coverage, units, nulls, estimates, formula and as-of time. The query enables
+**Show live** and **Pin to board**; pinning turns it into a live board query.
+
+When the user wants a live view, `props.data` can instead be
+`{"$computed":"usage","args":{"v":1,"source":"spend","measure":"tokens","x":"dim:model","range":"30d"}}`.
+It shows a skeleton while pending and refreshes with usage changes. This works in
+notes too. Don't silently turn a historical explanation into changing numbers.
+Use the native chart for its supported frame/view; custom HTML remains useful for
+shapes outside the kit. See usage.md for the shape-to-component table and complete
+live canvas example. `AreaChart` takes `normalize`, not an `eras` prop.
+
 ## HTML inside a canvas
 
 An `Html` block (`{"type": "Html", "props": {"page": "<hash>", "title": "…"}}`, or `"html": "<svg …>…</svg>"` for a small inline visual) puts a custom chart, timeline, diagram or pipeline inside the canvas. Details: the `Html` section of `notes-interactive-ui.md`.
@@ -202,6 +224,8 @@ When a canvas asks the owner something, put `"ask"` beside the `type` of the ele
 - `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
 - A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
 - A canvas with a send button and no markers is tracked as one question.
+- **Two or more marked questions make one form**, on desktop, iPhone and iPad. Put each question’s choice buttons and optional note inside its marked part. Pressing a choice selects it; the tab marks it chosen. atrium supplies one **Send answers (3 of 5)** footer that sends the selected answers in panel order, each as its own tracked answer. Do not author a second Send button outside the parts. Sending with unanswered parts asks for confirmation and leaves those parts open. A single-question canvas still sends on its choice button.
+- You may author `Tabs` with a marked question in each panel, or let atrium group the marked parts into tabs. On desktop, Cmd+Enter (Ctrl+Enter) sends the selections; Enter on the last tab does too. After answering, choice controls lock while Tabs, Collapsible and Accordion remain usable.
 - On a dashboard, give each new question a fresh element key: a finished one doesn't reopen when you edit it.
 - A plain question the owner could answer in a word or a pick from a short list goes through your harness's question tool, not a canvas.
 

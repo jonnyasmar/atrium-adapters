@@ -1,0 +1,4 @@
+{"sequence":1,"recorded_at":1794009600000000,"record_type":"fact","durability":"durable","payload_type":"runtime.session.metadata","payload":{"record":{"workspace_root":"/synthetic/muse"}}}
+{"sequence":2,"recorded_at":1794009601000000,"record_type":"fact","durability":"durable","payload_type":"session.opened.observed","payload":{}}
+{"sequence":3,"recorded_at":1794009602000000,"record_type":"fact","durability":"durable","payload_type":"runtime.user_intent.accepted","payload":{"semantic_kind":{"kind":"chat"},"model_messages":[{"content":[{"kind":"text","text":"Invented request to summarize a file"}]}]}}
+{"sequence":4,"recorded_at":1794009603000000,"record_type":"fact","durability":"durable","payload_type":"session.end","payload":{}}

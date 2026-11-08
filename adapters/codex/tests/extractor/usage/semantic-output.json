@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "sha256": "cfd2369c3a22c7da615934b50be55b62a9402b2da5c37ca7bfcb82197a65b1ca",
+  "records": [
+    {
+      "at": "2026-01-03T01:00:00.987Z",
+      "session_id": "child-a",
+      "model": "gpt-5",
+      "dedupe": "child-a:214",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 9,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": true,
+      "agent_id": "child-a",
+      "fork_of": "root"
+    },
+    {
+      "at": "2026-01-04T06:00:00.123Z",
+      "session_id": "child-a",
+      "model": "gpt-5",
+      "dedupe": "child-a:214",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 9,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": true,
+      "agent_id": "child-a",
+      "fork_of": "root"
+    },
+    {
+      "at": "2026-01-03T04:00:00.001Z",
+      "session_id": "child-b",
+      "model": "gpt-5",
+      "dedupe": "child-b:216",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 11,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": true,
+      "agent_id": "child-b",
+      "fork_of": "root"
+    },
+    {
+      "at": "2026-01-04T06:00:00.123Z",
+      "session_id": "grandchild",
+      "model": "gpt-5",
+      "dedupe": "grandchild:327",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 13,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": true,
+      "agent_id": "grandchild",
+      "fork_of": "child-a"
+    },
+    {
+      "at": "2026-01-02T12:00:00.000Z",
+      "session_id": "root",
+      "model": "gpt-5",
+      "dedupe": "root:105",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 5,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-01-03T01:00:00.987Z",
+      "session_id": "root",
+      "model": "gpt-5",
+      "dedupe": "root:105",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 5,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-01-03T04:00:00.001Z",
+      "session_id": "root",
+      "model": "gpt-5",
+      "dedupe": "root:105",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 5,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-01-04T06:00:00.123Z",
+      "session_id": "root",
+      "model": "gpt-5",
+      "dedupe": "root:105",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 5,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-01-02T12:00:00.000Z",
+      "session_id": "root",
+      "model": "gpt-5",
+      "dedupe": "root:212",
+      "type": "usage",
+      "tokens": {
+        "input": 70,
+        "output": 7,
+        "cache_read": 30,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 2
+      },
+      "tier": "priority",
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    }
+  ]
+}

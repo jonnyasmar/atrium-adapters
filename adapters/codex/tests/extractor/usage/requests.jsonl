@@ -1,0 +1,4 @@
+{"path": "input/root.jsonl", "session_id": "root", "resume": null}
+{"path": "input/child-a.jsonl", "session_id": "child-a", "resume": null}
+{"path": "input/child-b.jsonl", "session_id": "child-b", "resume": null}
+{"path": "input/grandchild.jsonl", "session_id": "grandchild", "resume": null}

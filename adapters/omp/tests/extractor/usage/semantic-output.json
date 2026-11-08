@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "sha256": "5bafc1214bc983ee577aa963b725cf92609a65e475df3316d7848782cde4258a",
+  "records": [
+    {
+      "at": "2026-11-07T00:00:01.000Z",
+      "session_id": "omp-fork-synthetic",
+      "model": "invented-model-a",
+      "dedupe": "a1b2c3d4:2026-11-07T00:00:01.000Z",
+      "type": "usage",
+      "tokens": {
+        "input": 10,
+        "output": 40,
+        "cache_read": 100,
+        "cache_write_5m": 20,
+        "cache_write_1h": 0,
+        "reasoning": 9
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": "omp-synthetic"
+    },
+    {
+      "at": "2026-11-07T00:00:01.000Z",
+      "session_id": "omp-sibling-synthetic",
+      "model": "invented-model-a",
+      "dedupe": "a1b2c3d4:2026-11-07T00:00:01.000Z",
+      "type": "usage",
+      "tokens": {
+        "input": 10,
+        "output": 40,
+        "cache_read": 100,
+        "cache_write_5m": 20,
+        "cache_write_1h": 0,
+        "reasoning": 9
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": "omp-synthetic"
+    },
+    {
+      "at": "2026-11-07T00:00:01.000Z",
+      "session_id": "omp-synthetic",
+      "model": "invented-model-a",
+      "dedupe": "a1b2c3d4:2026-11-07T00:00:01.000Z",
+      "type": "usage",
+      "tokens": {
+        "input": 10,
+        "output": 40,
+        "cache_read": 100,
+        "cache_write_5m": 20,
+        "cache_write_1h": 0,
+        "reasoning": 35
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-07T00:00:10.000Z",
+      "session_id": "omp-unrelated-synthetic",
+      "model": "invented-model-unrelated",
+      "dedupe": "a1b2c3d4:2026-11-07T00:00:10.000Z",
+      "type": "usage",
+      "tokens": {
+        "input": 2,
+        "output": 40,
+        "cache_read": 100,
+        "cache_write_5m": 20,
+        "cache_write_1h": 0,
+        "reasoning": 9
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-07T00:00:06.000Z",
+      "session_id": "omp-fork-synthetic",
+      "model": "invented-model-fork-only",
+      "dedupe": "c3d4e5f6:2026-11-07T00:00:06.000Z",
+      "type": "usage",
+      "tokens": {
+        "input": 3,
+        "output": 5,
+        "cache_read": 100,
+        "cache_write_5m": 20,
+        "cache_write_1h": 0,
+        "reasoning": 5
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-07T00:00:08.000Z",
+      "session_id": "omp-sibling-synthetic",
+      "model": "invented-model-fork-only",
+      "dedupe": "e5f6a7b8:2026-11-07T00:00:08.000Z",
+      "type": "usage",
+      "tokens": {
+        "input": 3,
+        "output": 5,
+        "cache_read": 100,
+        "cache_write_5m": 20,
+        "cache_write_1h": 0,
+        "reasoning": 5
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-07T00:00:03.000Z",
+      "session_id": "omp-synthetic",
+      "model": "__none",
+      "dedupe": "omp-synthetic:4",
+      "type": "usage",
+      "tokens": {
+        "input": 7,
+        "output": 11,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    }
+  ]
+}
