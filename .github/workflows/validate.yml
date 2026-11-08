@@ -90,6 +90,12 @@ jobs:
       - name: Validate extractors' and codex auto-trust's Python resolution
         run: bash tests/adapter-python-resolution.assert.sh
 
+      - name: Validate bounded Claude Code transcript lookup
+        run: python3 tests/claude-code-session-lookup.py
+
+      - name: Validate bounded adapter transcript lookup
+        run: python3 tests/session-lookup.py
+
       - name: Validate Claude Code session labels
         run: bash tests/claude-code-session-labels.assert.sh
 

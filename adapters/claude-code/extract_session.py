@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -279,19 +280,27 @@ def extract(transcript_path: Path, session_id: str, adapter: str, cwd: str, dept
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--transcript", required=True)
+    p.add_argument("--transcript")
     p.add_argument("--session-id", required=True)
     p.add_argument("--adapter", required=True)
     p.add_argument("--cwd", default="")
     p.add_argument("--depth", default="standard", choices=["quick", "standard", "deep"])
     args = p.parse_args()
 
-    transcript_path = Path(args.transcript)
-    if not transcript_path.is_file():
-        print(f"extract_session: transcript missing: {transcript_path}", file=sys.stderr)
-        return 1
-
     try:
+        if args.transcript:
+            transcript_path = Path(args.transcript)
+        else:
+            from session_path import find_transcript
+
+            root = os.environ.get("ATRIUM_TEST_TRANSCRIPT_ROOT") or str(
+                Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude") / "projects"
+            )
+            transcript_path = find_transcript(root, args.session_id, args.cwd,
+                                              fixture=bool(os.environ.get("ATRIUM_TEST_TRANSCRIPT_ROOT")))
+        if transcript_path is None or not transcript_path.is_file():
+            print(f"extract_session: session not found: {args.session_id}", file=sys.stderr)
+            return 1
         extract(transcript_path, args.session_id, args.adapter, args.cwd, args.depth)
     except OSError as exc:
         print(f"extract_session: IO error: {exc}", file=sys.stderr)
