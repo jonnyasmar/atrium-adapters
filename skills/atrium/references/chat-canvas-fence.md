@@ -222,6 +222,7 @@ When a canvas asks the owner something, put `"ask"` beside the `type` of the ele
 
 - atrium then tracks each marked part on its own: it counts as waiting on the owner, locks on the answer they send with their choice lit, and offers Later and Decline. Every decision line gets its own part, so the owner can answer one and leave the rest.
 - `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
+- Keep a form to about five questions: past that, group related ones into one part or split them across turns. Give each a `title` of one to three words. The titles label the form's tabs, and a form whose tabs won't fit shows one question at a time under its title.
 - A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
 - A canvas with a send button and no markers is tracked as one question.
 - **Two or more marked questions make one form**, on desktop, iPhone and iPad. Put each question’s choice buttons and optional note inside its marked part. Pressing a choice selects it; the tab marks it chosen. atrium supplies one **Send answers (3 of 5)** footer that sends the selected answers in panel order, each as its own tracked answer. Do not author a second Send button outside the parts. Sending with unanswered parts asks for confirmation and leaves those parts open. A single-question canvas still sends on its choice button.

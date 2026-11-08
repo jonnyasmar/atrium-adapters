@@ -33,7 +33,7 @@
       "remotePath": "skills/atrium/references/chat-canvas-fence.md",
       "target": "adapter-skill-reference",
       "destName": "chat-canvas-fence.md",
-      "sha256": "fac198484c803e909dd3f91dd89c78c53b28d747e39d94d6ac2dad19e5c740e7"
+      "sha256": "29ee716d989d25e6133cd0be3997a37b9f0e907dc6f53ff5401110830e55edb0"
     },
     {
       "id": "atrium-skill-chat-html-pages",
