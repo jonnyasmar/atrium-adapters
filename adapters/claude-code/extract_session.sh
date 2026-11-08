@@ -66,40 +66,14 @@ if ! find_python; then
   exit 3
 fi
 
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+[[ "$SCRIPT_DIR" != "${BASH_SOURCE[0]}" ]] || SCRIPT_DIR=.
+
 if [[ "$USAGE_MODE" == 1 ]]; then
-  exec "${PYTHON[@]}" "$(dirname "$0")/extract_session_usage.py" "${USAGE_ARGS[@]}"
+  exec "${PYTHON[@]}" "$SCRIPT_DIR/extract_session_usage.py" "${USAGE_ARGS[@]}"
 fi
 
-# CI fixture override; production uses ~/.claude/projects
-CC_ROOT="${ATRIUM_TEST_TRANSCRIPT_ROOT:-${CLAUDE_CONFIG_DIR:-${HOME}/.claude}/projects}"
-if [[ ! -d "$CC_ROOT" ]]; then
-  echo "extract_session: claude projects root not found: $CC_ROOT" >&2
-  exit 1
-fi
-
-# Find session transcript JSONL. In production, walks .claude/projects/<encoded>/<id>.jsonl;
-# in fixture mode, the fixture-session.jsonl is the transcript IF the requested
-# session id matches the id pinned in fixture-session-id.txt (this gates the
-# AC11 "exit 1 for not-found" contract under fixture isolation).
-TRANSCRIPT=""
-if [[ -n "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]] && [[ -f "$CC_ROOT/fixture-session.jsonl" ]] && [[ -f "$CC_ROOT/fixture-session-id.txt" ]]; then
-  FIXTURE_ID=$(tr -d '[:space:]' < "$CC_ROOT/fixture-session-id.txt")
-  if [[ "$SESSION_ID" == "$FIXTURE_ID" ]]; then
-    TRANSCRIPT="$CC_ROOT/fixture-session.jsonl"
-  fi
-elif [[ -f "$CC_ROOT/${SESSION_ID}.jsonl" ]]; then
-  TRANSCRIPT="$CC_ROOT/${SESSION_ID}.jsonl"
-else
-  TRANSCRIPT=$(find "$CC_ROOT" -name "${SESSION_ID}.jsonl" -print -quit 2>/dev/null || true)
-fi
-
-if [[ -z "$TRANSCRIPT" ]] || [[ ! -f "$TRANSCRIPT" ]]; then
-  echo "extract_session: session not found: $SESSION_ID" >&2
-  exit 1
-fi
-
-exec "${PYTHON[@]}" "$(dirname "$0")/extract_session.py" \
-  --transcript "$TRANSCRIPT" \
+exec "${PYTHON[@]}" "$SCRIPT_DIR/extract_session.py" \
   --session-id "$SESSION_ID" \
   --adapter claude-code \
   --cwd "$CWD" \
