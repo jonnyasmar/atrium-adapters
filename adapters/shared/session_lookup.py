@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -45,6 +44,8 @@ class PathIndex:
         self.scope = '\x00'.join(map(str, self.roots))
 
     def key(self, name):
+        import hashlib
+
         digest = hashlib.sha256((self.scope + '\x00' + name).encode()).hexdigest()
         return self.directory / digest
 

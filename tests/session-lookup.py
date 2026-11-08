@@ -1,3 +1,4 @@
+from contextlib import closing
 import importlib.util
 import json
 import os
@@ -11,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('layout', ROOT / 'tests/installed-layout.py')
 layout = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(layout)
-ADAPTERS = ('pi', 'omp', 'antigravity', 'codex')
+ADAPTERS = ('pi', 'omp', 'antigravity', 'codex', 'opencode')
 
 
 class InstalledLookup(unittest.TestCase):
@@ -49,7 +50,7 @@ class InstalledLookup(unittest.TestCase):
                     self.write(home / '.antigravity/brain/session-123/.system_generated/logs/transcript.jsonl')
                 elif name == 'codex':
                     path = self.write(home / '.codex/sessions/2026/11/08/rollout-exact.jsonl')
-                    with sqlite3.connect(home / '.codex/state_5.sqlite') as conn:
+                    with closing(sqlite3.connect(home / '.codex/state_5.sqlite')) as conn, conn:
                         conn.execute('create table threads (id text primary key, rollout_path text)')
                         conn.execute('insert into threads values (?, ?)', ('session-123', str(path)))
                 else:
@@ -106,13 +107,37 @@ class InstalledLookup(unittest.TestCase):
             self.assertIsNone(module.find_transcript(sid))
             self.assertIsNone(module.find_transcript('legacy-id-without-index'))
         # Refuse an unindexed native table instead of silently doing a table scan.
-        with sqlite3.connect(home / 'state_5.sqlite') as conn:
+        with closing(sqlite3.connect(home / 'state_5.sqlite')) as conn, conn:
             conn.execute('create table threads (id text, rollout_path text)')
             conn.execute('insert into threads values (?, ?)', ('legacy-id', str(self.write(home / 'existing.jsonl'))))
         self.assertIsNone(module.registry_path(home, 'legacy-id'))
-        with sqlite3.connect(home / 'state_5.sqlite') as conn:
+        with closing(sqlite3.connect(home / 'state_5.sqlite')) as conn, conn:
             conn.execute('create unique index thread_id on threads(id)')
         self.assertEqual(module.registry_path(home, 'legacy-id'), home / 'existing.jsonl')
+
+    def test_opencode_reads_only_project_names_and_caches_exact_identity(self):
+        box, _ = self.sandbox('opencode')
+        root = box.home / '.local/share/opencode'
+        path = self.write(root / 'project/hash/storage/session/info/ses_session-123.json', '{}')
+        self.write(root / 'project/another/deep/unrelated.json')
+        spec = importlib.util.spec_from_file_location('opencode_paths', ROOT / 'adapters/opencode/session_path.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        scandir = os.scandir
+        def only_root(directory):
+            self.assertEqual(Path(directory), root / 'project')
+            return scandir(directory)
+        with patch.dict(os.environ, box.env), patch('os.scandir', side_effect=only_root):
+            self.assertEqual(module.find_transcript('session-123'), path)
+            with patch('os.scandir', side_effect=AssertionError('cache enumerated')):
+                self.assertEqual(module.find_transcript('session-123'), path)
+            self.assertEqual(module.messages_directory(path), path.parent.parent / 'messages/ses_session-123')
+            self.assertIsNone(module.find_transcript('123'))
+            path.unlink()
+            moved = self.write(root / 'storage/session_diff/ses_session-123.json', '{}')
+            self.assertEqual(module.find_transcript('session-123'), moved)
+            with patch('os.scandir', side_effect=AssertionError('flat lookup enumerated')):
+                self.assertEqual(module.find_transcript('ses_session-123'), moved)
 
 
 class TimestampIndex(InstalledLookup):
@@ -183,6 +208,35 @@ class TimestampIndex(InstalledLookup):
         self.invoke(box, 'pi')
         box.env['ATRIUM_DATA_DIR'] = str(self.write(box.home / 'not-a-directory'))
         self.invoke(box, 'pi')
+
+
+class SharedIndex(unittest.TestCase):
+    def test_atomic_entries_are_scoped_and_stale_paths_are_rejected(self):
+        from concurrent.futures import ThreadPoolExecutor
+        box = layout.Sandbox(self, adapters=('shared',))
+        spec = importlib.util.spec_from_file_location('index_helpers', ROOT / 'adapters/shared/session_lookup.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        root = box.home / 'sessions'
+        root.mkdir()
+        first = root / 'a.jsonl'
+        second = root / 'b.jsonl'
+        first.touch()
+        second.touch()
+        with patch.dict(os.environ, box.env):
+            index = module.PathIndex('test', [root])
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                list(pool.map(lambda i: index.put(str(i % 2), (first, second)[i % 2]), range(32)))
+            self.assertEqual(index.get('0'), first)
+            self.assertEqual(index.get('1'), second)
+            self.assertIsNone(module.PathIndex('test', [box.home / 'other']).get('0'))
+            self.assertIsNone(module.PathIndex('other-adapter', [root]).get('0'))
+            first.unlink()
+            self.assertIsNone(index.get('0'))
+            index.key('session:0').write_text(json.dumps(str(box.home / 'sessions/../sessions/b.jsonl')))
+            self.assertIsNone(index.get('0'))
+            with patch.dict(os.environ, {'ATRIUM_DATA_DIR': str(box.home / 'other-instance')}):
+                self.assertIsNone(module.PathIndex('test', [root]).get('1'))
 
 
 if __name__ == '__main__':

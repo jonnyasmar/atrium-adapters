@@ -67,59 +67,9 @@ if [[ -z "$SESSION_ID" ]]; then
   exit 10
 fi
 
-INFO_FILE=""
-MESSAGES_DIR=""
-if [[ -n "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]] && [[ -f "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session.json" ]] && [[ -f "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session-id.txt" ]]; then
-  FIXTURE_ID=$(tr -d '[:space:]' < "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session-id.txt")
-  if [[ "$SESSION_ID" == "$FIXTURE_ID" ]]; then
-    INFO_FILE="${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session.json"
-    MESSAGES_DIR="${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-messages"
-  fi
-elif [[ -z "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]]; then
-  DATA_DIR="${HOME}/.local/share/opencode"
-  if [[ ! -d "$DATA_DIR" ]]; then
-    echo "extract_session: opencode data dir not found: $DATA_DIR" >&2
-    exit 1
-  fi
-  # opencode has shipped two storage layouts; scan both:
-  #   1. legacy: data/project/<encoded>/storage/session/info/<sid>.json
-  #      + messages/<sid>/<msg>.json
-  #   2. newer: data/storage/session_diff/ses_<sid>.json (no per-project)
-  # Walk both — first match wins.
-  FOUND=$("${PYTHON[@]}" -c "
-import glob, os, sys
-data_dir = sys.argv[1]
-sid = sys.argv[2]
-patterns = [
-    os.path.join(data_dir, 'project', '*', 'storage', 'session', 'info', '*.json'),
-    os.path.join(data_dir, 'storage', 'session_diff', '*.json'),
-    os.path.join(data_dir, 'storage', 'session', 'info', '*.json'),
-]
-for pattern in patterns:
-    for info in glob.glob(pattern):
-        base = os.path.splitext(os.path.basename(info))[0]
-        if base == sid or base == 'ses_' + sid or base.endswith('_' + sid):
-            # messages dir is sibling of info dir for the legacy layout;
-            # newer layouts may not have it (best-effort).
-            msg_dir = os.path.join(os.path.dirname(os.path.dirname(info)), 'messages', base)
-            print(info)
-            print(msg_dir if os.path.isdir(msg_dir) else '')
-            sys.exit(0)
-" "$DATA_DIR" "$SESSION_ID" 2>/dev/null || true)
-  if [[ -n "$FOUND" ]]; then
-    INFO_FILE=$(echo "$FOUND" | head -1)
-    MESSAGES_DIR=$(echo "$FOUND" | tail -1)
-  fi
-fi
-
-if [[ -z "$INFO_FILE" ]] || [[ ! -f "$INFO_FILE" ]]; then
-  echo "extract_session: opencode session info not found: $SESSION_ID" >&2
-  exit 1
-fi
-
-exec "${PYTHON[@]}" "$(dirname "$0")/extract_session.py" \
-  --info "$INFO_FILE" \
-  --messages-dir "$MESSAGES_DIR" \
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+[[ "$SCRIPT_DIR" != "${BASH_SOURCE[0]}" ]] || SCRIPT_DIR=.
+exec "${PYTHON[@]}" "$SCRIPT_DIR/extract_session.py" \
   --session-id "$SESSION_ID" \
   --adapter opencode \
   --cwd "$CWD" \

@@ -208,7 +208,7 @@ def extract(info_path: Path, messages_dir: str, session_id: str, cwd: str, depth
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--info", required=True)
+    p.add_argument("--info")
     p.add_argument("--messages-dir", default="")
     p.add_argument("--session-id", required=True)
     p.add_argument("--adapter", default="opencode")
@@ -216,6 +216,15 @@ def main() -> int:
     p.add_argument("--depth", default="standard", choices=["quick", "standard", "deep"])
     args = p.parse_args()
 
+    if not args.info:
+        from session_path import find_transcript, messages_directory
+
+        path = find_transcript(args.session_id, args.cwd)
+        if path is None:
+            print(f"extract_session: session not found: {args.session_id}", file=sys.stderr)
+            return 1
+        args.info = str(path)
+        args.messages_dir = str(messages_directory(path))
     info_path = Path(args.info)
     if not info_path.is_file():
         _degraded(args.session_id, args.cwd, iso_now())
