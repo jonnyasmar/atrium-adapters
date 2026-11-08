@@ -235,13 +235,21 @@ def extract(path: Path, session_id: str, adapter: str, cwd: str, depth: str):
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--transcript", required=True)
+    p.add_argument("--transcript")
     p.add_argument("--session-id", required=True)
     p.add_argument("--adapter", required=True)
     p.add_argument("--cwd", default="")
     p.add_argument("--depth", default="standard", choices=["quick", "standard", "deep"])
     args = p.parse_args()
 
+    if not args.transcript:
+        from session_path import find_transcript
+
+        path = find_transcript(args.session_id, args.cwd)
+        if path is None:
+            print(f"extract_session: session not found: {args.session_id}", file=sys.stderr)
+            return 1
+        args.transcript = str(path)
     transcript = Path(args.transcript)
     if not transcript.is_file():
         print(f"extract_session: transcript missing: {transcript}", file=sys.stderr)

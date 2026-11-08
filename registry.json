@@ -48,7 +48,7 @@
         "windows"
       ],
       "official": true,
-      "version": "1.22.8",
+      "version": "1.22.9",
       "minAppVersion": "0.363.0",
       "models": [
         "fable",
@@ -71,7 +71,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "60ad8075328dff36098023779693f1a4ae4976811bcde6cae5b6547c4fdfbe7c",
+      "contentSha256": "df334d8c34c2c5625399d596b93974a354abe8fc75a2445b3e89b82bdd7ec2f9",
       "maxAppVersion": null
     },
     {
@@ -87,7 +87,7 @@
         "windows"
       ],
       "official": true,
-      "version": "1.29.9",
+      "version": "1.29.10",
       "minAppVersion": "0.363.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" fill-rule=\"evenodd\"><title>Codex</title><path clip-rule=\"evenodd\" d=\"M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z\"/></svg>",
       "models": [
@@ -115,7 +115,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "273049a752e9e2a3fea11723525f2721e8a0545803d4259015783e2afdad757a",
+      "contentSha256": "c2158f206fcf7066d7df1730d4ebd9e66ba036ef797634a00400652f79693a67",
       "maxAppVersion": null
     },
     {
@@ -230,7 +230,7 @@
         "windows"
       ],
       "official": true,
-      "version": "0.8.5",
+      "version": "0.8.6",
       "minAppVersion": "0.363.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" fill=\"currentColor\"><title>opencode</title><path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M384 416H128V96H384V416ZM320 160H192V352H320V160Z\"/><path opacity=\"0.6\" d=\"M320 224V352H192V224H320Z\"/></svg>",
       "install": {
@@ -247,7 +247,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "4d1cdf70ade047d0bf349253a1b77071f17b1f9605a78e59d1b61688e81f732e",
+      "contentSha256": "1c4de6baa718f0cb4922d0cd96b6359c22e0a37b4e20635f7c241df1822c83c7",
       "maxAppVersion": null
     },
     {
@@ -451,8 +451,8 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "53532acd66180244ebc73ce1e7efbfc62dbb2e2d",
-    "sharedSha256": "cb854fbbee546af2587c0c71704b56d5879b2f01b6f3cc511f8ab4b2e72b5ae3",
+    "commit": "7317bf95cec76d2b35f19fbf63c03e2e63d821c3",
+    "sharedSha256": "45af4955c83db6c8ef0eb4449319018c1ae25ad7b9f125726e40f1754e0a7ef3",
     "schemaSha256": "5e2f322d91fe996a521173ffe7c8d414dbf5aaf2a5388ca31ab66b774bae5420",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },
