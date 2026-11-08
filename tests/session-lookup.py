@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('layout', ROOT / 'tests/installed-layout.py')
 layout = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(layout)
-ADAPTERS = ('pi',)
+ADAPTERS = ('pi', 'omp')
 
 
 class InstalledLookup(unittest.TestCase):
@@ -89,7 +89,11 @@ class TimestampIndex(InstalledLookup):
                 with patch.dict(os.environ, box.env), patch('os.scandir', side_effect=only_cwd):
                     self.assertEqual(module.find_transcript('session-123', '/work/proj'), path)
                     self.assertEqual(len(reads), 1)
-                    self.assertEqual(module.find_transcript('session-123', '/changed'), path)
+                    if name == 'omp':
+                        with patch.object(module, 'encoded_cwds', side_effect=AssertionError('cache hit encoded cwd')):
+                            self.assertEqual(module.find_transcript('session-123', '/changed'), path)
+                    else:
+                        self.assertEqual(module.find_transcript('session-123', '/changed'), path)
                     self.assertIsNone(module.find_transcript('missing', '/work/proj'))
                     self.assertEqual(len(reads), 1)
                     new = self.write(directory / '2026-11-09T00-00-00-000Z_new.jsonl')
@@ -109,6 +113,17 @@ class TimestampIndex(InstalledLookup):
                 self.invoke(box, name, expected=1)
                 self.write(root / '2026-11-08T00-00-00-000Z_session-123.jsonl')
                 self.invoke(box, name)
+
+    def test_omp_home_relative_and_hashed_directories(self):
+        box, _ = self.sandbox('omp')
+        root = box.home / '.omp/agent/sessions'
+        cwd = str(box.home / 'work/my_repo')
+        self.write(root / '-work-my_repo/2026-11-08T00-00-00-000Z_session-123.jsonl')
+        self.invoke(box, 'omp', cwd=cwd)
+        import hashlib
+        digest = hashlib.sha256(os.path.realpath(cwd).encode()).hexdigest()
+        self.write(root / ('home-my_repo-' + digest) / '2026-11-08T00-00-00-000Z_hashed.jsonl')
+        self.invoke(box, 'omp', sid='hashed', cwd=cwd)
 
     def test_cache_corruption_and_unwritable_cache(self):
         box, _ = self.sandbox('pi')

@@ -125,7 +125,7 @@ def timestamp_lookup(adapter, root, sid, directories):
         return cached
     # Only the supplied cwd's known spellings (or an explicit flat root).
     # A cold lookup cannot infer another project's timestamp-prefixed filename.
-    for directory in dict.fromkeys(directories):
+    for directory in dict.fromkeys(directories() if callable(directories) else directories):
         path = index.in_directory(directory, sid, timestamp_session)
         if path:
             return path
