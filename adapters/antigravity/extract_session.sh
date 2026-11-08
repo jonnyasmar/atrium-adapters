@@ -65,41 +65,9 @@ if [[ -z "$SESSION_ID" ]]; then
   exit 10
 fi
 
-TRANSCRIPT=""
-if [[ -n "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]] && [[ -f "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session.jsonl" ]] && [[ -f "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session-id.txt" ]]; then
-  FIXTURE_ID=$(tr -d '[:space:]' < "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session-id.txt")
-  if [[ "$SESSION_ID" == "$FIXTURE_ID" ]]; then
-    TRANSCRIPT="${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session.jsonl"
-  fi
-elif [[ -z "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]]; then
-  AGY_BRAIN="${HOME}/.gemini/antigravity-cli/brain/${SESSION_ID}/.system_generated/logs/transcript.jsonl"
-  if [[ -f "$AGY_BRAIN" ]]; then
-    TRANSCRIPT="$AGY_BRAIN"
-  fi
-  # Fallback: scan known antigravity roots for any path containing
-  # the SESSION_ID (handles future layout changes + cases where the
-  # brain dir is split across roots).
-  if [[ -z "$TRANSCRIPT" ]]; then
-    for ROOT in "${HOME}/.gemini/antigravity-cli" \
-                "${HOME}/.antigravity" \
-                "${HOME}/Library/Application Support/Antigravity"; do
-      [[ -d "$ROOT" ]] || continue
-      CANDIDATE=$(find "$ROOT" -type f \( -name "transcript.jsonl" -o -name "*.jsonl" \) -path "*${SESSION_ID}*" -print -quit 2>/dev/null || true)
-      if [[ -n "$CANDIDATE" ]]; then
-        TRANSCRIPT="$CANDIDATE"
-        break
-      fi
-    done
-  fi
-fi
-
-if [[ -z "$TRANSCRIPT" ]] || [[ ! -f "$TRANSCRIPT" ]]; then
-  echo "extract_session: antigravity transcript not found for $SESSION_ID" >&2
-  exit 1
-fi
-
-exec "${PYTHON[@]}" "$(dirname "$0")/extract_session.py" \
-  --transcript "$TRANSCRIPT" \
+SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
+[[ "$SCRIPT_DIR" != "${BASH_SOURCE[0]}" ]] || SCRIPT_DIR=.
+exec "${PYTHON[@]}" "$SCRIPT_DIR/extract_session.py" \
   --session-id "$SESSION_ID" \
   --adapter antigravity \
   --cwd "$CWD" \

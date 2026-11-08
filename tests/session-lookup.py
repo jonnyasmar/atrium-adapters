@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('layout', ROOT / 'tests/installed-layout.py')
 layout = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(layout)
-ADAPTERS = ('pi', 'omp')
+ADAPTERS = ('pi', 'omp', 'antigravity')
 
 
 class InstalledLookup(unittest.TestCase):
@@ -66,6 +66,19 @@ class InstalledLookup(unittest.TestCase):
                     (box.home / root).mkdir(parents=True)
                 self.invoke(box, name, expected=1)
                 self.assertFalse(marker.exists())
+
+    def test_antigravity_never_lists_and_does_not_prefix_match(self):
+        box, _ = self.sandbox('antigravity')
+        spec = importlib.util.spec_from_file_location('agy_paths', ROOT / 'adapters/antigravity/session_path.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        path = self.write(box.home / '.gemini/antigravity-cli/brain/session-123/.system_generated/logs/transcript.jsonl')
+        with patch.dict(os.environ, box.env), patch('os.scandir', side_effect=AssertionError('tree scan')):
+            self.assertEqual(module.find_transcript('session-123'), path)
+            self.assertIsNone(module.find_transcript('session'))
+            self.assertIsNone(module.find_transcript('../session-123'))
+            path.unlink()
+            self.assertIsNone(module.find_transcript('session-123'))
 
 
 class TimestampIndex(InstalledLookup):
