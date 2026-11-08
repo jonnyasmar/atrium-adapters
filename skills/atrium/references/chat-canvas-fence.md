@@ -248,7 +248,15 @@ Work down this list before assuming the feature is broken:
 - **Nested in an outer fence.** Four-backtick wrappers suppress it deliberately.
 - **Inline artifact rendering is switched off.** It's on by default; the user can turn it off in Settings › Appearance › Chat ("Inline canvases and pages"), and the phone has its own "Inline canvases" switch.
 
-A spec whose JSON never parses is a different failure: you get an error in the artifact frame, not a code block. Use the frame's **Show source** toggle to read back exactly what you emitted.
+A spec whose JSON never parses is a different failure: you get an error in the artifact frame, not a code block. Use the frame's **Show source** toggle to read back exactly what you emitted. A spec that parses but breaks the catalog (a missing or misnamed prop, an unknown component) gets a note in the frame naming the first problem, and atrium tells you on your next turn; fix it in your next canvas.
+
+## Common mistakes
+
+The three slips behind most broken canvases in a week of real chats. The first one hid a new director's very first question.
+
+- **`Text` takes `content`, not `text`.** Heading, Label and Badge take `text`; `Text` takes `content`. atrium 0.364 and later reads a `Text`'s `text` as its `content` (`content` wins when both are given), but older versions don't draw it, so write `content`.
+- **There is no `Ask` component.** A question is the element you mark with `"ask"` beside its `type` (see [Mark each question](#mark-each-question)), usually a `Stack` holding the question's text, its fields and its send buttons. `"type": "Ask"` is an unknown component and draws nothing.
+- **`Text`'s `tone` is `default`, `muted`, `success`, `destructive` or `warning`.** Nothing else: no `info`, no `error`. `warning` draws in atrium 0.364 and later; older versions reject it, so use `muted` or a `Badge` with `variant: "warning"` when in doubt.
 
 ## What NOT to do
 

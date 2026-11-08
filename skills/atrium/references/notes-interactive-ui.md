@@ -285,6 +285,8 @@ Streaming patches are forgiving — you don't have to emit elements in strict de
 
 atrium implements the **full json-render standard catalog** — all 41 components from json-render.dev plus three atrium-specific additions: `Label` (for a11y pairing), `Code` (Prism-highlighted source snippets) and `Html` (a rich HTML visual inside the canvas). Most components map to a corresponding atrium primitive (`Button` wraps `ui/button`, `Switch` wraps `ui/switch`, `Checkbox` wraps `shared/Checkbox`, `Dialog` wraps `ui/dialog`, `DropdownMenu` wraps `ui/dropdown-menu`) so they inherit any future styling updates automatically.
 
+There is no `Ask` component: a question is an element marked with `"ask"` beside its `type` (`chat-canvas-fence.md`, "Mark each question"). A `type` the catalog doesn't list draws nothing.
+
 **Layout & display:**
 
 | Component | Key props |
@@ -295,7 +297,7 @@ atrium implements the **full json-render standard catalog** — all 41 component
 | `Carousel`  | `items: { title?, content? }[]` (scroll-snap row) |
 | `Separator` | `orientation?: "horizontal"\|"vertical"` |
 | `Heading`   | `text: string`, `level?: 1..6` |
-| `Text`      | `content: string`, `tone?: "default"\|"muted"\|"destructive"\|"success"\|"warning"` |
+| `Text`      | `content: string` (not `text`, which Heading, Label and Badge take), `tone?: "default"\|"muted"\|"destructive"\|"success"\|"warning"`. atrium 0.364 and later also reads `text` as `content` and draws `warning`; older versions don't, so write `content` and avoid `warning` there. |
 | `Label`     | `text: string`, `htmlFor?: string` |
 | `Icon`      | `name: string` (Lucide), `size?: number`, `color?: string` |
 | `Image`     | `src?: string`, `alt?: string`, `width?`, `height?` |
