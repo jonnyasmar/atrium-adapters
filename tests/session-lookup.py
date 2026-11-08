@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('layout', ROOT / 'tests/installed-layout.py')
 layout = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(layout)
-ADAPTERS = ('pi', 'omp', 'antigravity')
+ADAPTERS = ('pi', 'omp', 'antigravity', 'codex')
 
 
 class InstalledLookup(unittest.TestCase):
@@ -79,6 +79,40 @@ class InstalledLookup(unittest.TestCase):
             self.assertIsNone(module.find_transcript('../session-123'))
             path.unlink()
             self.assertIsNone(module.find_transcript('session-123'))
+
+    def test_codex_date_fallback_is_bounded_and_registry_is_indexed(self):
+        from datetime import datetime, timezone
+        import uuid
+        box, _ = self.sandbox('codex')
+        home = box.home / 'custom-codex'
+        box.env['CODEX_HOME'] = str(home)
+        stamp = int(datetime(2026, 11, 8, tzinfo=timezone.utc).timestamp() * 1000)
+        sid = str(uuid.UUID(int=(stamp << 80) | (7 << 76) | (2 << 62) | 1))
+        day = home / 'sessions/2026/11/07'
+        path = self.write(day / ('rollout-2026-11-07T23-00-00-' + sid + '.jsonl'))
+        self.write(home / 'sessions/2020/01/01/unrelated.jsonl')
+        spec = importlib.util.spec_from_file_location('codex_paths', ROOT / 'adapters/codex/session_path.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        scandir = os.scandir
+        def bounded(directory):
+            self.assertIn(str(Path(directory).relative_to(home / 'sessions')), ('2026/11/07', '2026/11/08', '2026/11/09'))
+            return scandir(directory)
+        with patch.dict(os.environ, box.env), patch('os.scandir', side_effect=bounded):
+            self.assertEqual(module.find_transcript(sid), path)
+            with patch('os.scandir', side_effect=AssertionError('cached lookup scanned')):
+                self.assertEqual(module.find_transcript(sid), path)
+            path.unlink()
+            self.assertIsNone(module.find_transcript(sid))
+            self.assertIsNone(module.find_transcript('legacy-id-without-index'))
+        # Refuse an unindexed native table instead of silently doing a table scan.
+        with sqlite3.connect(home / 'state_5.sqlite') as conn:
+            conn.execute('create table threads (id text, rollout_path text)')
+            conn.execute('insert into threads values (?, ?)', ('legacy-id', str(self.write(home / 'existing.jsonl'))))
+        self.assertIsNone(module.registry_path(home, 'legacy-id'))
+        with sqlite3.connect(home / 'state_5.sqlite') as conn:
+            conn.execute('create unique index thread_id on threads(id)')
+        self.assertEqual(module.registry_path(home, 'legacy-id'), home / 'existing.jsonl')
 
 
 class TimestampIndex(InstalledLookup):
