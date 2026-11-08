@@ -140,6 +140,30 @@ class InstalledLookup(unittest.TestCase):
                 json.dumps({'type': 'session_meta', 'payload': {'id': sid}}) + '\n')
             self.invoke(box, 'codex', sid=sid)
 
+    def test_opencode_legacy_flat_path_survives_unusable_project_root(self):
+        box, _ = self.sandbox('opencode')
+        box.env.pop('PYTHONPATH')
+        root = box.home / '.local/share/opencode'
+        self.write(root / 'project', 'not a directory')
+        self.write(root / 'storage/session_diff/custom_session-123.json')
+        self.invoke(box, 'opencode')
+
+    def test_opencode_legacy_prefix_fallback_and_cache(self):
+        for directory in ('project/hash/storage/session/info', 'storage/session_diff', 'storage/session/info'):
+            with self.subTest(layout=directory):
+                box, _ = self.sandbox('opencode')
+                guarded = box.env.pop('PYTHONPATH')
+                root = box.home / '.local/share/opencode'
+                path = self.write(root / directory / 'custom_prefix_session-123.json', '{"id":"session-123"}')
+                self.invoke(box, 'opencode')
+                box.env['PYTHONPATH'] = guarded
+                self.invoke(box, 'opencode')
+                path.unlink()
+                self.write(root / directory / 'another_prefix_session-123.json', '{"id":"session-123"}')
+                box.env.pop('PYTHONPATH')
+                self.invoke(box, 'opencode')
+                self.invoke(box, 'opencode', sid='123', expected=1)
+
 
 class SharedIndex(unittest.TestCase):
     def test_atomic_entries_are_scoped_and_stale_paths_are_rejected(self):

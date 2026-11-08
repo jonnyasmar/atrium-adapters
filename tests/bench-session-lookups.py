@@ -20,11 +20,9 @@ import tempfile
 import time
 
 REPO = Path(__file__).resolve().parents[1]
-NAMES = ('pi', 'omp', 'antigravity', 'codex', 'opencode')
+NAMES = ('claude-code', 'codex', 'opencode')
 ROOTS = {
-    'pi': ('.pi/agent/sessions',),
-    'omp': ('.omp/agent/sessions',),
-    'antigravity': ('.gemini/antigravity-cli', '.antigravity', 'Library/Application Support/Antigravity'),
+    'claude-code': ('.claude/projects',),
     'codex': ('.codex/sessions',),
     'opencode': ('.local/share/opencode/project', '.local/share/opencode/storage'),
 }
@@ -48,24 +46,11 @@ def snapshot(source, target):
 
 
 def target_for(name, real_home):
-    if name in ('pi', 'omp'):
-        for project in (real_home / ROOTS[name][0]).iterdir():
-            if not project.is_dir():
-                continue
-            for path in project.glob('*.jsonl'):
-                with path.open() as stream:
-                    for _ in range(6):
-                        line = stream.readline(65536)
-                        try:
-                            cwd = json.loads(line).get('cwd')
-                        except (ValueError, AttributeError):
-                            continue
-                        if cwd:
-                            return path, path.stem.rsplit('_', 1)[-1], cwd
-    elif name == 'antigravity':
-        path = next((real_home / ROOTS[name][0] / 'brain').glob('*/.system_generated/logs/transcript.jsonl'), None)
+    if name == 'claude-code':
+        cwd = str(real_home / 'dev/atrium')
+        path = next((real_home / ROOTS[name][0] / cwd.replace('/', '-')).glob('*.jsonl'), None)
         if path:
-            return path, path.parents[2].name, '/benchmark'
+            return path, path.stem, cwd
     elif name == 'codex':
         path = next((real_home / ROOTS[name][0]).glob('*/*/*/rollout-*.jsonl'), None)
         if path:
@@ -98,7 +83,7 @@ def measure(script, env, sid, cwd, runs, missing=False, cold=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--before', default='1fffc814')
+    parser.add_argument('--before', default='119079b')
     parser.add_argument('--runs', type=int, default=5)
     args = parser.parse_args()
     real_home = Path.home()
@@ -134,9 +119,6 @@ def main():
                 target.write_text('{}\n')
             env = {'HOME': str(home), 'PATH': os.environ['PATH'], 'ATRIUM_DATA_DIR': str(temporary / (name + '-cache')),
                    'PYTHONDONTWRITEBYTECODE': '1'}
-            # Home-relative Omp encoding must use the original directory names.
-            if name == 'omp' and cwd.startswith(str(real_home) + os.sep):
-                cwd = str(home) + cwd[len(str(real_home)):]
             row = {'adapter': name, 'snapshot_directories': dirs, 'snapshot_files': files,
                    'runs': args.runs}
             old = temporary / 'before/adapters' / name / 'extract_session.sh'
@@ -147,6 +129,13 @@ def main():
             missing = sid[:-1] + ('0' if sid[-1] != '0' else '1') if name == 'codex' else 'missing-session'
             row['old_miss'] = measure(old, env, missing, cwd, args.runs, missing=True)
             row['new_miss'] = measure(new, env, missing, cwd, args.runs, missing=True)
+            if name == 'codex':
+                (home / '.codex/state_5.sqlite').unlink()
+            elif name == 'opencode':
+                target.rename(target.with_name('legacy_prefix_' + target.name))
+            if name != 'claude-code':
+                row['new_legacy_cold_hit'] = measure(new, env, sid, cwd, args.runs, cold=True)
+                row['new_legacy_cached_hit'] = measure(new, env, sid, cwd, args.runs)
             print(json.dumps(row), flush=True)
 
 

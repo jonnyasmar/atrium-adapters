@@ -8,6 +8,22 @@ sys.path.insert(0, str(shared))
 from session_lookup import PathIndex, component, fixture
 
 
+def matches_session(base, sid):
+    return base == sid or base == 'ses_' + sid or base.endswith('_' + sid)
+
+
+def legacy_path(root, sid):
+    import glob
+
+    for pattern in ('project/*/storage/session/info/*.json',
+                    'storage/session_diff/*.json', 'storage/session/info/*.json'):
+        for name in glob.glob(str(root / pattern)):
+            path = Path(name)
+            if matches_session(path.stem, sid) and path.is_file():
+                return path
+    return None
+
+
 def find_transcript(sid, cwd=''):
     if not component(sid):
         return None
@@ -20,7 +36,7 @@ def find_transcript(sid, cwd=''):
     if not sid.startswith('ses_'):
         names.append('ses_' + sid + '.json')
     cached = index.get(sid)
-    if cached and cached.name in names:
+    if cached and matches_session(cached.stem, sid):
         return cached
     for directory in (root / 'storage/session/info', root / 'storage/session_diff'):
         for name in names:
@@ -36,9 +52,10 @@ def find_transcript(sid, cwd=''):
                     path = Path(project.path) / 'storage/session/info' / name
                     if path.is_file():
                         return index.put(sid, path)
-    except FileNotFoundError:
+    except OSError:
         pass
-    return None
+    path = legacy_path(root, sid)
+    return index.put(sid, path) if path else None
 
 
 def messages_directory(info):
