@@ -106,28 +106,3 @@ def fixture(sid, suffix='.jsonl'):
         return True, path if pinned == sid and path.is_file() else None
     except OSError:
         return True, None
-
-
-def timestamp_session(filename):
-    if filename.endswith('.jsonl'):
-        return filename[:-6].rsplit('_', 1)[-1]
-    return None
-
-
-def timestamp_lookup(adapter, root, sid, directories):
-    if not component(sid):
-        return None
-    testing, path = fixture(sid)
-    if testing:
-        return path
-    index = PathIndex(adapter, [root])
-    cached = index.get(sid)
-    if cached and timestamp_session(cached.name) == sid:
-        return cached
-    # Only the supplied cwd's known spellings (or an explicit flat root).
-    # A cold lookup cannot infer another project's timestamp-prefixed filename.
-    for directory in dict.fromkeys(directories() if callable(directories) else directories):
-        path = index.in_directory(directory, sid, timestamp_session)
-        if path:
-            return path
-    return None

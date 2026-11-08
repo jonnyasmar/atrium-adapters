@@ -70,25 +70,41 @@ if [[ "$USAGE_MODE" == 1 ]]; then
   exec "${PYTHON[@]}" "$(dirname "$0")/extract_session_usage.py" "${USAGE_ARGS[@]}"
 fi
 
-SCRIPT_DIR="${BASH_SOURCE[0]%/*}"
-[[ "$SCRIPT_DIR" != "${BASH_SOURCE[0]}" ]] || SCRIPT_DIR=.
-exec "${PYTHON[@]}" - "$SCRIPT_DIR" "$SESSION_ID" "$CWD" "$DEPTH" <<'PY'
+# Find transcript
+TRANSCRIPT=""
+if [[ -n "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]] && [[ -f "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session.jsonl" ]] && [[ -f "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session-id.txt" ]]; then
+  FIXTURE_ID=$(tr -d '[:space:]' < "${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session-id.txt")
+  if [[ "$SESSION_ID" == "$FIXTURE_ID" ]]; then
+    TRANSCRIPT="${ATRIUM_TEST_TRANSCRIPT_ROOT}/fixture-session.jsonl"
+  fi
+elif [[ -z "${ATRIUM_TEST_TRANSCRIPT_ROOT:-}" ]]; then
+  ROOT="${PI_CODING_AGENT_SESSION_DIR:-${HOME}/.pi/agent/sessions}"
+  if [[ ! -d "$ROOT" ]]; then
+    echo "extract_session: pi sessions root not found: $ROOT" >&2
+    exit 1
+  fi
+  # Pi files are timestamp-prefixed: `<ISO-timestamp>_<UUID>.jsonl`
+  # under per-cwd dash-encoded subdirs. Match the UUID suffix.
+  CANDIDATE=$(find "$ROOT" -name "*${SESSION_ID}.jsonl" -print -quit 2>/dev/null || true)
+  if [[ -n "$CANDIDATE" ]]; then
+    TRANSCRIPT="$CANDIDATE"
+  fi
+fi
+
+if [[ -z "$TRANSCRIPT" ]] || [[ ! -f "$TRANSCRIPT" ]]; then
+  echo "extract_session: pi transcript not found for $SESSION_ID" >&2
+  exit 1
+fi
+
+# Inline Python (no companion file) — Pi's schema is shallow enough.
+exec "${PYTHON[@]}" - "$TRANSCRIPT" "$SESSION_ID" "$CWD" "$DEPTH" <<'PY'
 import json, os, re, sys
 from datetime import datetime, timezone
 
+transcript = sys.argv[1]
 session_id = sys.argv[2]
 cwd = sys.argv[3]
 depth = sys.argv[4] if len(sys.argv) > 4 else "standard"
-sys.path.insert(0, sys.argv[1])
-from session_path import find_transcript
-try:
-    transcript = find_transcript(session_id, cwd)
-except OSError as exc:
-    print(f"extract_session: IO error: {exc}", file=sys.stderr)
-    sys.exit(3)
-if transcript is None:
-    print(f"extract_session: pi transcript not indexed for {session_id}; supply its original cwd", file=sys.stderr)
-    sys.exit(1)
 
 ANSI = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
 
