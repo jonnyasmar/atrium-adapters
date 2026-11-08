@@ -76,6 +76,11 @@ jobs:
       - name: Validate semantic usage output guard
         run: python3 tests/usage_output_version_test.py
 
+      # atrium installs each adapter as a symlink into .managed/<name>/generations/,
+      # so entrypoints must also start from that layout, not only from the repo tree.
+      - name: Validate adapter entrypoints from the installed symlinked layout
+        run: python3 tests/installed-layout.py
+
       - name: Validate recent-session source metadata
         run: bash tests/list-recent-sessions-source-path.assert.sh
 
