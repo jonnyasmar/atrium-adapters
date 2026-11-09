@@ -48,7 +48,7 @@
         "windows"
       ],
       "official": true,
-      "version": "1.22.9",
+      "version": "1.22.10",
       "minAppVersion": "0.363.0",
       "models": [
         "fable",
