@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "version": "605ad235272563dcf9dff90cda114c4c3bfd25841738ac24ac95dc56a6390c4e",
+  "version": "6344e52aa2cb12c9e265e411740c6a78f276309249a8a763cc89443848862ff0",
   "source": "https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json",
   "license": "MIT",
   "models": {
@@ -1727,6 +1727,22 @@
       "cache_read_input_token_cost": 5e-7,
       "input_cost_per_token": 0.000005,
       "output_cost_per_token": 0.000025
+    },
+    "grok-4.6": {
+      "cache_read_input_token_cost": 5e-7,
+      "cache_read_input_token_cost_above_200k_tokens": 0.000001,
+      "input_cost_per_token": 0.000002,
+      "input_cost_per_token_above_200k_tokens": 0.000004,
+      "output_cost_per_token": 0.000006,
+      "output_cost_per_token_above_200k_tokens": 0.000012
+    },
+    "grok-4.7": {
+      "cache_read_input_token_cost": 5e-7,
+      "cache_read_input_token_cost_above_200k_tokens": 0.000001,
+      "input_cost_per_token": 0.000002,
+      "input_cost_per_token_above_200k_tokens": 0.000004,
+      "output_cost_per_token": 0.000006,
+      "output_cost_per_token_above_200k_tokens": 0.000012
     },
     "kimi-k2-thinking-251104": {
       "input_cost_per_token": 0,
