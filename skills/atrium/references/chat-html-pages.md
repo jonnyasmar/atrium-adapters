@@ -13,7 +13,7 @@ Read this when a custom page is the best way to show something: a diagram, a flo
 ## The flow
 
 1. **Write** a self-contained file, e.g. `/tmp/build-times.html`.
-2. **Check:** `"$ATRIUM_CLI_PATH" html preview /tmp/build-times.html`. It prints the screenshot path(s), the content height, console output and uncaught exceptions. **Look at the PNG with your image tool** before going on. Add `--theme light` (or `--theme dark`) to check the other theme if you used colour, and `--width 390` to check a phone width.
+2. **Check:** `"$ATRIUM_CLI_PATH" html preview /tmp/build-times.html`. It prints the screenshot path(s), the content height, console output and uncaught exceptions. **Look at the PNG with your image tool** before going on. Add `--theme light` (or `--theme dark`) to check the other theme if you used colour, and `--width 390` to check a phone width. A warning that the page is wider than the chat column means it scrolls sideways inline: make it fluid, or see "Pages that can't be fluid" below.
 3. **Publish:** `"$ATRIUM_CLI_PATH" html publish /tmp/build-times.html --title "Build times by crate"`. Publishing refuses a page that throws an uncaught exception or never settles (a busy loop); fix it, or pass `--allow-errors` if the error is expected and harmless. stdout is the fence and nothing else; warnings go to stderr.
 4. **Paste** the printed fence into your reply, exactly as printed:
 
@@ -53,13 +53,22 @@ Defaults are at zero specificity: `html, body` have no margin, a transparent bac
 ## Layout rules
 
 - **Transparent page.** Don't paint `html`/`body`. The page sits on the chat's own surface.
-- **Fluid width.** The page is shown at whatever width the chat column has, from about 360 px on a phone to about 1000 px. No fixed page widths, no horizontal scrolling. Use `max-width` plus percentages, flex or grid.
+- **Fluid width.** The page is shown at whatever width the chat column has, from about 360 px on a phone to about 1000 px. No fixed page widths, no horizontal scrolling. Use `max-width` plus percentages, flex or grid. `preview` and `publish` warn when the content is wider than the column.
 - **Fixed heights for charts.** Give SVG/canvas charts an explicit pixel height (`height: 240px`), not one derived from the viewport.
 - **No `100vh` / `100dvh`.** The frame sizes itself to your content; viewport-relative heights have nothing sensible to resolve against.
 - **No outer card or banner.** The transcript already frames the page with its title.
 - **Self-contained is best.** Inline CSS and JS. The network is open, so a CDN script or font works, but the page renders without it on a slow connection only if you keep the essentials inline.
 - **Local images:** reference them by absolute path (`<img src="/Users/me/chart.png">`) or relative to the HTML file; `publish` inlines them. Images over 2 MiB and non-image files are refused.
 - **Size cap:** 4 MiB per page after inlining; titles up to 200 characters.
+
+## Pages that can't be fluid
+
+Some pages have a width of their own: a desktop-app mockup, a wide dashboard, a 1280 px layout. Squeezed into the chat column they scroll sideways, and the user has to pan inside the transcript to read them. For those, do both:
+
+1. **Publish it inline anyway**, as a preview the user sees in place.
+2. **Also open it full size in your browser:** `"$ATRIUM_CLI_PATH" html open /tmp/mockup.html` (or the hash from the fence). It opens where `atrium browser open` would put the page: a director's own browser beside its chat, otherwise your room. From a delegated run, add `--show` to put it in your director's browser. The page keeps the user's theme and stays interactive. `--title "…"` names the browser tab.
+
+The user can do the same from the transcript: every inline page has an **Open in browser** button beside Copy.
 
 ## Interaction
 

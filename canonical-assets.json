@@ -40,7 +40,7 @@
       "remotePath": "skills/atrium/references/chat-html-pages.md",
       "target": "adapter-skill-reference",
       "destName": "chat-html-pages.md",
-      "sha256": "fd4e5612f6991f5f304ce3fda11fac49a8fd26ac9cb6449ca00bd4d259ab0f73"
+      "sha256": "27be200a753d66a1438a0a00d8b8d9fe25f99c5c980b0eafccc0ddb883bf5b6f"
     },
     {
       "id": "atrium-skill-capture",
