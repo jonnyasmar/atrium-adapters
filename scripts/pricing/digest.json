@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "version": "4b95886a06a1f0c535f835571f9692fd28c6f0ef54d256b1bc48982f7203da26",
+  "version": "605ad235272563dcf9dff90cda114c4c3bfd25841738ac24ac95dc56a6390c4e",
   "source": "https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json",
   "license": "MIT",
   "models": {
@@ -25,6 +25,17 @@
       "input_cost_per_token_batches": 0.000005,
       "output_cost_per_token": 0.00005,
       "output_cost_per_token_batches": 0.000025
+    },
+    "claude-fable-5-2": {
+      "cache_creation_input_token_cost": 0.00001,
+      "cache_creation_input_token_cost_above_1hr": 0.000016,
+      "cache_creation_input_token_cost_batches": 0.000005,
+      "cache_read_input_token_cost": 2e-7,
+      "cache_read_input_token_cost_batches": 1e-7,
+      "input_cost_per_token": 0.000008,
+      "input_cost_per_token_batches": 0.000004,
+      "output_cost_per_token": 0.00004,
+      "output_cost_per_token_batches": 0.00002
     },
     "claude-haiku-4-5": {
       "cache_creation_input_token_cost": 0.00000125,

@@ -48,7 +48,7 @@
         "windows"
       ],
       "official": true,
-      "version": "1.22.9",
+      "version": "1.22.10",
       "minAppVersion": "0.363.0",
       "models": [
         "fable",
@@ -71,7 +71,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "df334d8c34c2c5625399d596b93974a354abe8fc75a2445b3e89b82bdd7ec2f9",
+      "contentSha256": "550b2f17fe554597cd7825fbcd1a0f39e690c9551b3be2945f00b5fea21f7316",
       "maxAppVersion": null
     },
     {
@@ -451,7 +451,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "7e746d335243717055fd6fe6f1b68da6b3d3e08a",
+    "commit": "293502a209f0c82b0b283ff185ea5abee10dffe9",
     "sharedSha256": "45af4955c83db6c8ef0eb4449319018c1ae25ad7b9f125726e40f1754e0a7ef3",
     "schemaSha256": "5e2f322d91fe996a521173ffe7c8d414dbf5aaf2a5388ca31ab66b774bae5420",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
