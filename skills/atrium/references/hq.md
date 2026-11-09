@@ -229,19 +229,24 @@ by the pin (`memory show <id>`).
 ## Your browser
 
 ```bash
-"$ATRIUM_CLI_PATH" browser open <url> [--focus]
+"$ATRIUM_CLI_PATH" browser open <url> [--focus | --background]
 "$ATRIUM_CLI_PATH" browser tabs [--json]
 "$ATRIUM_CLI_PATH" browser navigate <subtab|mine> <url>
-"$ATRIUM_CLI_PATH" browser open <url> --show [--focus]
+"$ATRIUM_CLI_PATH" browser open <url> --show [--focus | --background]
 ```
 
-A director's `browser open` puts the page in its own browser, which shows beside its chat in HQ: a subtab, or the subtab already showing that URL. It never takes the owner's keyboard unless `--focus` is passed, which also brings HQ to that page. `mine` is the subtab showing; `browser tabs` lists every subtab (id, title, URL, who showed it), and any browser verb takes a subtab id. `pane close <subtab>` closes one.
+A director's `browser open` puts the page in its own browser, which shows beside its chat in HQ: a subtab, or the subtab already showing that URL. The page comes to the front there (the dock turns to Browser) without taking the owner's keyboard. Pick by who wants the page:
+
+- The owner asked to see it: the default. Add `--focus`, which also brings HQ to the page and gives it the keyboard, only if they're about to use it.
+- You're browsing for your own work: `--background`. The page waits behind the one showing, marked for the owner.
+
+`mine` is the subtab showing; `browser tabs` lists every subtab (id, title, URL, who showed it), and any browser verb takes a subtab id. `pane close <subtab>` closes one.
 
 **When the owner takes over, reads still work.** `tabs`, `annotations list`, `snapshot`, `screenshot`, `get`, `is`, `find`, `console`, cookie reads and ordinary `wait` conditions remain available without taking focus or moving the page. Acting commands wait for **Give back**: navigation, clicks, typing, filling (including `fill-login`), key presses, selection, scrolling, cookie deletion, and `annotations resolve` / `delete`. `annotations reply` keeps working: it only adds to a comment's thread and never touches the page. `eval`, raw `cdp` and `wait --function` also count as acting because they run arbitrary code. A blocked command returns `browser_owner_driving` with the read-only alternatives; atrium tells blocked agents when the owner gives the browser back.
 
 Your browser uses the owner's shared profile, so it's signed in wherever the owner is. Treat every page there as the owner's own session: read and act with that care, and ask before anything that sends, buys or changes something as them.
 
-`--show` is for a worker or staff run: the page opens in its director's browser as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Use it to demo a UI change; navigate and close only your own subtab.
+`--show` is for a worker or staff run: the page opens in front in its director's browser (behind, with `--background`) as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Use it to demo a UI change; navigate and close only your own subtab.
 
 ## Secrets and the browser
 
