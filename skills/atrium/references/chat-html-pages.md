@@ -70,6 +70,10 @@ Some pages have a width of their own: a desktop-app mockup, a wide dashboard, a 
 
 The user can do the same from the transcript: every inline page has an **Open in browser** button beside Copy.
 
+## Mocking an existing app
+
+When a page mocks an existing app's UI, in atrium or anywhere else, the theme tokens give you its colours, not its look. A sketch built from tokens alone reads as a different app, and the reader can't tell your proposal from your redrawing. Start from screenshots of the real surface and from the app's real component styles: resolve their classes, sizes, spacing, radii, fonts and icons into the page's CSS. If the project keeps a mock kit, a page of its real components already resolved, copy from that. Keep every part that already exists exactly as it is, and change only what the mock proposes. Before you publish, compare the page with a screenshot of the real surface at the same size; the unchanged parts should be indistinguishable from it. Mark what's new with numbered callouts beside the UI, not by styling the new parts differently.
+
 ## Interaction
 
 Pages can be interactive. On desktop the page shows as a snapshot until the user clicks it; then it runs live. On the phone, tapping the card opens it full screen.
