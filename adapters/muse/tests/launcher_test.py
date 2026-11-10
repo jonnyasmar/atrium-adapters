@@ -32,6 +32,8 @@ class WonderLauncherTests(unittest.TestCase):
     def test_efforts_follow_model_family(self):
         models = {row["modelId"]: row for row in self.catalog["models"]}
         for choice in self.options["model"]["choices"]:
+            if "efforts" not in choice:
+                continue  # no captured model/list yet (muse-ember-1.0): launcher falls back to the global tiers
             model_id = choice["value"].removesuffix("-contributor")
             with self.subTest(model=choice["value"]):
                 self.assertEqual(choice["efforts"], models[model_id]["variants"])
