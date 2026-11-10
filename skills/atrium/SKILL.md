@@ -160,6 +160,9 @@ The user keeps API keys, env vars and logins in atrium. You use them by name and
 - `secret request <NAME> --kind env|login|secret --why "<one line>"` — asks the user for one you don't have. A login adds `--site <domain>`. A card goes up in your chat and on the user's phone, and the command **returns at once: end your turn.** If you already have it, it answers `granted` right away.
 - `secret run --env <NAME> [--env VAR=NAME] -- <command> [args]` — runs a command with the secret in its environment. Non-interactive only (no stdin, no TTY), so not for tools that prompt. Its output comes back with each value replaced by `[secret:NAME]`, and the exit status is the command's.
 - `browser fill-login <pane-id> <login> [--submit]` — types a saved login into the page's sign-in form with real key events: only on the login's own site, over https, and not on a page you ran `eval`, `cdp` or `wait --function` on since it loaded (reload it first). `--otp` also types the code of a 1Password login. Password fields can't be read back.
+- `secret browse [<words>] [--site <domain>]` — the user's 1Password items by title, vault and site (never usernames or values), so you can ask for the right login by name: `secret request <NAME> --kind login --site <domain>` naming the item in `--why`.
+- `secret grant <NAME> --to <agent-slug|pane:ID> [--once | --expires <s>] --why "<one line>"` — lets another agent use a secret you hold, once or until revoked. Only what you hold, never to yourself or the agent you work for, never wider or longer than your own access; the user sees every grant. `secret grants` lists yours; `secret revoke <grant-id>` ends one you made.
+- `secret rejected <NAME> [--why "<one line>"]` — when a secret you used didn't work (a sign-in refused the password, an API refused the key). One from 1Password is read again, with the user's approval when needed: try again if it says it changed; if it says 1Password has the same value, tell the user and stop retrying. Report once; repeats change nothing.
 - `browser hand-off "<what the user should do>" --pane <pane-id>` — for a step only the user can take: a login you don't have, a 2FA code, a CAPTCHA. **Returns at once: end your turn**, and wait until it's done before acting on that page. Read-only access remains available. `--done-when-url <substring>` finishes it as soon as the page reaches that address.
 - An HQ director's own browser is `mine` (the subtab it shows), accepted wherever a browser verb takes a pane id (`browser fill-login mine <login>`; `browser hand-off` defaults to it for a director). Everyone else names a pane.
 
@@ -197,6 +200,23 @@ An atrium HQ director, or a staff member on a run HQ delegated to it, gets atriu
 "$ATRIUM_CLI_PATH" agent message <agent-id-prefix> --no-reply \
   "Heads up: I'm refactoring rowMediaMeasurement.ts, don't edit it for now."
 ```
+
+## Usage-aware work
+
+Read the director pulse's cached limits before pacing work. For the latest recorded
+account readings, use `usage query --source quota --measure latest --by account
+--split window`; check freshness in the result. `usedPct` remains the historical
+peak, not the current reading. Unknown or stale limits are not spare capacity.
+
+Worker report comments and delegation reports carry a `Usage:` line when the
+run's spend could be read: estimated API-equivalent dollars, output, cache writes,
+cache reads, and fresh input. An absent line means spend is unknown, not zero.
+History is queryable with
+`usage query --source spend --measure apiValue --by run`; `run`, `size`, `state`,
+`agent`, and `model` are available dimensions/filters (see `usage query --help`).
+Attribution follows request timestamps through the run's pane segments, including
+resumes and linked subagents. Dollars are API-price estimates, not subscription
+charges or a share of a subscription limit.
 
 ## Task workflow
 
