@@ -1,8 +1,8 @@
 # HTML pages in chat
 
-Read this when a custom page is the best way to show something: a diagram, a flow, a timeline, a mockup, a custom chart, an animation — anything where full control of layout and drawing makes a better visual than canvas components. You write an HTML file, check it, publish it, and paste the short fence that publishing prints. The chat transcript then shows the page inline in the user's own theme, on the Mac and on the phone.
+Read this when a custom page is the best way to show something: a diagram, a flow, a timeline, a small component, a custom chart, an animation — anything where full control of layout and drawing makes a better visual than canvas components. You write an HTML file, check it, publish it, and paste the short fence that publishing prints. The chat transcript then shows the page inline in the user's own theme, on the Mac and on the phone. A mock of a whole screen or app is the exception: it opens in the browser instead (see "Inline, or open in the browser").
 
-**Choosing the medium.** Pick whatever makes the best visual for this content; neither is the default. A ` ```canvas ` fence streams as you write and is native on every device: strong for metrics, standard bar and line graphs, tables, tabs, and anything that asks the user for input (choices, forms, values that come back to you). A page gives you full control: custom diagrams and charts, timelines, mockups, annotated layouts, animation. Use both in one reply when that helps. Either way, lean toward showing: when an answer has shape, a visual beats a paragraph.
+**Choosing the medium.** Pick whatever makes the best visual for this content; neither is the default. A ` ```canvas ` fence streams as you write and is native on every device: strong for metrics, standard bar and line graphs, tables, tabs, and anything that asks the user for input (choices, forms, values that come back to you). A page gives you full control: custom diagrams and charts, timelines, small components, annotated layouts, animation. Use both in one reply when that helps. Either way, lean toward showing: when an answer has shape, a visual beats a paragraph.
 
 **Inside a canvas:** a published page can also sit in a canvas as an `Html` block (`{"type": "Html", "props": {"page": "<hash>"}}`), framed by native components that ask the questions. See "HTML inside a canvas" in `chat-canvas-fence.md`.
 
@@ -13,7 +13,7 @@ Read this when a custom page is the best way to show something: a diagram, a flo
 ## The flow
 
 1. **Write** a self-contained file, e.g. `/tmp/build-times.html`.
-2. **Check:** `"$ATRIUM_CLI_PATH" html preview /tmp/build-times.html`. It prints the screenshot path(s), the content height, console output and uncaught exceptions. **Look at the PNG with your image tool** before going on. Add `--theme light` (or `--theme dark`) to check the other theme if you used colour, and `--width 390` to check a phone width. A warning that the page is wider than the chat column means it scrolls sideways inline: make it fluid, or see "Pages that can't be fluid" below.
+2. **Check:** `"$ATRIUM_CLI_PATH" html preview /tmp/build-times.html`. It prints the screenshot path(s), the content height, console output and uncaught exceptions. **Look at the PNG with your image tool** before going on. Add `--theme light` (or `--theme dark`) to check the other theme if you used colour, and `--width 390` to check a phone width. A warning that the page is wider than the chat column means it scrolls sideways inline: make it fluid, or open it in the browser instead (see "Inline, or open in the browser").
 3. **Publish:** `"$ATRIUM_CLI_PATH" html publish /tmp/build-times.html --title "Build times by crate"`. Publishing refuses a page that throws an uncaught exception or never settles (a busy loop); fix it, or pass `--allow-errors` if the error is expected and harmless. stdout is the fence and nothing else; warnings go to stderr.
 4. **Paste** the printed fence into your reply, exactly as printed:
 
@@ -61,14 +61,15 @@ Defaults are at zero specificity: `html, body` have no margin, a transparent bac
 - **Local images:** reference them by absolute path (`<img src="/Users/me/chart.png">`) or relative to the HTML file; `publish` inlines them. Images over 2 MiB and non-image files are refused.
 - **Size cap:** 4 MiB per page after inlining; titles up to 200 characters.
 
-## Pages that can't be fluid
+## Inline, or open in the browser
 
-Some pages have a width of their own: a desktop-app mockup, a wide dashboard, a 1280 px layout. Squeezed into the chat column they scroll sideways, and the user has to pan inside the transcript to read them. For those, do both:
+Decide by what the page *is*, not by its width.
 
-1. **Publish it inline anyway**, as a preview the user sees in place.
-2. **Also open it full size in your browser:** `"$ATRIUM_CLI_PATH" html open /tmp/mockup.html` (or the hash from the fence). It opens where `atrium browser open` would put the page: a director's own browser beside its chat, otherwise your room. From a delegated run, add `--show` to put it in your director's browser. The page keeps the user's theme and stays interactive. `--title "…"` names the browser tab.
+- **Inline in chat:** a visual that reads well in a chat column at a glance: a diagram, a chart, a timeline, a small component.
+- **Open in the browser:** a mock or prototype of a whole screen or app, or anything the reader will explore (click through, scroll, resize). That includes a mock that is fluid enough to fit; the transcript is the wrong place to explore it, and a page with a width of its own (a 1280 px layout, a wide dashboard) scrolls sideways there. Skip steps 3 and 4 and open it full size: `"$ATRIUM_CLI_PATH" html open /tmp/mockup.html` (or a page hash). It opens where `atrium browser open` would put the page: a director's own browser beside its chat, otherwise your room. From a delegated run, add `--show` to put it in your director's browser. The page keeps the user's theme and stays interactive. `--title "…"` names the browser tab. In chat, say in one line that it's open and what to try; don't paste the inline fence for it.
+- **A director relaying a worker's mock:** open it with `"$ATRIUM_CLI_PATH" html open <hash>` (the hash is in the fence the worker printed) instead of pasting that fence.
 
-The user can do the same from the transcript: every inline page has an **Open in browser** button beside Copy.
+Every inline page also has an **Open in browser** button beside Copy, so the user can pop out any page you did put inline.
 
 ## Mocking an existing app
 
