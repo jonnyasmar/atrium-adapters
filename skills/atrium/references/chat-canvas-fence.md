@@ -104,7 +104,7 @@ Either way its value is that it costs the user nothing — no pane appears, no f
 
 **Reach for plain markdown** when markdown can already carry the shape — prose, a plain table, a code block, a single image. Read-only is *not* the test: a chart is read-only and still belongs in a canvas. The test is whether anything is lost in the translation. A `Card` full of `Text` is markdown with extra steps.
 
-**Reach for an HTML page** (`chat-html-pages.md`) when a custom page would make a better visual than the catalog's components — an architecture or flow diagram, a timeline, a UI mockup, a scatter plot or heatmap, an annotated layout, anything animated. Neither medium is the default: pick whichever shows this content best, and use both in one reply when that helps.
+**Reach for an HTML page** (`chat-html-pages.md`) when a custom page would make a better visual than the catalog's components — an architecture or flow diagram, a timeline, a small UI component, a scatter plot or heatmap, an annotated layout, anything animated. Neither medium is the default: pick whichever shows this content best, and use both in one reply when that helps. A mock of a whole screen or app is neither: it opens in the browser (`chat-html-pages.md`, "Inline, or open in the browser").
 
 The failure mode in each direction: a fence where a note belonged leaves the artifact stranded in a transcript nobody scrolls back to, and gone when the pane closes; a note where a fence belonged litters their workspace with panes and files they have to clean up.
 
@@ -129,7 +129,8 @@ The failure mode in each direction: a fence where a note belonged leaves the art
 | A "form" with one yes/no question | **markdown** | Just ask. A canvas for a question you could type is ceremony |
 | How a request flows through the daemon, the sidecar and the app | **HTML page** | A diagram with arrows and lanes; the catalog has no diagram component |
 | The last month of releases as a timeline | **HTML page** | A custom timeline reads better than a table of dates |
-| A mockup of the settings screen you're proposing | **HTML page** | Layout is the point; build it with the theme tokens so it looks native |
+| A new button or card you're proposing | **HTML page** | Layout is the point; build it with the theme tokens so it looks native |
+| A mock of the whole settings screen you're proposing | **`atrium html open`**, not inline | A full screen to explore needs room the chat column doesn't have; say in one line that it's open |
 
 ## Write it so it streams well
 

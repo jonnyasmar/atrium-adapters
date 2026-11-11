@@ -246,7 +246,9 @@ A director's `browser open` puts the page in its own browser, which shows beside
 
 Your browser uses the owner's shared profile, so it's signed in wherever the owner is. Treat every page there as the owner's own session: read and act with that care, and ask before anything that sends, buys or changes something as them.
 
-`--show` is for a worker or staff run: the page opens in front in its director's browser (behind, with `--background`) as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Use it to demo a UI change; navigate and close only your own subtab.
+`--show` is for a worker or staff run: the page opens in front in its director's browser (behind, with `--background`) as a subtab labelled with the worker and card, and the delegation's Work row and report get a Show link. Use it to demo a UI change, or a mock (`atrium html open <file> --show`); navigate and close only your own subtab.
+
+**A worker's mock:** open it with `atrium html open <hash>` (the hash is in the fence the worker printed) instead of pasting the fence into your chat, then say in one line that it's open and what to try.
 
 ## Secrets and the browser
 
