@@ -48,6 +48,7 @@ cwd = sys.argv[1]
 sessions_dir = sys.argv[2]
 db_path = sys.argv[3]
 sessions = []
+registry_answered = False
 
 VERBATIM = '\\\\?\\'
 VERBATIM_UNC = '\\\\?\\UNC\\'
@@ -153,11 +154,15 @@ if os.path.isfile(db_path):
                     'lastActive': datetime.fromtimestamp(activity_ms / 1000, timezone.utc).isoformat().replace('+00:00', 'Z'),
                     'sourcePath': plain_spelling(source_path),
                 })
+            registry_answered = True
         conn.close()
     except (OSError, sqlite3.Error, ValueError, TypeError):
         sessions = []
+        registry_answered = False
 
-if sessions:
+# A compatible registry is authoritative, including zero eligible sessions.
+# Falling back here scans the entire rollout archive and revives excluded rows.
+if registry_answered:
     print(json.dumps({'sessions': sessions}))
     raise SystemExit(0)
 
@@ -231,6 +236,9 @@ if os.path.exists(history_path) and sessions:
 
 # Sort by lastActive descending, limit to 10
 sessions.sort(key=lambda s: s.get('lastActive', ''), reverse=True)
+if not sessions and os.path.isfile(db_path):
+    # No modern registry answer or rollout match: try the legacy SQLite shape.
+    raise SystemExit(1)
 print(json.dumps({'sessions': sessions[:10]}))
 PY
 }
@@ -241,7 +249,7 @@ if [ -d "$SESSIONS_DIR" ] || [ -f "$DB_PATH" ]; then
     # A failing interpreter must fall through to Strategy 2, not abort the
     # script under `set -e` with nothing on stdout.
     RESULT="$(list_with_python 2>/dev/null)" || RESULT=""
-    if [ -n "$RESULT" ] && [ "$RESULT" != '{"sessions": []}' ]; then
+    if [ -n "$RESULT" ]; then
       echo "$RESULT"
       exit 0
     fi
