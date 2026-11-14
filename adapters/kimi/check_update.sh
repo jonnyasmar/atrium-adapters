@@ -35,10 +35,13 @@ installed_output="$("$KIMI_BIN" --version 2>&1)" || json_error "failed to determ
 installed_version="$(extract_version "$installed_output")" || true
 [[ -n "$installed_version" ]] || json_error "failed to parse installed Kimi version"
 
-registry_json="$(curl -fsS --connect-timeout 2 --max-time 5 'https://registry.npmjs.org/-/package/@moonshot-ai%2Fkimi-code/dist-tags' 2>/dev/null)" \
+# The native installer's channel, which updateCommand installs from. npm's
+# dist-tag can run ahead of it (2.6.2 on npm while install.ps1 served 2.5.3),
+# and an update that cannot reach the advertised version is offered forever.
+latest_output="$(curl -fsSL --connect-timeout 2 --max-time 5 'https://code.kimi.com/kimi-code/latest' 2>/dev/null)" \
   || json_error "failed to fetch latest Kimi version"
-latest_version="$(printf '%s' "$registry_json" | jq -er '.latest | select(type == "string" and length > 0)' 2>/dev/null)" \
-  || json_error "failed to parse latest Kimi version"
+latest_version="$(extract_version "$latest_output")" || true
+[[ -n "$latest_version" ]] || json_error "failed to parse latest Kimi version"
 
 update_available=false
 if version_is_newer "$installed_version" "$latest_version"; then
