@@ -27,7 +27,16 @@ emit_error() {
 
 # --- installed -------------------------------------------------------------
 INSTALLED=""
-for marker in "$HOME/.local/bin/.muse-version" "${MUSE_INSTALL_DIR:-}/.muse-version"; do
+markers=("$HOME/.local/bin/.muse-version" "${MUSE_INSTALL_DIR:-}/.muse-version")
+case "$(uname -s)" in
+  # install.ps1's launcher home: $MUSE_INSTALL_DIR, else %LOCALAPPDATA%\Programs\muse.
+  # A ~/.local/bin marker here would be a POSIX launcher Windows never runs, and
+  # `command -v muse` below cannot see the muse.cmd shim.
+  MINGW*|MSYS*|CYGWIN*)
+    markers=("${MUSE_INSTALL_DIR:-}/.muse-version" "${LOCALAPPDATA:-}/Programs/muse/.muse-version")
+    ;;
+esac
+for marker in "${markers[@]}"; do
   if [ -n "$marker" ] && [ -f "$marker" ]; then
     INSTALLED="$(tr -d '[:space:]' <"$marker")"
     [ -n "$INSTALLED" ] && break
