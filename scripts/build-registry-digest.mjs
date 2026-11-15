@@ -9,15 +9,22 @@
 //   node scripts/build-registry-digest.mjs                 # crawl the registry
 //   node scripts/build-registry-digest.mjs --from <dir>    # build from saved pages
 //   node scripts/build-registry-digest.mjs --out <file>    # default connectors/registry-digest.ndjson.gz
+//   node scripts/build-registry-digest.mjs --listings-only # refresh the curated lines, keep the servers
 //
 // The first line is a header ({schemaVersion, generatedAt, registry,
-// servers}); each line after it is {"server": {...}}. atrium classifies,
-// ranks and collapses near-duplicates itself when it reads the file.
+// servers, listings, vendors}); each line after it is {"server": {...}},
+// then one {"listing": {...}} per entry of connectors/official-listings.json
+// (official servers the registry doesn't list), one {"vendor": {...}} per
+// entry of connectors/vendors.json (who owns which product names), and one
+// {"genericWords": [...]} (words no domain's name makes a brand). A build that
+// predates them reads no `server` in those lines and skips them. atrium
+// classifies, ranks and collapses near-duplicates itself when it reads the
+// file.
 
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 
 const REGISTRY = "https://registry.modelcontextprotocol.io";
 const LIST = "/v0.1/servers";
@@ -34,6 +41,7 @@ const option = (name) => {
 };
 const out = resolve(option("--out") ?? join(root, "connectors/registry-digest.ndjson.gz"));
 const from = option("--from");
+const listingsOnly = args.includes("--listings-only");
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 // A link a client may open or the daemon may fetch: https, with a host and no
@@ -161,29 +169,73 @@ function slim(server) {
   });
 }
 
-const servers = new Map();
-let read = 0;
-for await (const page of from ? saved(from) : crawl()) {
-  for (const entry of page.servers ?? []) {
-    read += 1;
-    const status = entry._meta?.["io.modelcontextprotocol.registry/official"]?.status ?? "active";
-    const name = entry.server?.name;
-    if (status !== "active" || typeof name !== "string" || !name.includes("/")) continue;
-    servers.set(name, slim(entry.server));
-  }
-}
+// The official listings (check-schemas.py validates the file itself), as
+// the lines atrium reads: the server as the registry would hold it, and what
+// atrium shows beside it.
+const listingLines = JSON.parse(readFileSync(join(root, "connectors/official-listings.json"), "utf8"))
+  .listings.map((listing) =>
+    JSON.stringify({
+      listing: compact({
+        server: slim(listing.server),
+        vendor: listing.vendor,
+        category: listing.category,
+        status: listing.status,
+        docsUrl: https(listing.docsUrl),
+        why: listing.why,
+        owns: listing.owns,
+      }),
+    }),
+  );
 
-const names = [...servers.keys()].sort();
-const header = {
-  schemaVersion: 1,
-  generatedAt: new Date().toISOString(),
-  registry: REGISTRY,
-  servers: names.length,
+// The vendors as the index reads them: their sources stay in the file.
+const vendorsDocument = JSON.parse(readFileSync(join(root, "connectors/vendors.json"), "utf8"));
+const vendorLines = vendorsDocument.vendors.map((vendor) =>
+  JSON.stringify({
+    vendor: compact({
+      owns: vendor.owns,
+      roots: vendor.roots.map((item) => item.root),
+      searchedAs: vendor.searchedAs,
+      endpoints: vendor.endpoints?.map((item) => item.url),
+    }),
+  }),
+);
+const genericLine = JSON.stringify({ genericWords: vendorsDocument.genericWords });
+
+let header;
+let serverLines;
+let read = 0;
+if (listingsOnly) {
+  // The kept digest's servers as they are; only its listings are replaced.
+  const [first, ...rest] = gunzipSync(readFileSync(out)).toString("utf8").split("\n");
+  header = JSON.parse(first);
+  serverLines = rest.filter((line) => line.startsWith('{"server":'));
+  read = serverLines.length;
+} else {
+  const servers = new Map();
+  for await (const page of from ? saved(from) : crawl()) {
+    for (const entry of page.servers ?? []) {
+      read += 1;
+      const status = entry._meta?.["io.modelcontextprotocol.registry/official"]?.status ?? "active";
+      const name = entry.server?.name;
+      if (status !== "active" || typeof name !== "string" || !name.includes("/")) continue;
+      servers.set(name, slim(entry.server));
+    }
+  }
+  const names = [...servers.keys()].sort();
+  header = { schemaVersion: 1, generatedAt: new Date().toISOString(), registry: REGISTRY };
+  serverLines = names.map((name) => JSON.stringify({ server: servers.get(name) }));
+}
+header = {
+  ...header,
+  servers: serverLines.length,
+  listings: listingLines.length,
+  vendors: vendorLines.length,
 };
-const lines = [JSON.stringify(header), ...names.map((name) => JSON.stringify({ server: servers.get(name) }))];
+
+const lines = [JSON.stringify(header), ...serverLines, ...listingLines, ...vendorLines, genericLine];
 const body = Buffer.from(`${lines.join("\n")}\n`, "utf8");
 const gz = gzipSync(body, { level: 9 });
 writeFileSync(out, gz);
 console.log(
-  `✓ ${names.length} servers (of ${read} read) → ${out}: ${(body.length / 1e6).toFixed(1)} MB, ${(gz.length / 1e6).toFixed(1)} MB gzipped`,
+  `✓ ${serverLines.length} servers (of ${read} read), ${listingLines.length} listings and ${vendorLines.length} vendors → ${out}: ${(body.length / 1e6).toFixed(1)} MB, ${(gz.length / 1e6).toFixed(1)} MB gzipped`,
 );

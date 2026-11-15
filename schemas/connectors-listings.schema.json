@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "atrium official connector listings",
+  "description": "Official MCP servers that the MCP Registry doesn't list, each confirmed from its vendor's own documentation. scripts/build-registry-digest.mjs carries them in the registry digest as {\"listing\": …} lines, which atrium indexes as Official and earlier builds skip. A listing is lighter than a catalog preset: atrium hasn't set up its sign-in, and when atrium can't add it yet, `why` says so.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "updatedAt", "listings"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "updatedAt": { "$ref": "#/$defs/date" },
+    "listings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/listing" }
+    }
+  },
+  "$defs": {
+    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "httpsUrl": { "type": "string", "pattern": "^https://[^/@\\s]+(/\\S*)?$" },
+    "listing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "vendor", "category", "docsUrl", "server", "verified"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "vendor": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who publishes it, as atrium shows it beside the name."
+        },
+        "category": {
+          "enum": ["developer", "productivity", "data", "docs", "design", "finance", "communication", "local", "other"]
+        },
+        "status": {
+          "enum": ["ga", "beta", "preview"],
+          "description": "The vendor's own word for its launch stage; left out when the vendor doesn't say."
+        },
+        "docsUrl": { "$ref": "#/$defs/httpsUrl" },
+        "owns": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9]{2,}$" },
+          "description": "The product words this vendor owns, as reviewed: atrium never calls another publisher's server named for one Official. Each must be a word of the listing's title or server name, or two or three adjacent title words joined. [] claims none. Left out, the listing claims its domain's brand only when its whole title spells exactly that brand, with four letters or more."
+        },
+        "why": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Present only when atrium can't add it yet: why, as a clause atrium shows after \"atrium can't add it yet:\"."
+        },
+        "server": { "$ref": "#/$defs/server" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "title", "description", "websiteUrl", "remotes"],
+      "description": "The server as the MCP Registry would hold it. `name` is the reverse-DNS of the endpoint's host under its first label (`drivemcp.googleapis.com` → `com.googleapis.drivemcp`), then `/mcp`, the way the vendor's registry entries are named.",
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+/[a-z0-9._-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "websiteUrl": { "$ref": "#/$defs/httpsUrl" },
+        "remotes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "url"],
+            "properties": {
+              "type": { "const": "streamable-http" },
+              "url": { "$ref": "#/$defs/httpsUrl" }
+            }
+          }
+        }
+      }
+    },
+    "verified": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "sources", "checks", "mcp"],
+      "properties": {
+        "date": { "$ref": "#/$defs/date" },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/httpsUrl" },
+          "description": "The vendor's own pages that document the endpoint."
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "mcp": {
+          "type": "object",
+          "description": "scripts/probe-connector.py's `mcp` object, as it printed it."
+        },
+        "oauth": {
+          "type": "object",
+          "description": "scripts/probe-connector.py's `oauth` object, when the probe found one."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "atrium connector vendors",
+  "description": "Who owns which product names, for atrium's Official tier. scripts/build-registry-digest.mjs carries each vendor in the registry digest as a {\"vendor\": \u2026} line and the generic words as one {\"genericWords\": \u2026} line; earlier builds skip both. A server named for a word a vendor owns is Official only when that vendor published it from one of its roots.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "updatedAt",
+    "genericWords",
+    "vendors"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "updatedAt": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "genericWords": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]{2,}$"
+      },
+      "description": "Words no registry domain's name makes a brand: a reviewed core (ai, api, app, \u2026) plus the everyday words registry domains are named for, which scripts/refresh-generic-words.py recomputes from the digest. A vendor's, a listing's or a preset's word overrides it."
+    },
+    "vendors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vendor"
+      }
+    }
+  },
+  "$defs": {
+    "vendor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "owns",
+        "roots"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owns": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]{2,}$"
+          },
+          "description": "Its product words: no one else's server named for one is Official. Distinctive names only; an everyday word (zoom, slack) only after a review of what else it would demote."
+        },
+        "searchedAs": {
+          "type": "string",
+          "pattern": "^[a-z0-9]{2,}$",
+          "description": "A word its servers are also found by on a root whose name doesn't say it (google for googleapis.com). One of owns."
+        },
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "root",
+              "source"
+            ],
+            "properties": {
+              "root": {
+                "type": "string",
+                "pattern": "^(io\\.github\\.[a-z0-9-]+|[a-z0-9-]+(\\.[a-z0-9-]+)+)$",
+                "description": "A registrable domain as a registry namespace (com.salesforce for salesforce.com), or io.github.<organization>."
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^https://",
+                "description": "Where the vendor shows it publishes from there: its docs, or the domain itself."
+              }
+            }
+          }
+        },
+        "endpoints": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "url",
+              "source"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "pattern": "^https://[^/@\\s?#]+(/[^\\s?#]*)?$",
+                "description": "The exact endpoint, served from someone else's host (a docs platform, FastMCP, a Lambda URL). Never a whole host."
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^https://",
+                "description": "A page on one of the vendor's own domains that names this exact URL."
+              }
+            }
+          },
+          "description": "Exact endpoints the vendor owns on someone else's host: a server there is judged as published from the vendor's first domain."
+        }
+      }
+    }
+  }
+}

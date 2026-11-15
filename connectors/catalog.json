@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-07",
+  "updatedAt": "2026-11-15",
   "logoSource": {
     "package": "simple-icons",
     "version": "16.36.0",
@@ -10,10 +10,10 @@
   "presets": [
     {
       "id": "github",
-      "revision": 1,
+      "revision": 3,
       "name": "GitHub",
       "category": "developer",
-      "description": "Work with GitHub repositories, issues, pull requests and Actions.",
+      "description": "Work with GitHub repositories, issues, pull requests, Actions, security alerts, projects and notifications.",
       "docsUrl": "https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md",
       "logo": {
         "slug": "github",
@@ -25,7 +25,11 @@
       "server": {
         "transport": "http",
         "url": "https://api.githubcopilot.com/mcp/",
-        "headers": {},
+        "headers": {
+          "X-MCP-Toolsets": {
+            "literal": "all"
+          }
+        },
         "auth": {
           "kind": "bearer",
           "token": {
@@ -34,8 +38,7 @@
           "tokenHelpUrl": "https://github.com/settings/personal-access-tokens/new",
           "scopes": [
             "repo",
-            "read:org",
-            "read:packages"
+            "read:org"
           ]
         }
       },
@@ -45,7 +48,7 @@
           "label": "Personal access token",
           "secret": true,
           "required": true,
-          "help": "A fine-grained token limited to the repositories agents should reach, or a classic token with repo, read:org and read:packages.",
+          "help": "A fine-grained token limited to the repositories agents should reach, or a classic token with repo and read:org. GitHub hides the tools a classic token's scopes don't allow: add workflow, notifications, gist, security_events or project for those.",
           "helpUrl": "https://github.com/settings/personal-access-tokens/new",
           "placeholder": "github_pat_..."
         }
@@ -53,10 +56,20 @@
       "toolPolicyDefaults": {
         "delete_*": "ask",
         "merge_*": "ask",
-        "push_files": "ask"
+        "push_files": "ask",
+        "create_or_update_file": "ask",
+        "actions_run_trigger": "ask",
+        "create_repository": "ask",
+        "create_repository_ruleset": "ask",
+        "custom_properties_write": "ask",
+        "create_gist": "ask",
+        "update_gist": "ask",
+        "projects_write": "ask",
+        "label_write": "ask",
+        "*secret_scanning*": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -87,21 +100,24 @@
             "S256"
           ]
         },
-        "toolNamesSource": "https://raw.githubusercontent.com/github/github-mcp-server/main/README.md (Tools section)",
+        "toolNamesSource": "https://raw.githubusercontent.com/github/github-mcp-server/main/README.md (Tools section); annotations from pkg/github/__toolsnaps__ on main, 2026-11-15",
         "registryName": "io.github.github/github-mcp-server",
         "notes": [
           "github.com/login/oauth advertises neither a client ID metadata document nor a registration endpoint, so sign-in uses a personal access token (contract D19).",
-          "Read-only variant: https://api.githubcopilot.com/mcp/readonly (same 401 and discovery chain), or the X-MCP-Readonly: true header."
+          "Read-only variant: https://api.githubcopilot.com/mcp/readonly (same 401 and discovery chain), or the X-MCP-Readonly: true header.",
+          "The preset loads every toolset with the X-MCP-Toolsets: all header. GitHub documents it and the /x/all path as equivalent (docs/remote-server.md, docs/server-configuration.md), and its server source sends both to the same toolset setting (pkg/http/handler.go withToolset, pkg/http/middleware/request_config.go). The header keeps the documented endpoint, so a pasted GitHub config still resolves to this preset and the OAuth resource stays https://api.githubcopilot.com/mcp/.",
+          "GitHub filters tools by a classic token's scopes; fine-grained tokens see every tool (docs/server-configuration.md, Scope Filtering).",
+          "Secret scanning asks though GitHub annotates it read-only: run_secret_scanning returns the secrets it finds, and the full set's get_secret_scanning_alert and list_secret_scanning_alerts return the leaked values (ATR-1210)."
         ]
       }
     },
     {
       "id": "gitlab",
-      "revision": 1,
+      "revision": 2,
       "name": "GitLab",
       "category": "developer",
       "description": "Search and update GitLab projects, merge requests, work items and pipelines.",
-      "setupNote": "On GitLab.com, the MCP server must be allowed for your top-level group first.",
+      "setupNote": "A top-level group Owner can turn MCP access off. If sign-in is refused, ask them.",
       "docsUrl": "https://docs.gitlab.com/user/model_context_protocol/mcp_server/",
       "logo": {
         "slug": "gitlab",
@@ -129,10 +145,11 @@
       "inputs": [],
       "toolPolicyDefaults": {
         "accept_merge_request": "ask",
-        "manage_pipeline": "ask"
+        "manage_pipeline": "ask",
+        "save_pipeline": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -168,7 +185,8 @@
         "registryName": "com.gitlab/mcp",
         "notes": [
           "WWW-Authenticate names scope=\"mcp\". The authorization server advertises plain and S256 PKCE; atrium requires S256.",
-          "GitLab documents a dynamic registration limit of 10 per hour per IP, and admins can turn registration off."
+          "GitLab documents a dynamic registration limit of 10 per hour per IP, and admins can turn registration off.",
+          "manage_pipeline is unlisted since GitLab 19.5 and save_pipeline runs, retries, cancels or renames a pipeline (doc/user/model_context_protocol/mcp_server_tools.md); both ask, for instances on either side of that change."
         ]
       }
     },
@@ -177,7 +195,7 @@
       "revision": 1,
       "name": "Sentry",
       "category": "developer",
-      "description": "Look up Sentry issues, events and traces, and help triage errors.",
+      "description": "Search Sentry errors, traces and logs, triage issues, and manage projects, alerts and monitors.",
       "docsUrl": "https://mcp.sentry.dev/",
       "logo": {
         "slug": "sentry",
@@ -235,7 +253,7 @@
             "S256"
           ]
         },
-        "toolNamesSource": "https://github.com/getsentry/sentry-mcp/tree/main/packages/mcp-core/src/tools/catalog",
+        "toolNamesSource": "https://github.com/getsentry/toolkit/tree/main/packages/mcp-core/src/tools/catalog",
         "registryName": "io.github.getsentry/sentry-mcp",
         "notes": [
           "docs.sentry.io/product/sentry-mcp/ redirects to https://mcp.sentry.dev/."
@@ -244,10 +262,10 @@
     },
     {
       "id": "vercel",
-      "revision": 1,
+      "revision": 3,
       "name": "Vercel",
       "category": "developer",
-      "description": "Inspect Vercel projects, deployments and logs, and search Vercel's docs.",
+      "description": "Deploy and manage Vercel projects, domains, env vars and firewall rules, read logs, and search Vercel's docs.",
       "docsUrl": "https://vercel.com/docs/agent-resources/vercel-mcp",
       "logo": {
         "slug": "vercel",
@@ -271,23 +289,52 @@
       },
       "inputs": [],
       "toolPolicyDefaults": {
-        "buy_*": "ask",
+        "create_project_env": "ask",
+        "edit_project_env": "ask",
+        "put_firewall_config": "ask",
+        "update_firewall_config": "ask",
+        "update_attack_challenge_mode": "ask",
+        "replace_domain_dns_records": "ask",
+        "create_record": "ask",
+        "update_record": "ask",
+        "add_project_domain": "ask",
+        "assign_alias": "ask",
+        "issue_cert": "ask",
+        "create_deployment": "ask",
         "cancel_deployment": "ask",
         "request_promote": "ask",
         "request_rollback": "ask",
-        "replace_domain_dns_records": "ask",
-        "pause_project": "ask"
+        "start_rolling_release": "ask",
+        "approve_rolling_release_stage": "ask",
+        "complete_rolling_release": "ask",
+        "update_rolling_release_config": "ask",
+        "update_route_versions": "ask",
+        "update_bulk_redirect_version": "ask",
+        "*pause_project": "ask",
+        "buy_*": "ask",
+        "create_or_transfer_domain": "ask",
+        "activate_kms_*": "ask",
+        "create_kms_*": "ask",
+        "update_kms_*": "ask",
+        "revoke_kms_*": "ask",
+        "*protection_bypass": "ask",
+        "accept_project_transfer_request": "ask",
+        "delete_*": "ask",
+        "filter_project_envs": "ask",
+        "get_project_env": "ask",
+        "get_shared_env_var": "ask",
+        "get_edge_config_tokens": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
-        "status": "flagged",
-        "flagReason": "client-approval-required",
+        "date": "2026-11-15",
+        "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
           "POST initialize with protocolVersion 2025-11-25",
           "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
           "Fetched the authorization server metadata (RFC 8414)",
-          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source",
+          "Signed in live as atrium's client metadata document and listed the tools"
         ],
         "mcp": {
           "discover": {
@@ -313,20 +360,22 @@
             "S256"
           ]
         },
-        "toolNamesSource": "https://vercel.com/docs/agent-resources/vercel-mcp/tools",
+        "toolNamesSource": "Live tools/list after atrium signed in as its CIMD client, 2026-11-15 (250 tools); https://vercel.com/docs/agent-resources/vercel-mcp/tools",
         "registryName": "com.vercel/vercel-mcp",
         "notes": [
-          "Vercel's docs: \"Vercel MCP only supports AI clients that have been reviewed and approved by Vercel.\" atrium is not on the supported-clients list. To apply, use the client review form: https://forms.gle/FQ3nYPbovoHvbfmz9",
-          "Vercel's changelog says the server supports the 2026-07-28 specification; the era was not observable before sign-in."
+          "Vercel admits any client that publishes a client ID metadata document (changelog 2026-11-02); atrium signs in as https://getatrium.dev/oauth/client.json. Vercel's docs: \"Vercel MCP supports clients that use CIMD or that have been reviewed and approved by Vercel.\"",
+          "A live sign-in on 2026-11-15 listed 250 tools: 151 read-only, 92 destructive, none that delete a project. The Ask list covers env vars, firewall, DNS and domains, deploys, promotions, rolling releases, route and redirect publishing, purchases, KMS, protection bypass and deletes.",
+          "After sign-in the server answered protocol 2025-11-25.",
+          "Reads that return secrets ask too, though Vercel annotates them read-only: filter_project_envs (its decrypt option), get_project_env and get_shared_env_var (decrypted values), get_edge_config_tokens (token values). From the tool descriptions in the live list (ATR-1210)."
         ]
       }
     },
     {
       "id": "netlify",
-      "revision": 1,
+      "revision": 2,
       "name": "Netlify",
       "category": "developer",
-      "description": "Create, deploy and configure Netlify sites and their settings.",
+      "description": "Create, deploy and configure Netlify projects, env vars, forms and extensions, and read request logs.",
       "docsUrl": "https://docs.netlify.com/build/build-with-ai/agent-setup-guides/agent-setup-overview/#mcp-server-support",
       "logo": {
         "slug": "netlify",
@@ -337,7 +386,7 @@
       },
       "server": {
         "transport": "http",
-        "url": "https://netlify-mcp.netlify.app/mcp",
+        "url": "https://mcp.netlify.com/mcp",
         "headers": {},
         "auth": {
           "kind": "oauth",
@@ -353,7 +402,7 @@
         "netlify-*-services-updater": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -375,20 +424,20 @@
         },
         "oauth": {
           "wwwAuthenticateResourceMetadata": true,
-          "resourceMetadataUrl": "https://netlify-mcp.netlify.app/.well-known/oauth-protected-resource/mcp",
+          "resourceMetadataUrl": "https://mcp.netlify.com/.well-known/oauth-protected-resource/mcp",
           "authorizationServers": [
-            "https://netlify-mcp.netlify.app/"
+            "https://mcp.netlify.com/"
           ],
-          "authorizationServerMetadataUrl": "https://netlify-mcp.netlify.app/.well-known/oauth-authorization-server",
+          "authorizationServerMetadataUrl": "https://mcp.netlify.com/.well-known/oauth-authorization-server",
           "clientIdMetadataDocumentSupported": false,
-          "registrationEndpoint": "https://netlify-mcp.netlify.app/oauth-server/reg",
+          "registrationEndpoint": "https://mcp.netlify.com/oauth-server/reg",
           "codeChallengeMethodsSupported": [
             "S256"
           ]
         },
         "toolNamesSource": "https://github.com/netlify/netlify-mcp/blob/main/src/tools/index.ts (names built as netlify-<domain>-services-<reader|updater>)",
         "notes": [
-          "No MCP Registry entry from Netlify; the endpoint is the one Netlify's docs and the netlify/netlify-mcp repo name.",
+          "No MCP Registry entry from Netlify. Netlify's docs name https://mcp.netlify.com/mcp for new connections and say the old netlify-mcp.netlify.app URL keeps working.",
           "Writes go through the grouped *-services-updater tools, so the policy targets those."
         ]
       }
@@ -466,10 +515,10 @@
     },
     {
       "id": "stripe",
-      "revision": 1,
+      "revision": 2,
       "name": "Stripe",
       "category": "developer",
-      "description": "Query Stripe customers, payments and subscriptions, and search Stripe's docs.",
+      "description": "Read and write Stripe data through its API, run analytics, move Treasury funds, and search Stripe's docs.",
       "docsUrl": "https://docs.stripe.com/mcp",
       "logo": {
         "slug": "stripe",
@@ -496,10 +545,11 @@
         "stripe_api_write": "ask",
         "send_money": "ask",
         "transfer_money": "ask",
-        "convert_currency": "ask"
+        "convert_currency": "ask",
+        "setup_recipient": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -535,8 +585,8 @@
         "toolNamesSource": "https://docs.stripe.com/mcp (Tools table)",
         "registryName": "com.stripe/mcp",
         "notes": [
-          "From 2026-11-30 Stripe MCP refuses full-access secret keys and restricted keys without the Agent tag; OAuth is unaffected.",
-          "Stripe asks for human approval through its own approval URL for some writes, such as refunds and payouts."
+          "Starting in December 2026 (migrate by 2026-11-30) Stripe MCP refuses full-access secret keys and restricted keys without the Agent tag; OAuth is unaffected.",
+          "Stripe asks for human approval through its own approval URL for some writes, such as refunds and Treasury money movement (send_money, transfer_money, convert_currency); account rules can add more."
         ]
       }
     },
@@ -545,7 +595,7 @@
       "revision": 1,
       "name": "Figma",
       "category": "developer",
-      "description": "Bring Figma design context, components and variables into your code.",
+      "description": "Bring Figma design context into your code, and create or edit content in Figma files.",
       "docsUrl": "https://developers.figma.com/docs/figma-mcp-server/",
       "logo": {
         "slug": "figma",
@@ -759,8 +809,8 @@
       "revision": 1,
       "name": "Atlassian",
       "category": "productivity",
-      "description": "Search and edit Jira issues and Confluence pages on your Atlassian sites.",
-      "setupNote": "Your Atlassian organization admin controls which apps may connect. If sign-in is refused, ask them to allow atrium.",
+      "description": "Search and update Jira, Confluence, Jira Service Management, Bitbucket and Loom on your Atlassian sites.",
+      "setupNote": "Works by default. If sign-in is refused, your Atlassian admin may have turned off Atlassian-supported domains.",
       "docsUrl": "https://support.atlassian.com/atlassian-ai-gateway/docs/get-started-with-the-atlassian-remote-mcp-server/",
       "logo": {
         "slug": "atlassian",
@@ -789,7 +839,7 @@
         "executeDestructive": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -822,7 +872,7 @@
             "S256"
           ]
         },
-        "toolNamesSource": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/",
+        "toolNamesSource": "https://support.atlassian.com/atlassian-ai-gateway/docs/supported-tools/",
         "registryName": "com.atlassian/atlassian-mcp-server",
         "notes": [
           "v2 is Atlassian's recommended endpoint. The older https://mcp.atlassian.com/v1/mcp answers 401 without resource_metadata and advertises DCR only; v1 credentials do not carry over to v2.",
@@ -832,10 +882,10 @@
     },
     {
       "id": "notion",
-      "revision": 1,
+      "revision": 2,
       "name": "Notion",
       "category": "productivity",
-      "description": "Search, read and edit the pages and databases in your Notion workspace.",
+      "description": "Search and edit Notion pages, databases and files, manage calendar events, and delegate to Custom Agents.",
       "docsUrl": "https://developers.notion.com/guides/mcp/get-started-with-mcp",
       "logo": {
         "slug": "notion",
@@ -860,10 +910,12 @@
       "inputs": [],
       "toolPolicyDefaults": {
         "notion-delete-*": "ask",
-        "notion-move-pages": "ask"
+        "notion-move-pages": "ask",
+        "notion-calendar-cancel-events": "ask",
+        "notion-restore-version": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -894,7 +946,7 @@
             "S256"
           ]
         },
-        "toolNamesSource": "https://developers.notion.com/guides/mcp/mcp-supported-tools.md",
+        "toolNamesSource": "https://developers.notion.com/guides/mcp/tools-faqs.md",
         "registryName": "com.notion/mcp"
       }
     },
@@ -903,7 +955,7 @@
       "revision": 1,
       "name": "Slack",
       "category": "productivity",
-      "description": "Search Slack messages and channels, and post or react on your behalf.",
+      "description": "Search Slack, read channels and threads, send messages, and edit canvases and lists for you.",
       "setupNote": "Slack only accepts its own registered apps: create an internal app in your workspace, then paste its client ID and secret.",
       "docsUrl": "https://docs.slack.dev/ai/slack-mcp-server/",
       "logo": null,
@@ -946,7 +998,7 @@
       ],
       "toolPolicyDefaults": {},
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -957,11 +1009,11 @@
         "mcp": {
           "discover": {
             "status": 401,
-            "error": "-32001: missing_token"
+            "error": "-32001: missing_authorization_header"
           },
           "initialize": {
             "status": 401,
-            "error": "-32001: missing_token"
+            "error": "-32001: missing_authorization_header"
           },
           "eras": []
         },
@@ -979,7 +1031,7 @@
           ]
         },
         "notes": [
-          "The authorization server advertises neither a client ID metadata document nor a registration endpoint, and Slack's docs say dynamic registration is unsupported. It requires client_secret_post.",
+          "The authorization server advertises neither a client ID metadata document nor a registration endpoint, and Slack's docs say dynamic registration is unsupported. Its metadata lists only client_secret_post, but a Slack app with PKCE turned on is a public client and needs no secret (https://docs.slack.dev/changelog/2026/03/30/pkce).",
           "Slack's docs list capabilities but not tool names, so no tool-name defaults.",
           "simple-icons has no Slack icon."
         ]
@@ -987,10 +1039,10 @@
     },
     {
       "id": "asana",
-      "revision": 1,
+      "revision": 2,
       "name": "Asana",
       "category": "productivity",
-      "description": "Find and update Asana tasks, projects and goals.",
+      "description": "Find, create and update Asana tasks, projects and tables, and read portfolios and goals.",
       "setupNote": "Asana needs an MCP app you create in its developer console; paste that app's client ID and secret.",
       "docsUrl": "https://developers.asana.com/docs/integrating-with-asanas-mcp-server",
       "logo": {
@@ -1037,9 +1089,11 @@
           "helpUrl": "https://app.asana.com/0/my-apps"
         }
       ],
-      "toolPolicyDefaults": {},
+      "toolPolicyDefaults": {
+        "delete_*": "ask"
+      },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -1074,8 +1128,9 @@
         "notes": [
           "The authorization server (app.asana.com) advertises neither a client ID metadata document nor a registration endpoint.",
           "Asana's docs: send no scope parameter, or authorization fails with invalid scope. Use resource=https://mcp.asana.com/v2.",
-          "Asana deprecated the V1 endpoint (mcp.asana.com/sse) on 2026-02-03 and announced its shutdown for 2026-08-05; it still answered 401 here."
-        ]
+          "Asana deprecated the V1 endpoint (mcp.asana.com/sse) on 2026-02-03; the 2026-08-05 shutdown date has passed, and /sse still answered 401 on 2026-11-14."
+        ],
+        "toolNamesSource": "https://developers.asana.com/docs/mcp-tools-reference"
       }
     },
     {
@@ -1084,7 +1139,7 @@
       "name": "Todoist",
       "category": "productivity",
       "description": "Add, find, reschedule and complete Todoist tasks and projects.",
-      "docsUrl": "https://github.com/Doist/todoist-ai",
+      "docsUrl": "https://github.com/todoist/todoist-mcp",
       "logo": {
         "slug": "todoist",
         "title": "Todoist",
@@ -1144,7 +1199,7 @@
             "S256"
           ]
         },
-        "toolNamesSource": "https://github.com/Doist/todoist-ai/blob/main/src/utils/tool-names.ts",
+        "toolNamesSource": "https://github.com/todoist/todoist-mcp/blob/main/src/utils/tool-names.ts",
         "registryName": "net.todoist/mcp"
       }
     },
@@ -1235,15 +1290,16 @@
         "notes": [
           "The authorization server advertises neither a client ID metadata document nor a registration endpoint, and it requires client_secret_post.",
           "HubSpot's tools are create/update/publish writes with no delete tools, so no tool-name defaults; annotation defaults apply."
-        ]
+        ],
+        "toolNamesSource": "https://developers.hubspot.com/docs/apps/developer-platform/build-apps/integrate-with-the-remote-hubspot-mcp-server#available-tools"
       }
     },
     {
       "id": "monday",
-      "revision": 1,
+      "revision": 2,
       "name": "monday.com",
       "category": "productivity",
-      "description": "Work with monday.com boards, items, updates and automations.",
+      "description": "Work with monday.com boards, items, docs, forms, dashboards, workflows and AI agents.",
       "setupNote": "Your monday.com account admin may need to approve atrium the first time anyone connects.",
       "docsUrl": "https://developer.monday.com/api-reference/docs/integrate-with-monday-mcp",
       "logo": null,
@@ -1264,10 +1320,12 @@
       "toolPolicyDefaults": {
         "all_monday_api": "ask",
         "manage_automations": "ask",
-        "manage_agent": "ask"
+        "manage_agent*": "ask",
+        "publish_workflow": "ask",
+        "delete_*": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -1308,10 +1366,10 @@
     },
     {
       "id": "supabase",
-      "revision": 1,
+      "revision": 2,
       "name": "Supabase",
       "category": "data",
-      "description": "Manage Supabase projects: query and migrate Postgres, branches, functions and logs.",
+      "description": "Manage Supabase projects: query and migrate Postgres, branches, functions, storage and logs.",
       "docsUrl": "https://supabase.com/docs/guides/ai-tools/mcp",
       "logo": {
         "slug": "supabase",
@@ -1322,7 +1380,7 @@
       },
       "server": {
         "transport": "http",
-        "url": "https://mcp.supabase.com/mcp",
+        "url": "https://mcp.supabase.com/mcp?features=account,branching,database,debugging,development,docs,feedback,functions,notebooks,storage",
         "headers": {},
         "auth": {
           "kind": "oauth",
@@ -1342,17 +1400,20 @@
         "reset_*": "ask",
         "rebase_branch": "ask",
         "pause_project": "ask",
-        "deploy_edge_function": "ask"
+        "deploy_edge_function": "ask",
+        "run_notebook": "ask",
+        "update_storage_config": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
           "POST initialize with protocolVersion 2025-11-25",
           "Followed WWW-Authenticate resource_metadata to the protected-resource metadata (RFC 9728)",
           "Fetched the authorization server metadata (RFC 8414)",
-          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source"
+          "Confirmed the toolPolicyDefaults tool names in the vendor's docs or source",
+          "Probed the URL with the features query: same 401, and the resource metadata names that exact URL"
         ],
         "mcp": {
           "discover": {
@@ -1365,7 +1426,7 @@
         },
         "oauth": {
           "wwwAuthenticateResourceMetadata": true,
-          "resourceMetadataUrl": "https://mcp.supabase.com/.well-known/oauth-protected-resource/mcp",
+          "resourceMetadataUrl": "https://mcp.supabase.com/.well-known/oauth-protected-resource/mcp?features=account,branching,database,debugging,development,docs,feedback,functions,notebooks,storage",
           "authorizationServers": [
             "https://api.supabase.com"
           ],
@@ -1377,20 +1438,21 @@
             "plain"
           ]
         },
-        "toolNamesSource": "https://github.com/supabase-community/supabase-mcp/tree/main/packages/mcp-server-supabase/src/tools",
+        "toolNamesSource": "https://github.com/supabase/mcp/tree/main/packages/mcp-server-supabase/src/tools",
         "registryName": "com.supabase/mcp",
         "notes": [
-          "Supports URL options project_ref=<id>, read_only=true and features=<groups> for narrower access.",
-          "The authorization server advertises plain and S256 PKCE; atrium requires S256."
+          "The URL names every feature group, storage included: features= replaces Supabase's defaults, which leave storage off. The protected-resource metadata echoes the query in its resource, so the resource still matches the connector's URL. Also takes project_ref=<id> and read_only=true.",
+          "The authorization server advertises plain and S256 PKCE; atrium requires S256.",
+          "No read returns a secret: get_publishable_keys returns publishable and legacy anon keys, which are meant for public clients; execute_sql and run_notebook, which can read anything, already ask (ATR-1210)."
         ]
       }
     },
     {
       "id": "neon",
-      "revision": 1,
+      "revision": 2,
       "name": "Neon",
       "category": "data",
-      "description": "Create Neon Postgres projects and branches, and run SQL against them.",
+      "description": "Manage Neon Postgres projects, branches, SQL, Auth, Functions, object storage and snapshots.",
       "docsUrl": "https://neon.com/docs/ai/neon-mcp-server",
       "logo": {
         "slug": "neon",
@@ -1407,7 +1469,7 @@
           "kind": "oauth",
           "registration": "auto",
           "advertised": {
-            "cimd": false,
+            "cimd": true,
             "dcr": true
           }
         }
@@ -1418,10 +1480,18 @@
         "run_sql*": "ask",
         "reset_from_parent": "ask",
         "restore_snapshot": "ask",
-        "complete_database_migration": "ask"
+        "complete_database_migration": "ask",
+        "deploy_function": "ask",
+        "register_functions_custom_domain": "ask",
+        "set_default_branch": "ask",
+        "finalize_branch_restore": "ask",
+        "disable_*": "ask",
+        "rotate_*": "ask",
+        "revoke_credential": "ask",
+        "reset_postgres_role_password": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -1448,7 +1518,7 @@
             "https://mcp.neon.tech"
           ],
           "authorizationServerMetadataUrl": "https://mcp.neon.tech/.well-known/oauth-authorization-server",
-          "clientIdMetadataDocumentSupported": false,
+          "clientIdMetadataDocumentSupported": true,
           "registrationEndpoint": "https://mcp.neon.tech/api/register",
           "codeChallengeMethodsSupported": [
             "S256"
@@ -1460,10 +1530,10 @@
     },
     {
       "id": "prisma",
-      "revision": 1,
+      "revision": 2,
       "name": "Prisma",
       "category": "data",
-      "description": "Provision and manage Prisma Postgres databases and run queries against them.",
+      "description": "Manage Prisma Postgres databases and SQL, Prisma Compute deployments, and Object Storage buckets.",
       "docsUrl": "https://www.prisma.io/docs/ai/tools/mcp-server",
       "logo": {
         "slug": "prisma",
@@ -1492,10 +1562,11 @@
         "execute_prisma_postgres_schema_update": "ask",
         "rollback_*": "ask",
         "stop_*": "ask",
-        "promote_*": "ask"
+        "promote_*": "ask",
+        "set_prisma_compute_env_var": "ask"
       },
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -1601,7 +1672,7 @@
         "toolNamesSource": "https://posthog.com/docs/model-context-protocol/tools.md",
         "registryName": "io.github.PostHog/mcp",
         "notes": [
-          "In PostHog's CLI mode, which it picks for many clients, the server exposes a single exec tool and these name defaults do not match; annotation defaults still apply.",
+          "PostHog serves its CLI mode (one exec tool) to every client except Cursor, so these name defaults do not match; exec is annotated open-world, so every call asks.",
           "x-posthog-read-only: true (or ?readonly=true) removes create, update and delete tools."
         ]
       }
@@ -1611,7 +1682,7 @@
       "revision": 1,
       "name": "Airtable",
       "category": "data",
-      "description": "Read and edit Airtable bases, tables and records.",
+      "description": "Read and edit Airtable bases, tables and records, and build interfaces and automations.",
       "docsUrl": "https://airtable.com/developers/agents/mcp/getting-started",
       "logo": {
         "slug": "airtable",
@@ -1757,7 +1828,7 @@
       "inputs": [],
       "toolPolicyDefaults": {},
       "verified": {
-        "date": "2026-10-25",
+        "date": "2026-11-15",
         "status": "verified",
         "checks": [
           "POST server/discover with MCP-Protocol-Version 2026-07-28 and Mcp-Method headers",
@@ -1766,19 +1837,22 @@
         ],
         "mcp": {
           "discover": {
-            "status": 400,
-            "error": "-32600: Bad Request: Unsupported protocol version: 2026-07-28. Supported versions: 2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25"
+            "status": 200,
+            "supportedVersions": [
+              "2026-07-28"
+            ]
           },
           "initialize": {
             "status": 200,
             "protocolVersion": "2025-11-25"
           },
           "eras": [
+            "2026-07-28",
             "2025"
           ]
         },
         "notes": [
-          "2025-era only: server/discover is refused with HTTP 400 (unsupported protocol version); initialize negotiates 2025-11-25.",
+          "Answers in both eras (2026-07-28 and 2025-11-25).",
           "Tools: read_wiki_structure, read_wiki_contents, ask_wiki_question (no annotations; all read or question-answering).",
           "simple-icons has no DeepWiki icon."
         ]
