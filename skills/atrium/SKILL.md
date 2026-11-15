@@ -34,6 +34,7 @@ Each bucket is one top-level verb. Run `<verb> --help` for its full surface.
 - **`workspace-command`** — The workspace's named background commands (dev server, watcher, etc.): list / status / start / stop / restart / logs / clear / create / edit / delete. **Check before you launch** — see **Workspace commands** below.
 - **`browser`** — Drive browser panes: navigate, click, fill, type, press, select, scroll, eval JS, screenshot, snapshot, wait, read attributes. Always prefer this over Playwright or any browser MCP. Every verb works on a pane the user can't see — see **Never take the user's focus** below.
 - **`secret`** — Keys, env vars and logins the user keeps in atrium: list / request / run. You get access, never the value. See **Secrets** below.
+- **`companion`** — A connector's vendor API and CLI (GitHub, Stripe, Vercel, Cloudflare, Supabase) with the token atrium keeps: list / api / run / skill. See **Vendor APIs and CLIs** below.
 - **`agent`** — List active agent panes and send framed messages between them. See **Agent-to-agent messaging** below.
 - **`theme`** — List and switch themes.
 - **`config`** — Read/write atrium settings.
@@ -169,6 +170,17 @@ The user keeps API keys, env vars and logins in atrium. You use them by name and
 **The answer comes as a turn.** You don't poll: when the user answers, atrium wakes you with one line, `[atrium · secrets] The owner gave you OPENAI_API_KEY…` (or declined it, or it ran out), or `[atrium · browser] The owner finished: …`. Pick the work up from there. `--wait [--timeout <s>]` on `request` or `hand-off` waits in place instead (up to 600 s); the card stays up either way.
 
 A delegated run may use whatever the agent that delegated it may use. If you need one you don't have and you're working for another agent, say exactly which in your report instead of requesting it.
+
+## Vendor APIs and CLIs (companions)
+
+For what a vendor's connector can't do (deletes, payouts, releases, secrets, domains), use its companion. atrium injects the token; you never see it.
+
+- `companion list` — which companions you can use, whether each has its token and CLI.
+- `companion api <id> [-X METHOD] <path> [-f key=value]… [--input file]` — the vendor's REST API, like `gh api`: GET unless `-X`, POST when fields are given. **GET and HEAD run at once**; other methods (and the few reads that return secrets) wait for the user's approval card.
+- `companion run <id> -- <args>` — the vendor's CLI (`gh`, `stripe`, `vercel`, `wrangler`, `supabase`) for local work like deploys. **Every CLI command waits for approval**, so prefer `companion api` for reads. No stdin or TTY: pass the flags that skip prompts. Commands that print or change the CLI's own sign-in are refused.
+- `companion skill <id>` — how to use it here, then the vendor's own skill.
+
+A held call prints its handle; if your wait ends first, rerun the same command with `--approval <handle>`. No token yet: `secret request companion.<id> --kind secret --why "<one line>"`, then end your turn.
 
 ## HQ (directors and staff)
 

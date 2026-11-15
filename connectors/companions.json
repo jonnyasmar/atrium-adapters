@@ -1,0 +1,3633 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-15",
+  "companions": [
+    {
+      "id": "github",
+      "presetId": "github",
+      "name": "GitHub CLI",
+      "binary": "gh",
+      "docsUrl": "https://cli.github.com/manual/",
+      "discovery": {
+        "wellKnownPaths": {
+          "macos": [
+            "/opt/homebrew/bin/gh",
+            "/usr/local/bin/gh"
+          ],
+          "linux": [
+            "/usr/bin/gh",
+            "/usr/local/bin/gh",
+            "/home/linuxbrew/.linuxbrew/bin/gh"
+          ],
+          "windows": [
+            "C:\\Program Files\\GitHub CLI\\gh.exe"
+          ]
+        }
+      },
+      "version": {
+        "args": [
+          "--version"
+        ],
+        "min": "2.0.0"
+      },
+      "install": {
+        "macos": {
+          "cmd": "brew install gh"
+        },
+        "linux": {
+          "cmd": "if command -v apt-get >/dev/null 2>&1; then (type -p wget >/dev/null || (sudo apt-get update && sudo apt-get install wget -y)) && sudo mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && sudo mkdir -p -m 755 /etc/apt/sources.list.d && echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && sudo apt-get update && sudo apt-get install gh -y; elif command -v dnf >/dev/null 2>&1; then sudo dnf install -y 'dnf-command(config-manager)' && sudo dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo && sudo dnf install -y gh; else brew install gh; fi"
+        },
+        "windows": {
+          "cmd": "winget install --id GitHub.cli --source winget"
+        }
+      },
+      "update": {
+        "macos": {
+          "cmd": "brew upgrade gh",
+          "unattended": true
+        },
+        "linux": {
+          "cmd": "if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install --only-upgrade gh -y; elif command -v dnf >/dev/null 2>&1; then sudo dnf update -y gh; else brew upgrade gh; fi"
+        },
+        "windows": {
+          "cmd": "winget upgrade --id GitHub.cli --source winget"
+        }
+      },
+      "latest": {
+        "github": "cli/cli"
+      },
+      "token": {
+        "secret": "companion.github",
+        "label": "GitHub fine-grained token",
+        "help": "A fine-grained personal access token limited to the repositories and permissions agents need. Read-only permissions make every change fail at GitHub too.",
+        "helpUrl": "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
+      },
+      "env": {
+        "GH_PROMPT_DISABLED": "1",
+        "GH_NO_UPDATE_NOTIFIER": "1",
+        "GH_NO_EXTENSION_UPDATE_NOTIFIER": "1",
+        "GH_TELEMETRY": "0",
+        "GH_SPINNER_DISABLED": "1"
+      },
+      "passEnv": [
+        "GH_REPO"
+      ],
+      "askPaths": [],
+      "noSessionPaths": [
+        {
+          "path": "/graphql"
+        }
+      ],
+      "refusePaths": [
+        {
+          "method": "POST",
+          "path": "/app/installations/*/access_tokens"
+        },
+        {
+          "method": "POST",
+          "path": "/authorizations"
+        }
+      ],
+      "projectEnvDeny": [
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "GH_HOST",
+        "GH_ENTERPRISE_TOKEN"
+      ],
+      "commands": {
+        "valueFlags": [
+          "-R",
+          "--repo",
+          "-X",
+          "--method",
+          "-f",
+          "-F",
+          "--field",
+          "--raw-field",
+          "--input",
+          "-H",
+          "--header",
+          "-q",
+          "--jq",
+          "-t",
+          "--template",
+          "-p",
+          "--preview",
+          "--cache",
+          "--json",
+          "-L",
+          "--limit",
+          "-o",
+          "--org",
+          "-e",
+          "--env",
+          "-s",
+          "--state",
+          "-c",
+          "--codespace"
+        ],
+        "credentialFlags": [
+          "--hostname",
+          "--with-token",
+          "--show-token"
+        ],
+        "rules": [
+          {
+            "path": [
+              "auth"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "config",
+              "set"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "ssh-key",
+              "add"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "ssh-key",
+              "delete"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "gpg-key",
+              "add"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "gpg-key",
+              "delete"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "repo",
+              "deploy-key",
+              "add"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "repo",
+              "deploy-key",
+              "delete"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "api",
+              "graphql"
+            ],
+            "class": "write"
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "read",
+            "flag": {
+              "names": [
+                "-X",
+                "--method"
+              ],
+              "valueIn": [
+                "GET",
+                "HEAD"
+              ]
+            }
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "write",
+            "flag": {
+              "names": [
+                "-X",
+                "--method"
+              ]
+            }
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "write",
+            "flag": {
+              "names": [
+                "-f",
+                "-F",
+                "--field",
+                "--raw-field",
+                "--input"
+              ]
+            }
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "agent-task",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "agent-task",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "attestation",
+              "verify"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "attestation",
+              "trusted-root"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "attestation",
+              "download"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "browse"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "cache",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "codespace",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "codespace",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "codespace",
+              "logs"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "discussion",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "discussion",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "extension",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "extension",
+              "search"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "extension",
+              "browse"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "gist",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "gist",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "issue",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "issue",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "issue",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "issue",
+              "artifact",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "issue",
+              "artifact",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "issue",
+              "artifact",
+              "download"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "label",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "org",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pr",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pr",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pr",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pr",
+              "diff"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pr",
+              "checks"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "project",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "project",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "project",
+              "field-list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "project",
+              "item-list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "release",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "release",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "release",
+              "download"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "release",
+              "verify"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "release",
+              "verify-asset"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "read-file"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "read-dir"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "gitignore"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "license"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "autolink",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "repo",
+              "autolink",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ruleset",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ruleset",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ruleset",
+              "check"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "run",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "run",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "run",
+              "watch"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "run",
+              "download"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "search"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "secret",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "variable",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "variable",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "workflow",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "workflow",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "skill",
+              "search"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "skill",
+              "preview"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "skill",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "alias",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "completion"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "help"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "licenses"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "version"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "extension"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "alias"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "copilot"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "codespace",
+              "ssh"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "codespace",
+              "cp"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "codespace",
+              "jupyter"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "codespace",
+              "code"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "codespace",
+              "ports"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "repo",
+              "clone"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "repo",
+              "sync"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "repo",
+              "set-default"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "pr",
+              "checkout"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "issue",
+              "develop"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "gist",
+              "clone"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "skill",
+              "install"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "skill",
+              "update"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "aw"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "stack"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "webhook"
+            ],
+            "class": "exec"
+          }
+        ]
+      },
+      "skills": [
+        {
+          "name": "gh",
+          "url": "https://raw.githubusercontent.com/cli/cli/3d5a9e355a837f2f5ee78d7484c118cc1342ad1a/skills/gh/SKILL.md",
+          "sha256": "b40d44ef9077b34d710b4c0737fee0e72c595e0770fbbdcb339de2ba0b40e23b",
+          "license": "MIT"
+        }
+      ],
+      "verified": {
+        "date": "2026-11-15",
+        "sources": [
+          "https://cli.github.com/manual/gh_help_environment",
+          "https://github.com/cli/cli/blob/3d5a9e355a837f2f5ee78d7484c118cc1342ad1a/pkg/cmd/api/api.go",
+          "https://github.com/cli/cli/blob/3d5a9e355a837f2f5ee78d7484c118cc1342ad1a/pkg/cmd/root/root.go",
+          "https://github.com/cli/cli/blob/3d5a9e355a837f2f5ee78d7484c118cc1342ad1a/docs/install_linux.md"
+        ],
+        "checks": [
+          "gh reads GH_TOKEN before GITHUB_TOKEN and before any stored login (v2.104.0 source and docs)",
+          "gh api is GET unless -X is given or -f/-F/--input adds a body, which makes it POST",
+          "auth token, auth status --show-token and auth git-credential print the token, so every auth command is refused",
+          "config set can reroute a host's API traffic with its token, so config writes are refused",
+          "rules read against v2.104.0; the 2.x minimum is not separately verified",
+          "automatic updates run unattended only through brew on macOS; the Linux apt/dnf and Windows winget recipes need a person"
+        ]
+      }
+    },
+    {
+      "id": "stripe",
+      "presetId": "stripe",
+      "name": "Stripe CLI",
+      "binary": "stripe",
+      "docsUrl": "https://docs.stripe.com/stripe-cli",
+      "discovery": {
+        "wellKnownPaths": {
+          "macos": [
+            "/opt/homebrew/bin/stripe",
+            "/usr/local/bin/stripe",
+            "~/.stripe/bin/stripe"
+          ],
+          "linux": [
+            "~/.stripe/bin/stripe",
+            "/usr/local/bin/stripe",
+            "/usr/bin/stripe"
+          ],
+          "windows": [
+            "~/.stripe/bin/stripe.exe"
+          ]
+        }
+      },
+      "version": {
+        "args": [
+          "--version"
+        ],
+        "min": "1.0.0"
+      },
+      "install": {
+        "macos": {
+          "cmd": "if command -v brew >/dev/null 2>&1; then brew install stripe-cli; else curl -fsSL https://cli.stripe.com/install.sh | sh; fi"
+        },
+        "linux": {
+          "cmd": "curl -fsSL https://cli.stripe.com/install.sh | sh"
+        },
+        "windows": {
+          "cmd": "winget install --id Stripe.StripeCli --source winget"
+        }
+      },
+      "update": {
+        "macos": {
+          "cmd": "if brew list stripe-cli >/dev/null 2>&1; then brew upgrade stripe-cli; elif brew list stripe >/dev/null 2>&1; then brew upgrade stripe; else curl -fsSL https://cli.stripe.com/install.sh | sh; fi",
+          "unattended": true
+        },
+        "linux": {
+          "cmd": "curl -fsSL https://cli.stripe.com/install.sh | sh"
+        },
+        "windows": {
+          "cmd": "winget upgrade --id Stripe.StripeCli --source winget"
+        }
+      },
+      "latest": {
+        "github": "stripe/stripe-cli"
+      },
+      "token": {
+        "secret": "companion.stripe",
+        "label": "Stripe restricted key",
+        "help": "A restricted key (rk_…) with only the permissions agents need; a test-mode key keeps agents out of live data. Read-only permissions make every change fail at Stripe too.",
+        "helpUrl": "https://docs.stripe.com/keys/restricted-api-keys"
+      },
+      "env": {
+        "STRIPE_CLI_TELEMETRY_OPTOUT": "1",
+        "STRIPE_NO_AUTO_UPDATE": "1",
+        "STRIPE_NO_UPDATE_CHECK": "1",
+        "STRIPE_CLI_NO_PLUGIN_AUTO_INSTALL": "true"
+      },
+      "passEnv": [],
+      "askPaths": [
+        {
+          "path": "/v1/apps/secrets"
+        },
+        {
+          "path": "/v1/apps/secrets/*"
+        }
+      ],
+      "noSessionPaths": [],
+      "refusePaths": [],
+      "projectEnvDeny": [
+        "STRIPE_API_KEY",
+        "STRIPE_DEVICE_NAME"
+      ],
+      "commands": {
+        "valueFlags": [
+          "--color",
+          "--config",
+          "--device-name",
+          "--log-level",
+          "-p",
+          "--project-name",
+          "-d",
+          "--data",
+          "-e",
+          "--expand",
+          "-H",
+          "--request-header",
+          "-i",
+          "--idempotency",
+          "--stripe-version",
+          "--stripe-account",
+          "--stripe-context",
+          "-l",
+          "--limit",
+          "-a",
+          "--starting-after",
+          "-b",
+          "--ending-before",
+          "--format"
+        ],
+        "credentialFlags": [
+          "--api-key",
+          "--api-base",
+          "--access-base",
+          "--dashboard-base"
+        ],
+        "rules": [
+          {
+            "path": [
+              "login"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "logout"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "reauth"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "switch"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "config"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "sandboxes",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "sandboxes",
+              "create"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "sandboxes",
+              "claim"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "plugin",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "plugin"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "apps"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "generate"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "projects"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "pay"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "directory"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "provision"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "agent"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "daemon"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "open"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "community"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "samples"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "serve"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "listen"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "fixtures"
+            ],
+            "class": "write"
+          },
+          {
+            "path": [
+              "trigger"
+            ],
+            "class": "write"
+          },
+          {
+            "path": [
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "post"
+            ],
+            "class": "write"
+          },
+          {
+            "path": [
+              "delete"
+            ],
+            "class": "write"
+          },
+          {
+            "path": [
+              "preview",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "preview"
+            ],
+            "class": "write"
+          },
+          {
+            "path": [
+              "whoami"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "logs",
+              "tail"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "resources"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "version"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "help"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "docs"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "keys",
+              "permissions"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "completion"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "retrieve"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "search"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "find"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "preview"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "preview_lines"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "pdf"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "me"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "capabilities"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "persons"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "balance_transactions"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "source_transactions"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "list_line_items"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "list_computed_upfront_line_items"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "list_owners"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "list_payment_methods"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "retrieve_features"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "*",
+              "retrieve_payment_method"
+            ],
+            "class": "read"
+          }
+        ]
+      },
+      "skills": [
+        {
+          "name": "stripe-docs",
+          "url": "https://raw.githubusercontent.com/stripe/ai/17d0c774b7dcfcd8a55cb5a7cf9f3b809bc24a29/skills/stripe-docs/SKILL.md",
+          "sha256": "af38e784edcdb2f1b273825705c749c1fb3a2614a25875d0705abde02eaa603f",
+          "license": "MIT"
+        },
+        {
+          "name": "stripe-best-practices",
+          "url": "https://raw.githubusercontent.com/stripe/ai/17d0c774b7dcfcd8a55cb5a7cf9f3b809bc24a29/skills/stripe-best-practices/SKILL.md",
+          "sha256": "d5c3267cd373ea5e0221d39b6b731e572d31020918a6f28cff2bd38e63e0fee0",
+          "license": "MIT"
+        }
+      ],
+      "verified": {
+        "date": "2026-11-15",
+        "sources": [
+          "https://docs.stripe.com/cli/api_keys",
+          "https://github.com/stripe/stripe-cli/blob/v1.55.11/pkg/config/profile.go",
+          "https://github.com/stripe/stripe-cli/blob/v1.55.11/pkg/cmd/root.go",
+          "https://github.com/stripe/stripe-cli/blob/v1.55.11/pkg/stripe/url.go",
+          "https://docs.stripe.com/stripe-cli/install"
+        ],
+        "checks": [
+          "STRIPE_API_KEY outranks --api-key and every stored login (v1.55.11 source)",
+          "resource operations read only for the GET operation names in specs_gen.go; get reads, post and delete write",
+          "the hidden --api-base accepts a loopback URL that would receive the key, so it is refused",
+          "sandboxes create can print STRIPE_API_KEY back, and config --list prints stored keys, so both are refused",
+          "listen prints the webhook signing secret; plugins inherit the key, so both ask",
+          "rules read against v1.55.11; the 1.x minimum is not separately verified",
+          "automatic updates run unattended through brew or Stripe's script; winget needs a person"
+        ]
+      }
+    },
+    {
+      "id": "vercel",
+      "presetId": "vercel",
+      "name": "Vercel CLI",
+      "binary": "vercel",
+      "docsUrl": "https://vercel.com/docs/cli",
+      "discovery": {
+        "wellKnownPaths": {
+          "macos": [
+            "/opt/homebrew/bin/vercel",
+            "/usr/local/bin/vercel"
+          ],
+          "linux": [
+            "/usr/local/bin/vercel",
+            "/usr/bin/vercel"
+          ],
+          "windows": []
+        }
+      },
+      "version": {
+        "args": [
+          "--version"
+        ],
+        "min": "50.12.1"
+      },
+      "install": {
+        "macos": {
+          "cmd": "npm i -g vercel@latest"
+        },
+        "linux": {
+          "cmd": "npm i -g vercel@latest"
+        },
+        "windows": {
+          "cmd": "npm i -g vercel@latest"
+        }
+      },
+      "update": {
+        "macos": {
+          "cmd": "npm i -g vercel@latest",
+          "unattended": true
+        },
+        "linux": {
+          "cmd": "npm i -g vercel@latest",
+          "unattended": true
+        },
+        "windows": {
+          "cmd": "npm i -g vercel@latest",
+          "unattended": true
+        }
+      },
+      "latest": {
+        "npm": "vercel"
+      },
+      "token": {
+        "secret": "companion.vercel",
+        "label": "Vercel access token",
+        "help": "A token scoped to one team or project. Vercel tokens can't be read-only, so changes are held for your approval in atrium.",
+        "helpUrl": "https://vercel.com/kb/guide/how-do-i-use-a-vercel-api-access-token"
+      },
+      "env": {
+        "VERCEL_TELEMETRY_DISABLED": "1",
+        "NO_UPDATE_NOTIFIER": "1"
+      },
+      "passEnv": [
+        "VERCEL_ORG_ID",
+        "VERCEL_PROJECT_ID"
+      ],
+      "askPaths": [
+        {
+          "path": "/v*/projects/*/env",
+          "query": "decrypt=true"
+        },
+        {
+          "path": "/v*/projects/*/env/*"
+        },
+        {
+          "path": "/v1/env/*"
+        }
+      ],
+      "noSessionPaths": [],
+      "refusePaths": [
+        {
+          "method": "POST",
+          "path": "/v*/user/tokens"
+        }
+      ],
+      "projectEnvDeny": [
+        "VERCEL_TOKEN"
+      ],
+      "commands": {
+        "valueFlags": [
+          "-A",
+          "--local-config",
+          "-S",
+          "--scope",
+          "-T",
+          "--team",
+          "--project",
+          "-e",
+          "--environment",
+          "--git-branch",
+          "--format",
+          "--limit",
+          "-X",
+          "--method",
+          "-F",
+          "--field",
+          "-f",
+          "--raw-field",
+          "--input",
+          "-H",
+          "--header",
+          "--spec-url"
+        ],
+        "credentialFlags": [
+          "--token",
+          "-t",
+          "--api",
+          "-Q",
+          "--global-config",
+          "--cwd"
+        ],
+        "rules": [
+          {
+            "path": [
+              "login"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "logout"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "signup"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "tokens"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "switch"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "teams",
+              "switch"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "vcr",
+              "login"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "api",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "api",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "read",
+            "flag": {
+              "names": [
+                "-X",
+                "--method"
+              ],
+              "valueIn": [
+                "GET",
+                "HEAD"
+              ]
+            }
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "write",
+            "flag": {
+              "names": [
+                "-X",
+                "--method"
+              ]
+            }
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "write",
+            "flag": {
+              "names": [
+                "-f",
+                "-F",
+                "--field",
+                "--raw-field",
+                "--input"
+              ]
+            }
+          },
+          {
+            "path": [
+              "api"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "build"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "dev"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "develop"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "env",
+              "run"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "bisect"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "curl"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "httpstat"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "traces",
+              "create"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "sandbox"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "vcr",
+              "build"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "vcr",
+              "push"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "integration",
+              "add"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "install"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "skills"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "setup"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "mcp"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "agent"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "token-pass"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "upgrade"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "version",
+              "use"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "version",
+              "update"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "builders"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "init"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "env",
+              "pull"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "pull"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "link"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "project",
+              "token"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "projects",
+              "token"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "connect",
+              "token"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "blob",
+              "signed-token"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "blob",
+              "presign"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "ai-gateway"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "global-config",
+              "tokens"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "flags",
+              "sdk-keys"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "deploy-hooks"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "env",
+              "ls"
+            ],
+            "class": "reveal",
+            "flag": {
+              "names": [
+                "--json"
+              ]
+            }
+          },
+          {
+            "path": [
+              "env",
+              "list"
+            ],
+            "class": "reveal",
+            "flag": {
+              "names": [
+                "--json"
+              ]
+            }
+          },
+          {
+            "path": [
+              "whoami"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "logs"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "log"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "activity"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "alerts",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "alerts",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "metrics"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "traces",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "traces",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "traces",
+              "search"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "health"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pricing"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "changelog"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "docs"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "kb"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "doctor"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "usage"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "help"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "version"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "promote",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "rollback",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "rolling-release",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "project",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "project",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "project",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "projects",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "projects",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "projects",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "teams",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "teams",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "domains",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "domains",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "domains",
+              "price"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "domains",
+              "check"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "dns",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "dns",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "certs",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "alias",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "alias",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "webhooks",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "webhooks",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "drains",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "drains",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "firewall",
+              "overview"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "firewall",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "firewall",
+              "diff"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "flags",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "flags",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "global-config",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "integration",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "integration",
+              "discover"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "storage",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "blob",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "blob",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "crons",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "crons",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "env",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "env",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "redirects",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "routes",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "routes",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ci",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ci",
+              "logs"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ci",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "kms",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "kms",
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "budgets",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "billing",
+              "overview"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "billing",
+              "usage"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "telemetry",
+              "status"
+            ],
+            "class": "read"
+          }
+        ]
+      },
+      "skills": [
+        {
+          "name": "vercel-cli",
+          "url": "https://raw.githubusercontent.com/vercel/vercel-plugin/b004b4098274bb1b3a0290623260e23432437b4b/skills/vercel-cli/SKILL.md",
+          "sha256": "e207e8a1d5091092aa009da0a768d0c004b437de6569e0fd06398a346dc4d60f",
+          "license": "Apache-2.0"
+        }
+      ],
+      "verified": {
+        "date": "2026-11-15",
+        "sources": [
+          "https://vercel.com/docs/cli/global-options",
+          "https://github.com/vercel/vercel/blob/155eacfa16840e68ae54bc50ee72fc8e16733857/packages/cli/src/index.ts",
+          "https://vercel.com/docs/cli/api",
+          "https://vercel.com/docs/cli"
+        ],
+        "checks": [
+          "the CLI reads VERCEL_TOKEN from the environment since 50.12.1, after a --token flag, before any stored login",
+          "the hidden --api flag and -Q/--global-config can send the token to another host, so they are refused",
+          "a bare vercel, a path, or an unknown word deploys or runs a vercel-<name> extension, so they ask",
+          "vercel api is GET unless -X is given or -F/-f/--input adds a body",
+          "build, dev, env run, curl and extensions run code with the token in their environment, so they ask",
+          "rules read against 65.16.0",
+          "automatic updates run unattended through npm"
+        ]
+      }
+    },
+    {
+      "id": "cloudflare",
+      "presetId": "cloudflare",
+      "name": "Wrangler (Cloudflare)",
+      "binary": "wrangler",
+      "docsUrl": "https://developers.cloudflare.com/workers/wrangler/",
+      "discovery": {
+        "wellKnownPaths": {
+          "macos": [
+            "/opt/homebrew/bin/wrangler",
+            "/usr/local/bin/wrangler"
+          ],
+          "linux": [
+            "/usr/local/bin/wrangler",
+            "/usr/bin/wrangler"
+          ],
+          "windows": []
+        }
+      },
+      "version": {
+        "args": [
+          "--version"
+        ],
+        "min": "3.0.0"
+      },
+      "install": {
+        "macos": {
+          "cmd": "npm i -g wrangler@latest"
+        },
+        "linux": {
+          "cmd": "npm i -g wrangler@latest"
+        },
+        "windows": {
+          "cmd": "npm i -g wrangler@latest"
+        }
+      },
+      "update": {
+        "macos": {
+          "cmd": "npm i -g wrangler@latest",
+          "unattended": true
+        },
+        "linux": {
+          "cmd": "npm i -g wrangler@latest",
+          "unattended": true
+        },
+        "windows": {
+          "cmd": "npm i -g wrangler@latest",
+          "unattended": true
+        }
+      },
+      "latest": {
+        "npm": "wrangler"
+      },
+      "token": {
+        "secret": "companion.cloudflare",
+        "label": "Cloudflare API token",
+        "help": "An API token with only the permissions agents need (Read where they only look). Read-only permissions make every change fail at Cloudflare too.",
+        "helpUrl": "https://developers.cloudflare.com/fundamentals/api/get-started/create-token/"
+      },
+      "env": {
+        "WRANGLER_SEND_METRICS": "false",
+        "WRANGLER_WRITE_LOGS": "false",
+        "WRANGLER_LOG_SANITIZE": "true"
+      },
+      "passEnv": [
+        "CLOUDFLARE_ACCOUNT_ID"
+      ],
+      "askPaths": [
+        {
+          "path": "/accounts/*/challenges/widgets/*"
+        },
+        {
+          "path": "/accounts/*/cfd_tunnel/*/token"
+        }
+      ],
+      "noSessionPaths": [
+        {
+          "path": "/accounts/*/d1/database/*/query"
+        },
+        {
+          "path": "/accounts/*/d1/database/*/raw"
+        }
+      ],
+      "refusePaths": [
+        {
+          "method": "POST",
+          "path": "/user/tokens"
+        },
+        {
+          "method": "POST",
+          "path": "/accounts/*/tokens"
+        },
+        {
+          "method": "PUT",
+          "path": "/user/tokens/*/value"
+        },
+        {
+          "method": "PUT",
+          "path": "/accounts/*/tokens/*/value"
+        }
+      ],
+      "projectEnvDeny": [
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_API_BASE_URL",
+        "CLOUDFLARE_API_HEADERS",
+        "CLOUDFLARE_API_KEY",
+        "CLOUDFLARE_EMAIL",
+        "CF_API_TOKEN"
+      ],
+      "commands": {
+        "valueFlags": [
+          "-e",
+          "--env",
+          "--profile",
+          "--namespace-id",
+          "--binding",
+          "--format",
+          "--command",
+          "--file",
+          "--name"
+        ],
+        "credentialFlags": [
+          "--env-file",
+          "--cwd",
+          "-c",
+          "--config"
+        ],
+        "rules": [
+          {
+            "path": [
+              "*"
+            ],
+            "class": "exec",
+            "flag": {
+              "names": [
+                "--install-skills"
+              ]
+            }
+          },
+          {
+            "path": [
+              "login"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "logout"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "auth"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "dev"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "pages",
+              "dev"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "deploy"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "versions",
+              "upload"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "build"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "check"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "types"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "pages",
+              "functions"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "pages",
+              "deploy"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "pages",
+              "publish"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "setup"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "init"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "containers",
+              "build"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "containers",
+              "push"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "containers",
+              "ssh"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "cloudchamber",
+              "build"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "cloudchamber",
+              "push"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "cloudchamber",
+              "ssh"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "tunnel",
+              "run"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "tunnel",
+              "quick-start"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "artifacts",
+              "repos",
+              "issue-token"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "artifacts",
+              "repos",
+              "create"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "containers",
+              "registries",
+              "credentials"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "cloudchamber",
+              "registries",
+              "credentials"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "turnstile",
+              "widget",
+              "get"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "turnstile",
+              "widget",
+              "create"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "browser",
+              "view"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "whoami"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "deployments",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "deployments",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "deployments",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "versions",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "versions",
+              "view"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "versions",
+              "secret",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "secret",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "tail"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "kv",
+              "namespace",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "kv",
+              "key",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "kv",
+              "key",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "kv",
+              "bulk",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "r2",
+              "bucket",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "r2",
+              "bucket",
+              "info"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "r2",
+              "object",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "d1",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "d1",
+              "info"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "d1",
+              "insights"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "d1",
+              "migrations",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "d1",
+              "time-travel",
+              "info"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "d1",
+              "export"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "queues",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "queues",
+              "info"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "vectorize",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "vectorize",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "vectorize",
+              "info"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "vectorize",
+              "query"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "hyperdrive",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "hyperdrive",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ai",
+              "models"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pages",
+              "project",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pages",
+              "deployment",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pages",
+              "deployment",
+              "tail"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "pages",
+              "secret",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "workflows",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "workflows",
+              "describe"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "workflows",
+              "instances",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "workflows",
+              "instances",
+              "describe"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "dispatch-namespace",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "dispatch-namespace",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "containers",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "containers",
+              "info"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "docs"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "telemetry",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "help"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "complete"
+            ],
+            "class": "read"
+          }
+        ]
+      },
+      "skills": [
+        {
+          "name": "wrangler",
+          "url": "https://raw.githubusercontent.com/cloudflare/skills/cbf893b954222276bf1af57e5f23379231e0efb9/skills/wrangler/SKILL.md",
+          "sha256": "a39de5c69f50e88759736a6ec7ad07f402c15f7a58a3224bcf979dce42013b13",
+          "license": "Apache-2.0"
+        }
+      ],
+      "verified": {
+        "date": "2026-11-15",
+        "sources": [
+          "https://developers.cloudflare.com/workers/wrangler/install-and-update/",
+          "https://github.com/cloudflare/workers-sdk/blob/79b890ab89a62823198a0c551c44ff647c80de4d/packages/workers-auth/src/credentials.ts",
+          "https://github.com/cloudflare/workers-sdk/blob/79b890ab89a62823198a0c551c44ff647c80de4d/packages/wrangler/src/index.ts",
+          "https://github.com/cloudflare/workers-sdk/blob/79b890ab89a62823198a0c551c44ff647c80de4d/packages/wrangler/src/dialogs.ts"
+        ],
+        "checks": [
+          "CLOUDFLARE_API_TOKEN outranks the stored login; wrangler has no token flag",
+          "wrangler loads the project's .env files but never replaces a variable already set, so atrium pins CLOUDFLARE_API_BASE_URL and refuses --env-file",
+          "without a TTY wrangler's own confirmations answer yes, so atrium's approval is the only gate on deletes",
+          "auth token prints the token, so auth is refused",
+          "d1 execute's read or write depends on its SQL, so it asks",
+          "rules read against 4.162.0",
+          "automatic updates run unattended through npm"
+        ]
+      }
+    },
+    {
+      "id": "supabase",
+      "presetId": "supabase",
+      "name": "Supabase CLI",
+      "binary": "supabase",
+      "docsUrl": "https://supabase.com/docs/reference/cli/introduction",
+      "discovery": {
+        "wellKnownPaths": {
+          "macos": [
+            "/opt/homebrew/bin/supabase",
+            "/usr/local/bin/supabase"
+          ],
+          "linux": [
+            "/home/linuxbrew/.linuxbrew/bin/supabase",
+            "/usr/local/bin/supabase",
+            "/usr/bin/supabase"
+          ],
+          "windows": [
+            "~/scoop/shims/supabase.exe"
+          ]
+        }
+      },
+      "version": {
+        "args": [
+          "--version"
+        ],
+        "min": "2.0.0"
+      },
+      "install": {
+        "macos": {
+          "cmd": "brew install supabase/tap/supabase"
+        },
+        "linux": {
+          "cmd": "if command -v brew >/dev/null 2>&1; then brew install supabase/tap/supabase; else npm i -g supabase@latest; fi"
+        },
+        "windows": {
+          "cmd": "npm i -g supabase@latest"
+        }
+      },
+      "update": {
+        "macos": {
+          "cmd": "brew upgrade supabase",
+          "unattended": true
+        },
+        "linux": {
+          "cmd": "if command -v brew >/dev/null 2>&1; then brew upgrade supabase; else npm i -g supabase@latest; fi",
+          "unattended": true
+        },
+        "windows": {
+          "cmd": "npm i -g supabase@latest",
+          "unattended": true
+        }
+      },
+      "latest": {
+        "github": "supabase/cli"
+      },
+      "token": {
+        "secret": "companion.supabase",
+        "label": "Supabase scoped access token",
+        "help": "A scoped personal access token (sbp_…) limited to the organizations and projects agents need, with Read where they only look.",
+        "helpUrl": "https://supabase.com/docs/guides/platform/personal-access-tokens"
+      },
+      "env": {
+        "SUPABASE_TELEMETRY_DISABLED": "1",
+        "SUPABASE_NO_UPDATE_NOTIFIER": "1",
+        "DO_NOT_TRACK": "1"
+      },
+      "passEnv": [
+        "SUPABASE_PROJECT_ID"
+      ],
+      "askPaths": [
+        {
+          "path": "/v1/projects/*/api-keys"
+        },
+        {
+          "path": "/v1/projects/*/api-keys/*"
+        }
+      ],
+      "noSessionPaths": [
+        {
+          "path": "/v1/projects/*/database/query"
+        }
+      ],
+      "refusePaths": [
+        {
+          "method": "POST",
+          "path": "/v1/projects/*/api-keys"
+        }
+      ],
+      "projectEnvDeny": [
+        "SUPABASE_ACCESS_TOKEN",
+        "SUPABASE_API_URL",
+        "SUPABASE_PROFILE",
+        "SUPABASE_HOME",
+        "SUPABASE_WORKDIR"
+      ],
+      "commands": {
+        "valueFlags": [
+          "-o",
+          "--output",
+          "--output-format",
+          "--network-id",
+          "--dns-resolver",
+          "--agent",
+          "--log-level",
+          "--project-ref",
+          "-s",
+          "-j",
+          "-f",
+          "-t",
+          "-x"
+        ],
+        "credentialFlags": [
+          "--password",
+          "-p",
+          "--db-url",
+          "--db-password",
+          "--token",
+          "--profile",
+          "--workdir"
+        ],
+        "rules": [
+          {
+            "path": [
+              "*"
+            ],
+            "class": "write",
+            "flag": {
+              "names": [
+                "--yes"
+              ]
+            }
+          },
+          {
+            "path": [
+              "login"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "logout"
+            ],
+            "class": "credential"
+          },
+          {
+            "path": [
+              "projects",
+              "api-keys"
+            ],
+            "class": "reveal",
+            "flag": {
+              "names": [
+                "--reveal"
+              ]
+            }
+          },
+          {
+            "path": [
+              "branches",
+              "get"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "encryption",
+              "get-root-key"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "gen",
+              "bearer-jwt"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "gen",
+              "signing-key"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "db",
+              "dump"
+            ],
+            "class": "reveal"
+          },
+          {
+            "path": [
+              "start"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "stop"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "status"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "db",
+              "start"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "functions",
+              "serve"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "functions",
+              "deploy"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "test"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "db",
+              "test"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "db",
+              "reset"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "db",
+              "diff"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "experimental",
+              "stack"
+            ],
+            "class": "exec"
+          },
+          {
+            "path": [
+              "projects",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "projects",
+              "api-keys"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "orgs",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "whoami"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "branches",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "backups",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "functions",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "functions",
+              "download"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "secrets",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "snippets",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "snippets",
+              "download"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "config",
+              "diff"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "domains",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "network-bans",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "network-restrictions",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "ssl-enforcement",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "postgres-config",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "vanity-subdomains",
+              "get"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "vanity-subdomains",
+              "check-availability"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "sso",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "sso",
+              "show"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "sso",
+              "info"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "services"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "logs"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "migration",
+              "list"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "gen",
+              "types"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "inspect"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "db",
+              "lint"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "db",
+              "advisors"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "storage",
+              "ls"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "telemetry",
+              "status"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "completion"
+            ],
+            "class": "read"
+          },
+          {
+            "path": [
+              "help"
+            ],
+            "class": "read"
+          }
+        ]
+      },
+      "skills": [
+        {
+          "name": "supabase",
+          "url": "https://raw.githubusercontent.com/supabase/agent-skills/c9be0e931b7930f7d02126d04774d904c381e7d7/skills/supabase/SKILL.md",
+          "sha256": "697e0e949f97621c6fc1784169eb3ccbf673747d6bb8299a52962d3d84d93dc6",
+          "license": "MIT"
+        }
+      ],
+      "verified": {
+        "date": "2026-11-15",
+        "sources": [
+          "https://supabase.com/docs/guides/local-development/cli/getting-started",
+          "https://supabase.com/docs/guides/platform/personal-access-tokens",
+          "https://github.com/supabase/cli/tree/v3.1.0",
+          "https://github.com/supabase/cli/releases/tag/v3.0.0"
+        ],
+        "checks": [
+          "SUPABASE_ACCESS_TOKEN outranks the keyring and the saved token file (v3.1.0 source)",
+          "since v3 a hosted change fails unattended unless --yes is given, so any command with --yes asks",
+          "database passwords travel in --password/-p and --db-url, so those are refused rather than shown on a card",
+          "projects api-keys --reveal, branches get, encryption get-root-key and db dump print secrets or data, so they ask",
+          "start, functions serve, db reset and db diff run project code or containers, so they ask",
+          "rules read against v3.1.0; the CLI was Go before v2.100, and the 2.x minimum is not separately verified",
+          "automatic updates run unattended through brew or npm"
+        ]
+      }
+    }
+  ]
+}
