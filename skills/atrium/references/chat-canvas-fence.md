@@ -223,6 +223,7 @@ When a canvas asks the owner something, put `"ask"` beside the `type` of the ele
 
 - atrium then tracks each marked part on its own: it counts as waiting on the owner, locks on the answer they send with their choice lit, and offers Later and Decline. Every decision line gets its own part, so the owner can answer one and leave the rest.
 - `id` is your name for the question (the element key if you leave it out). Add a short `title` when the part's own text doesn't say what it asks.
+- **Asking again closes the old one.** A question you post again under the same title, in any of your chats or on your board, replaces the one still waiting. When the new question has a different title, or gathers several earlier ones, list them in `replaces`: `"ask": { "id": "all", "title": "Five pending decisions", "replaces": ["scale-backups", "ask_01M77F…"] }`. Each entry is an ask id or an earlier part's `id`. An unanswered ask it names closes as replaced. One the owner already answered becomes done.
 - Keep a form to about five questions: past that, group related ones into one part or split them across turns. Give each a `title` of one to three words. The titles label the form's tabs, and a form whose tabs won't fit shows one question at a time under its title.
 - A send button outside every marked part asks nothing. A button that isn't a question, like Refresh, takes `repeat: true` in its params.
 - A canvas with a send button and no markers is tracked as one question.
