@@ -45,12 +45,12 @@ jq -e '
 
 launch="$("$ADAPTER_DIR/build_launch_command.sh" \
   '{"permissionMode":"auto","plan":true,"model":"kimi-code/k3","effort":"high","extraArgs":"--agent default"}')"
-jq -e '.command == ["env","KIMI_MODEL_THINKING_EFFORT=high","kimi","--auto","--plan","--model","kimi-code/k3","--agent","default"]' \
+jq -e '.command == ["env","KIMI_MODEL_THINKING_EFFORT=high","kimi","--yolo","--plan","--model","kimi-code/k3","--agent","default"]' \
   <<<"$launch" >/dev/null
 
 resume="$("$ADAPTER_DIR/build_resume_command.sh" \
   '01234567-89ab-cdef-0123-456789abcdef' '{"yolo":true,"effort":"max"}')"
-jq -e '.command == ["env","KIMI_MODEL_THINKING_EFFORT=max","kimi","--session","01234567-89ab-cdef-0123-456789abcdef","--yolo"]' \
+jq -e '.command == ["env","KIMI_MODEL_THINKING_EFFORT=max","kimi","--session","01234567-89ab-cdef-0123-456789abcdef","--auto"]' \
   <<<"$resume" >/dev/null
 
 jq -e '
@@ -59,3 +59,5 @@ jq -e '
     and (map(select(.key == "model" and .type == "select" and (.choices | length == 3))) | length == 1)
     and (map(select(.key == "effort" and .choices == ["low", "high", "max"])) | length == 1)
 ' "$ADAPTER_DIR/launcher_options.json" >/dev/null
+
+bash "$ADAPTER_DIR/tests/permission-modes.assert.sh"

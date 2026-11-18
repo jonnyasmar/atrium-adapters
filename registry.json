@@ -199,7 +199,7 @@
         "windows"
       ],
       "official": true,
-      "version": "0.2.1",
+      "version": "0.2.2",
       "minAppVersion": "0.233.0",
       "iconSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><title>Kimi Code</title><rect x=\"3\" y=\"4.5\" width=\"18\" height=\"13\" rx=\"2.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><rect x=\"9.6\" y=\"8\" width=\"1.4\" height=\"2.6\" rx=\".45\" fill=\"currentColor\"/><rect x=\"15.6\" y=\"8\" width=\"1.4\" height=\"2.6\" rx=\".45\" fill=\"currentColor\"/></svg>",
       "install": {
@@ -216,7 +216,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "236e3af8ecaed8b8d35f1d4a093a0166068dcde35557c77928c127ca11ab56e4",
+      "contentSha256": "a3414d422db57e57f11d9fbbfe033c60b76f259d44ab739896f481eaa8ff37ba",
       "maxAppVersion": null
     },
     {
@@ -453,7 +453,7 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "20b10b33af7f48e6c89ca686fe1470284c3340c5",
+    "commit": "c13333eab0a91f6334f1fdc26459d3380941b601",
     "sharedSha256": "72056405029215f44f8bec03780d587566d66166e0a8aeef47165dfa75be9f5f",
     "schemaSha256": "5e2f322d91fe996a521173ffe7c8d414dbf5aaf2a5388ca31ab66b774bae5420",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"

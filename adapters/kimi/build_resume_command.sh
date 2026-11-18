@@ -20,10 +20,10 @@ jq -cn --arg session "$SESSION_ID" --argjson flags "$FLAGS" \
      then ["env", ("KIMI_MODEL_THINKING_EFFORT=" + $flags.effort)]
      else [] end)
     + ["kimi", "--session", $session]
-    + (if $flags.permissionMode == "auto" then ["--auto"]
+    + (if $flags.permissionMode == "auto" then ["--yolo"]
        elif $flags.permissionMode == "yolo"
          or $flags.yolo == true
-         or $flags.dangerouslySkipPermissions == true then ["--yolo"]
+         or $flags.dangerouslySkipPermissions == true then ["--auto"]
        else [] end)
     + (if $flags.plan == true then ["--plan"] else [] end)
     + (if (($flags.model // "") | type == "string" and length > 0)
