@@ -45,7 +45,7 @@ check "launch: wrapper leads the argv" \
   "$(argv "$(bash "$KIMI_DIR/build_launch_command.sh" \
     '{"trust":true,"effort":"high","permissionMode":"yolo"}')")" \
   "$(jq -cn --arg s "$TRUST_SH" \
-    '[$s,"env","KIMI_MODEL_THINKING_EFFORT=high","kimi","--yolo"]')"
+    '[$s,"env","KIMI_MODEL_THINKING_EFFORT=high","kimi","--auto"]')"
 
 check "resume: wrapper leads the argv" \
   "$(argv "$(bash "$KIMI_DIR/build_resume_command.sh" sess-1 '{"trust":true}')")" \
