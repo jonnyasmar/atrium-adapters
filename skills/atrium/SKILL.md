@@ -317,6 +317,12 @@ Need a git worktree? Use `atrium worktree create --branch <name>` — **never** 
 "$ATRIUM_CLI_PATH" worktree list --json                         # bound worktrees (--orphans to find unbound ones)
 ```
 
+`worktree create` waits for the include copy, destination verification, and post-create commands. Each post-create command has a 15-minute deadline; expiry stops its process tree and skips the remaining commands. A copy or setup failure exits nonzero and leaves the worktree available for inspection. To continue in the background, use `--no-wait`; the response includes an `operationId` and the target `projectDir`. Check it with `worktree status <operationId>`, or `worktree status <operationId> --wait` to wait for readiness. Create and status waits default to 30 minutes; use `--timeout <seconds>` to change that limit. A CLI wait timeout does not cancel setup: check the same operation before retrying creation. Status includes the phase and copied/total file counts.
+
+A wait retries a lost connection for up to 30 seconds. Operation records are bounded to 256 and expire when the daemon restarts; a restart can leave a partially prepared, unbound worktree. Unknown status is not success. Inspect `worktree list --orphans`, match the reported target path, then use `worktree adopt <path>` to keep it or `worktree remove <path>` to remove it. Inspect incomplete setup before running commands there; adoption does not finish the interrupted copy or setup. Do not create the same worktree again until its state is known.
+
+The copier preserves included empty directories and copies symlinks without traversing their targets. Nested Git repositories and worktrees, special files such as sockets, and entries removed from the source during copying are skipped with warnings. Verification uses copy-time source metadata. A source change is a warning only when the destination matches the new source metadata; a missing destination or another mismatch fails setup. On Windows without symlink privileges, file/junction fallbacks are reported as warnings; links that cannot be carried fail setup. Regular files use APFS clones or Linux reflinks when supported, and normal copies otherwise. If `node_modules` is included with a pnpm, Yarn Berry, or Bun lockfile, create recommends a post-create install using that manager's shared store. This is advice only; it never changes your configuration.
+
 Full surface (`remove` / `forget` / `adopt` / `prune`) via `worktree --help`.
 
 ## Notes
