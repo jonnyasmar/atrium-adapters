@@ -106,11 +106,14 @@ jobs:
       - name: Validate Muse Wonder launcher catalog and flags
         run: python3 adapters/muse/tests/launcher_test.py
 
+      - name: Validate Antigravity launch permissions and model catalog
+        run: python3 adapters/antigravity/tests/launcher_test.py
+
       - name: Validate opencode launch flags and reasoning-variant wrapper
         run: python3 adapters/opencode/tests/launch_test.py
 
-      - name: Validate Codex launch and resume argument boundaries
-        run: python3 adapters/codex/tests/launcher_test.py
+      - name: Validate Codex launch arguments and session discovery
+        run: python3 -m unittest discover -s adapters/codex/tests -p '*_test.py'
 
       - name: Validate Copilot hooks, launch commands, and session history
         run: python3 -m unittest discover -s adapters/copilot/tests -p '*_test.py'
