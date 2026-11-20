@@ -116,6 +116,37 @@
       },
       "uniqueItems": true
     },
+    "sessionStore": {
+      "type": "object",
+      "description": "SDK v2. Optional. Where the tool files its sessions, and whether that place follows the working directory. When a project folder moves, atrium carries a `directoryPerCwd` store from the old folder's key to the new one, so the tool resumes and lists its sessions from the new folder. It moves files by hard link and rename and never replaces or deletes one. Open by design: an atrium that does not know a layout, key scheme or field carries nothing rather than refusing the adapter, so later adapters can add values here without breaking older apps.",
+      "required": ["layout"],
+      "properties": {
+        "layout": {
+          "type": "string",
+          "description": "Known values: `directoryPerCwd` (one directory per cwd under `root`, named by `cwdKey`) and `cwdIndependent` (sessions are found by id wherever the project lives; nothing to carry)."
+        },
+        "root": {
+          "type": "string",
+          "description": "The store root, absolute or `~/`-prefixed (`~/.claude/projects`)."
+        },
+        "rootEnv": {
+          "type": "array",
+          "description": "Environment variables that move the root, first set one wins. `subdir` is joined onto the value (`CLAUDE_CONFIG_DIR` + `projects`).",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "subdir": { "type": "string" }
+            }
+          }
+        },
+        "cwdKey": {
+          "type": "string",
+          "description": "How a cwd becomes its directory name under the root. Known values: `claude-path` (every UTF-16 unit outside [A-Za-z0-9] becomes `-`; paths over 200 units are not carried), `pi-path` (`--` + the path without one leading separator, `/`, `\\` and `:` turned into `-`, + `--`), `md5-path` (lowercase hex MD5 of the path)."
+        }
+      }
+    },
     "hookEnvelopes": {
       "type": "object",
       "description": "SDK v2. Optional. Declares the per-event response-envelope shape atrium core emits when the underlying tool fires SessionStart, UserPromptSubmit, PreToolUse, and PostToolUse hooks. This is ALSO the per-event injection-capability matrix (Epic 77): for each event, 'kind: none' (or an omitted field) means the adapter CANNOT have context injected back into that event ('cannot inject unless verified' — the conservative default); any non-none 'kind' means the adapter IS injection-capable for that event and atrium renders the assembled context in that envelope shape. Lets atrium's context-injection layer stay adapter-agnostic — new adapters declare their capability + envelope here rather than requiring a Rust enum bump. Omitted fields fall back to atrium's default (identity for sessionStartManifest, hookSpecificOutput/UserPromptSubmit with systemMessage for userPromptSubmit, and PreToolUse/PostToolUse incapable — the Claude-Code-compatible defaults).",
