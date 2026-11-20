@@ -5,7 +5,7 @@
   "description": "Minimal terminal coding agent by Mario Zechner (pi.dev)",
   "accent": "#06b6d4",
   "binary": "pi",
-  "version": "0.8.4",
+  "version": "0.9.0",
   "updateCommand": [
     "bash",
     "-c",
@@ -99,6 +99,15 @@
       "hookEventName": "PostToolUse",
       "includeSystemMessage": false
     }
+  },
+  "sessionStore": {
+    "layout": "directoryPerCwd",
+    "root": "~/.pi/agent/sessions",
+    "rootEnv": [
+      {"name": "PI_CODING_AGENT_SESSION_DIR"},
+      {"name": "PI_CODING_AGENT_DIR", "subdir": "sessions"}
+    ],
+    "cwdKey": "pi-path"
   },
   "chatTransport": {
     "kind": "pi-rpc",
