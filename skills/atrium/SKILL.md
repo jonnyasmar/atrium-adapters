@@ -240,7 +240,9 @@ When atrium launches you against a task, it sets `$ATRIUM_TASK_ID` (the card UUI
 "$ATRIUM_CLI_PATH" task set-done                        # 3. ONLY if the user said to skip review
 ```
 
-**Progress without handing back:** post a comment with `task comment "$ATRIUM_TASK_ID" --kind report --source "adapter:<your adapter>" --body "<progress>"`, then run `task report-progress`. The director wakes with your progress report; the run stays Active and the card stays In Progress. Continue working. Use `set-in-review` only for a final report when you are done, not for interim updates.
+**Progress without handing back:** post a comment with `task comment "$ATRIUM_TASK_ID" --kind report --source "adapter:<your adapter>" --body "<progress>"`, then run `task report-progress`. The run stays Active and the card stays In Progress; continue working. A director gets progress as a digest, with its next wake or within 20 minutes, so plain progress never interrupts it.
+
+**A question goes through `--question`:** if the report asks the director anything (a decision, an answer, what you need to go on), run `task report-progress --question`. It wakes the director at once. Never bury a question in a progress report without it. If `task report-progress --help` lists no `--question`, your atrium is older: run plain `report-progress`, which already wakes the director for every report. Use `set-in-review` only for a final report when you are done, not for interim updates.
 
 `report-progress`, `set-in-review` and `set-done` read `$ATRIUM_TASK_RUN_ID` by default (override with `--run-id`). `set-in-review` moves the card to the configured review status so the user can approve your changes; `set-done` moves it to completion AND marks the run complete.
 
