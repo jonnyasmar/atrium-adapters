@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "version": "be9d51277fab6e8fbe2e9753516c86d1efce52622ee690bd7677629b3854e8d4",
+  "version": "22141a8044bc0a30bce4cb2c2ff4a95d8ffbe98b881e6b683bbe6498f43d0189",
   "source": "https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json",
   "license": "MIT",
   "models": {
@@ -538,6 +538,20 @@
       "output_cost_per_token_batches": 0.00000375,
       "output_cost_per_token_flex": 0.00000375,
       "output_cost_per_token_priority": 0.0000135
+    },
+    "gemini-4-neon": {
+      "cache_read_input_token_cost": 1.5e-7,
+      "cache_read_input_token_cost_batches": 7.5e-8,
+      "cache_read_input_token_cost_flex": 7.5e-8,
+      "cache_read_input_token_cost_priority": 2.7e-7,
+      "input_cost_per_token": 0.000003,
+      "input_cost_per_token_batches": 0.0000015,
+      "input_cost_per_token_flex": 0.0000015,
+      "input_cost_per_token_priority": 0.0000054,
+      "output_cost_per_token": 0.000015,
+      "output_cost_per_token_batches": 0.0000075,
+      "output_cost_per_token_flex": 0.0000075,
+      "output_cost_per_token_priority": 0.000027
     },
     "gemini-exp-1206": {
       "cache_read_input_token_cost": 3e-8,
