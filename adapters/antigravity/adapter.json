@@ -5,7 +5,7 @@
   "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
   "accent": "#14b8a6",
   "binary": "agy",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "updateCommand": [
     "bash",
     "-c",
@@ -14,16 +14,13 @@
   "icon": "icon.svg",
   "chatTransport": {
     "kind": "acp",
-    "managedRuntime": "antigravity-acp",
-    "binaryDiscovery": {
-      "commands": [
-        "agy_acp_server.par",
-        "agy_acp_server"
-      ],
-      "wellKnownPaths": [
-        "~/.local/share/atrium/runtimes/antigravity-acp/current/agy_acp_server.par",
-        "~/.antigravity/acp/agy_acp_server.par"
-      ]
+    "args": [
+      "acp",
+      "--app-data-dir",
+      "antigravity-acp"
+    ],
+    "launchEnv": {
+      "AGY_CLI_DISABLE_AUTO_UPDATE": "1"
     },
     "capabilities": {
       "resume": true,
@@ -31,13 +28,13 @@
       "thinking": true,
       "permissionCallback": true,
       "commandDiscovery": true,
-      "planMode": false,
+      "planMode": true,
       "contextUsage": true,
       "imageInput": true,
       "checkpointing": false,
-      "subagentEvents": false,
-      "steering": false,
-      "backgroundTasks": true
+      "subagentEvents": true,
+      "steering": true,
+      "backgroundTasks": false
     }
   },
   "skillInstallPath": "~/.gemini/antigravity-cli/skills/atrium/SKILL.md",
