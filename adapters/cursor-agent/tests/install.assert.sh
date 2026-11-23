@@ -15,7 +15,7 @@ jq -e '
   and .methods.check_update.script == "check_update.sh"
   and .icon == "icon.svg"
   and .skillInstallPath == "~/.cursor/skills/atrium/SKILL.md"
-  and .version == "0.5.1"
+  and (.version | test("^[0-9]+[.][0-9]+[.][0-9]+$"))
 ' "$ADAPTER_DIR/adapter.json" >/dev/null
 
 [[ -f "$ADAPTER_DIR/icon.svg" ]] || {
@@ -79,6 +79,18 @@ jq -e '
     and ([.[] | select(.key == "model") | .choices[].value] | index("grok-4.3") == null)
     and ([.[] | select(.key == "model") | .choices[].value] | index("cursor-grok-4.6-high") != null)
     and ([.[] | select(.key == "model") | .choices[].value] | index("cursor-grok-4.5-high") != null)
+' "$ADAPTER_DIR/launcher_options.json" >/dev/null
+
+# Catalog snapshot of `cursor-agent models`: default auto, Opus 5.5 effort
+# ladder present, retired ids gone, and every "-fast" id after all non-fast.
+jq -e '
+  (.options | map(select(.key == "model")) | .[0]) as $m
+  | ($m.choices | map(.value)) as $v
+  | $m.default == "auto"
+    and $v[0] == "auto"
+    and (["claude-opus-5-5-low","claude-opus-5-5-medium","claude-opus-5-5-high","claude-opus-5-5-xhigh","claude-opus-5-5-max","claude-sonnet-5-xhigh","grok-4.7-high","gpt-5.6-sol-high","gpt-5.6-sol-xhigh","gpt-5.6-luna-high","composer-2.5"] - $v | length == 0)
+    and ($v | index("gemini-3.6-flash-high") == null)
+    and (($v | map(endswith("-fast"))) as $f | ($f | index(true)) as $first | ($f[$first:] | all))
 ' "$ADAPTER_DIR/launcher_options.json" >/dev/null
 
 echo "install.assert: cursor-agent ok"
