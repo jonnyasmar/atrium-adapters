@@ -103,7 +103,7 @@ def _extract(item, request, adapter, page_size):
         cursor, reset = adapter.select(connection, resume)
         event_count = 0
         malformed = 0
-        next_resume = resume or "r:0"
+        next_resume = (None if reset else resume) or getattr(adapter, "initial_resume", "r:0")
         while True:
             rows = cursor.fetchmany(page_size)
             if not rows:

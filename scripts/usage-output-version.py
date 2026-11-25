@@ -14,6 +14,7 @@ import tarfile
 import tempfile
 
 MAX_RECONCILABLE_OUTPUT_VERSION = 1
+ADDITIVE_OUTPUT_VERSIONS = {'grok': 2}
 GOLDEN = 'tests/extractor/usage/semantic-output.json'
 ROOT_ENV = ('CLAUDE_CONFIG_DIR', 'CODEX_HOME', 'PI_CODING_AGENT_SESSION_DIR',
             'OMP_CODING_AGENT_SESSION_DIR', 'GOOSE_PATH_ROOT', 'GROK_HOME',
@@ -103,6 +104,12 @@ def transition(version, records, previous_version, previous_records):
         raise ValueError('a bump must change fixture output; extend the fixture to cover the new semantics')
 
 
+def additive_transition(records, previous_records):
+    current = {canonical(row) for row in records}
+    if previous_records is None or any(canonical(row) not in current for row in previous_records):
+        raise ValueError('Grok v2 is additive: every v1 request must remain identical')
+
+
 def git(root, *args, optional=False):
     env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
     result = subprocess.run(['git', '-C', str(root), *args], capture_output=True, check=False, env=env)
@@ -152,8 +159,8 @@ def check(adapter, record=False, repository=None):
     repository = Path(repository).resolve() if repository else root
     relative = adapter.relative_to(root)
     version = output_version(adapter)
-    if version > MAX_RECONCILABLE_OUTPUT_VERSION:
-        raise ValueError('versions above 1 need app-side reconciliation (not yet supported)')
+    if version > ADDITIVE_OUTPUT_VERSIONS.get(adapter.name, MAX_RECONCILABLE_OUTPUT_VERSION):
+        raise ValueError('versions above 1 need app-side reconciliation')
     path = adapter / GOLDEN
     with tempfile.TemporaryDirectory(prefix='atrium-usage-semantic-') as temporary:
         temporary = Path(temporary)
@@ -176,6 +183,8 @@ def check(adapter, record=False, repository=None):
             except (OSError, ValueError, subprocess.TimeoutExpired, json.JSONDecodeError):
                 old_records = None
             transition(version, records, old_version, old_records)
+            if adapter.name == 'grok' and version == 2 and old_version == 1:
+                additive_transition(records, old_records)
     return len(records)
 
 

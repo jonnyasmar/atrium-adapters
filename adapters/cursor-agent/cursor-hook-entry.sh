@@ -28,7 +28,7 @@ ATRIUM_CLI="${ATRIUM_CLI_PATH:-$HOME/.atrium/bin/atrium}"
 # Chat-sidecar sessions get activity from the chat runtime's turn bridge —
 # engine-side lifecycle emits double-feed the activity card and (with no
 # settling stop behind them) wedge it in "working".
-[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || exit 0
+[ -z "${ATRIUM_CHAT_SDK_HOOKS:-}" ] || [ "$EVENT" = "usage-update" ] || exit 0
 
 # hooks.json is global, so this also runs for Cursor sessions with no atrium
 # pane (started outside atrium). An emit there has nothing to attribute the
@@ -51,6 +51,17 @@ BASE_FILTER='if type=="object" then . + (if .session_id then {} else {session_id
 # Capture stdin once: the stop case reads the payload (cwd) before the
 # dispatch jq below would otherwise consume it.
 input="$(cat)"
+
+if [ "$EVENT" = "usage-update" ]; then
+  payload="$(printf '%s' "$input" | jq -c '
+    select(.input_tokens != null and .output_tokens != null and
+           .cache_read_tokens != null and .cache_write_tokens != null) |
+    {session_id:(.session_id // .conversation_id),generation_id,model,
+     input_tokens,output_tokens,cache_read_tokens,cache_write_tokens}' 2>/dev/null)"
+  [ -n "$payload" ] || exit 0
+  printf '%s' "$payload" | "$ATRIUM_CLI" hook emit usage-update --adapter cursor-agent --pane-id "$ATRIUM_PANE_ID" --json 2>/dev/null
+  exit 0
+fi
 
 # Per-event field normalization — translate Cursor-shaped payloads into
 # the field names atrium's `parseActivityEvent` reads.

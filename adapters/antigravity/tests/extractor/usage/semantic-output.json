@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "sha256": "21b1ba6778048eb048e49bb6eb73a9445c60b956f66cc655209d2e747a27284c",
+  "records": [
+    {
+      "at": "2026-11-23T13:24:07.126Z",
+      "session_id": "synthetic",
+      "model": "gemini-4-neon-xhigh",
+      "dedupe": "antigravity:synthetic:step:0",
+      "type": "usage",
+      "tokens": {
+        "input": 120,
+        "output": 40,
+        "cache_read": 500,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 10
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    }
+  ]
+}

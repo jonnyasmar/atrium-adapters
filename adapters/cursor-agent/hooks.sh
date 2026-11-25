@@ -42,20 +42,16 @@ ATRIUM_HOOK_MARKER_RE='cursor-hook-entry\.sh|context-entry\.sh|inject-context\.s
 # the hook under, and the matcher. Cursor treats matcher as an optional
 # regex; "*" and "" are special cases.
 #
-# Cursor's CLI surfaces no hook event that carries the assistant's response
-# text — `afterAgentResponse` is defined in the event enum but is only
-# fired by the Cursor IDE app, not the `cursor-agent` CLI (verified in
-# the CLI bundle: no executeHookForStep(afterAgentResponse) call site).
-# We therefore wire Cursor's native `stop` for the end-of-turn signal
-# and accept that atrium's `lastAssistantMessage` stays null for Cursor
-# until either Cursor starts firing text-carrying events or we pull the
-# text out-of-band from the chat sqlite.
+# New CLI builds expose generation counters on response and stop hooks.
+# Both share generation_id, so the usage ledger deduplicates delivery.
 EVENTS=$'session-start\tsessionStart\t*
 session-end\tsessionEnd\t*
 user-prompt-submit\tbeforeSubmitPrompt\t*
 pre-tool-use\tpreToolUse\t.*
 post-tool-use\tpostToolUse\t.*
 stop\tstop\t*
+usage-update\tafterAgentResponse\t*
+usage-update\tstop\t*
 subagent-start\tsubagentStart\t.*
 subagent-stop\tsubagentStop\t*'
 

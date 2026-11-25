@@ -89,11 +89,25 @@ def extract(request, parser_factory):
                       events=0, malformed=0, reset=False))
             return
         with open_transcript(path) as stream:
-            offset, crc, reset = (0, 0, token is not None) if compressed else checkpoint_offset(stream, token)
             parser = parser_factory(Path(path), request.get('session_id'))
+            state = None
+            position = token
+            if isinstance(token, str) and token.startswith('state:') and hasattr(parser, 'restore_state'):
+                try:
+                    saved = json.loads(token[6:])
+                    position, state = saved['position'], saved['state']
+                except (ValueError, KeyError, TypeError):
+                    position = 'invalid'
+            offset, crc, reset = (0, 0, token is not None) if compressed else checkpoint_offset(stream, position)
+            if offset and state is not None and not reset:
+                try:
+                    parser.restore_state(state)
+                except (ValueError, TypeError, AttributeError):
+                    offset, crc, reset = 0, 0, True
+                    parser = parser_factory(Path(path), request.get('session_id'))
             # Context-only replay is needed by rollouts whose model/session metadata
             # precedes the checkpoint; usage records themselves are never replayed.
-            if offset and hasattr(parser, 'restore_context'):
+            elif offset and hasattr(parser, 'restore_context'):
                 parser.restore_context(stream, offset)
             if not compressed:
                 stream.seek(offset)
@@ -108,8 +122,9 @@ def extract(request, parser_factory):
                     row = json.loads(line)
                     if not isinstance(row, dict):
                         raise ValueError()
-                    event = parser.event(row)
-                    if event:
+                    parser.offset = offset - len(line)
+                    value = parser.event(row)
+                    for event in value if isinstance(value, list) else ([value] if value else []):
                         timestamp = datetime.fromisoformat(event['at'].replace('Z', '+00:00'))
                         if timestamp.tzinfo is None:
                             raise ValueError('usage timestamp has no timezone')
@@ -122,8 +137,11 @@ def extract(request, parser_factory):
                     malformed += 1
             for event in events.values():
                 emit(event)
+            resume = archive_token or f'o:{offset}:{crc:08x}'
+            if not compressed and hasattr(parser, 'checkpoint_state'):
+                resume = 'state:' + json.dumps(dict(position=resume, state=parser.checkpoint_state()), separators=(',', ':'))
             checkpoint = dict(type='checkpoint', path=path,
-                              resume=token if deferred else archive_token or f'o:{offset}:{crc:08x}',
+                              resume=token if deferred else resume,
                               complete=not deferred, events=len(events), malformed=malformed, reset=reset)
             if deferred:
                 checkpoint['error'] = f'fork-ancestry-unavailable:{deferred}'

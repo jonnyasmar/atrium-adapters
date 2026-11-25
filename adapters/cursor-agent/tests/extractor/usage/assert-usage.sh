@@ -12,3 +12,4 @@ messages = [json.loads(value) for (value,) in connection.execute("SELECT value F
 assert len(messages) == 2 and all("usage" not in message for message in messages)
 assert open(sys.argv[3], encoding="utf-8").read() == ""
 PY
+python3 "$FIXTURE_DIR/test_hooks.py"

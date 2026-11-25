@@ -11,3 +11,6 @@ with tempfile.TemporaryDirectory(prefix='atrium-adapters-index-') as temporary:
     subprocess.run([sys.executable, str(mirror / 'scripts/usage-output-version.py'),
                     'check', '--repository', str(root)], cwd=mirror, check=True)
     subprocess.run([sys.executable, str(mirror / 'tests/usage_output_version_test.py')], cwd=mirror, check=True)
+    # atrium refuses a canonical set with a stale sha256 and skips its whole
+    # refresh, and a branch nobody pushes never reaches CI's copy of this check.
+    subprocess.run([sys.executable, str(mirror / 'tests/canonical-assets.py')], cwd=mirror, check=True)

@@ -5,7 +5,7 @@
   "description": "Google's agent-first terminal CLI (successor to Gemini CLI)",
   "accent": "#14b8a6",
   "binary": "agy",
-  "version": "0.8.0",
+  "version": "0.9.1",
   "updateCommand": [
     "bash",
     "-c",
@@ -100,7 +100,18 @@
       "quick",
       "standard",
       "deep"
-    ]
+    ],
+    "usage": {
+      "source": "transcript",
+      "batch": true,
+      "roots": [
+        "~/.gemini/antigravity-acp/conversations",
+        "~/.gemini/antigravity-cli/conversations",
+        "~/.gemini/antigravity-acp/brain",
+        "~/.gemini/antigravity-cli/brain"
+      ],
+      "rootEnv": ["ANTIGRAVITY_HOME"]
+    }
   },
   "hookEnvelopes": {
     "sessionStartManifest": {

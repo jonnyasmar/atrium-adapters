@@ -1,0 +1,3 @@
+{"type":"usage.record","time":1794000100000,"model":"invented-kimi-model","usage":{"inputOther":200,"output":80,"inputCacheRead":700,"inputCacheCreation":100},"usageScope":"turn"}
+{"type":"context.append_loop_event","time":1794000100000,"event":{"usage":{"inputOther":200,"output":80,"inputCacheRead":700,"inputCacheCreation":100}}}
+{"type":"token_counting.measured","time":1794000100000,"tokens":100000}
