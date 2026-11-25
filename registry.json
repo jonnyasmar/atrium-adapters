@@ -150,7 +150,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "1eecee81786642f83d6fc0d0e30dca03f10e09c073243cfc299e10f25827f0d3",
+      "contentSha256": "498751e8a119900b97eb22ff6e799e7163f590afa58b7aac78d89690b02ccd31",
       "maxAppVersion": null
     },
     {
@@ -184,7 +184,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "d7b4781d29121583ec4823efd442680858ea7c2c4a7bbb8c32abf327e6552a13"
+      "contentSha256": "3443de35f8709456079ec45e449a45f43396967d2fd872ec7bc487ddd496be4c"
     },
     {
       "name": "kimi",
@@ -216,7 +216,7 @@
           "postInstallAuth": true
         }
       },
-      "contentSha256": "a3414d422db57e57f11d9fbbfe033c60b76f259d44ab739896f481eaa8ff37ba",
+      "contentSha256": "12d0fb71921455ad1fc4f541848929a4ec19a94b22937a2e6de2a7d7824b19d1",
       "maxAppVersion": null
     },
     {
@@ -316,7 +316,7 @@
         }
       },
       "maxAppVersion": null,
-      "contentSha256": "96db317804344ff4b91ad922360b3c10ab67da822bd43bf9fc5026a9bd7918e1"
+      "contentSha256": "d391534ca564fdc606943ba1aa097966d65d67c57403fa685f85e305aa3df84e"
     },
     {
       "name": "hermes",
@@ -453,8 +453,8 @@
   ],
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
-    "commit": "2fb0448013208537913e602523de8cd726d55e00",
-    "sharedSha256": "72056405029215f44f8bec03780d587566d66166e0a8aeef47165dfa75be9f5f",
+    "commit": "ff28b8a21f5781e2d97e098156cd7d5d34cb6d63",
+    "sharedSha256": "ecd6e8b670c830f61def170d66cf852b1f99a023543679ff124b56d2412f80c9",
     "schemaSha256": "88ceea0112e9d85d0d3e2fe639e2f60793280f0be4a5207a01777c08f47ead90",
     "methodsSchemaSha256": "a7c2939121db2e948a6b5f1f0d3ed0df58de8930108845a789e95b33944c6060"
   },
