@@ -1,7 +1,107 @@
 {
-  "version": 1,
-  "sha256": "7068f0768cc4af28ce33f0c767286e05d55a55420f73786d1426c12ad5e1c1fa",
+  "version": 2,
+  "sha256": "bb5a19d50bea693304b94363e6c43309c681f31a3523a11a4e6779902b42dd22",
   "records": [
+    {
+      "at": "2026-11-06T21:28:20.000Z",
+      "session_id": "synthetic-call-grok",
+      "model": "__none",
+      "dedupe": "grok-turn:synthetic-call-grok:counted-call-prompt:__none",
+      "type": "usage",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:30:00.000Z",
+      "session_id": "synthetic-cost-grok",
+      "model": "synthetic-model",
+      "dedupe": "grok-turn:synthetic-cost-grok:cost-prompt:synthetic-model",
+      "type": "usage",
+      "tokens": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": 0.025,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:21:40.000Z",
+      "session_id": "synthetic-legacy-grok",
+      "model": "synthetic-model",
+      "dedupe": "grok-turn:synthetic-legacy-grok:legacy-prompt-a:synthetic-model",
+      "type": "usage",
+      "tokens": {
+        "input": 400,
+        "output": 200,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:21:41.000Z",
+      "session_id": "synthetic-legacy-grok",
+      "model": "synthetic-model",
+      "dedupe": "grok-turn:synthetic-legacy-grok:legacy-prompt-b:synthetic-model",
+      "type": "usage",
+      "tokens": {
+        "input": 600,
+        "output": 300,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
+    {
+      "at": "2026-11-06T21:23:20.000Z",
+      "session_id": "synthetic-mixed-grok",
+      "model": "synthetic-model",
+      "dedupe": "grok-turn:synthetic-mixed-grok:mixed-legacy-prompt:synthetic-model",
+      "type": "usage",
+      "tokens": {
+        "input": 800,
+        "output": 400,
+        "cache_read": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": false,
+      "agent_id": null,
+      "fork_of": null
+    },
     {
       "at": "2026-11-06T21:20:03.000Z",
       "session_id": "synthetic-grok-session-716",

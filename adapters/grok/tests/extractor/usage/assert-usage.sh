@@ -77,12 +77,12 @@ with tempfile.TemporaryDirectory() as temporary:
 print(f'[PASS] resume at all {len(lines) + 1} line boundaries')
 
 for name, count_expected, requests_expected in (
-    ('legacy-only.jsonl', 1, 0),
-    ('mixed-history.jsonl', 1, 1),
+    ('legacy-only.jsonl', 0, 2),
+    ('mixed-history.jsonl', 0, 2),
     ('modern-only.jsonl', 0, 2),
     ('empty-turns.jsonl', 0, 0),
-    ('model-call-only.jsonl', 1, 0),
-    ('cost-only.jsonl', 1, 0),
+    ('model-call-only.jsonl', 0, 1),
+    ('cost-only.jsonl', 0, 1),
 ):
     path = fixture_root / name
     result = invoke('--batch', [{'path': str(path), 'resume': None}])
@@ -99,7 +99,7 @@ for name, count_expected, requests_expected in (
             resumed = invoke('--batch', [{'path': str(path), 'resume': first[-1]['resume']}])
             assert resumed[-1].get('unrecorded') == expected_unrecorded, (name, boundary, resumed)
             assert resumed[-1]['complete'] is True and 'error' not in resumed[-1]
-print('[PASS] legacy/mixed histories retain counted notes across resumes; modern and empty/zero aggregates stay covered')
+print('[PASS] legacy totals are counted once, mixed response/totals do not overlap, and empty turns stay empty')
 
 compress = None
 try:
@@ -118,7 +118,7 @@ if compress:
         first = invoke('--batch', [{'path': str(archive), 'resume': None}])
         resumed = invoke('--batch', [{'path': str(archive), 'resume': first[-1]['resume']}])
         assert resumed[-1]['events'] == 0 and resumed[-1]['complete'] is True
-        assert first[-1]['unrecorded'] == {'reason': 'legacy-turn-totals', 'count': 1}
+        assert first[-1]['events'] == 2 and 'unrecorded' not in first[-1]
         assert 'unrecorded' not in resumed[-1]
         assert resumed[-1]['resume'] == first[-1]['resume'] and resumed[-1]['reset'] is False
 
@@ -139,7 +139,7 @@ with tempfile.TemporaryDirectory() as temporary:
     result = invoke('--batch', [{'path': str(torn), 'session_id': session, 'resume': None}])
     assert [row for row in result if row['type'] == 'usage'] == expected
     assert result[-1]['complete'] is True and result[-1]['malformed'] == 0
-    assert result[-1]['resume'].startswith(f'o:{source.stat().st_size}:')
+    assert json.loads(result[-1]['resume'][6:])['position'].startswith(f'o:{source.stat().st_size}:')
 print('[PASS] partial tail is deferred without advancing the checkpoint')
 
 listed = invoke('--list', extra_env={'ATRIUM_TEST_TRANSCRIPT_ROOT': str(fixture_root)})
@@ -155,3 +155,5 @@ assert len([row for row in batch if row['type'] == 'checkpoint']) == 200
 assert elapsed / 200 <= 0.05, f'{elapsed * 1000 / 200:.3f} ms/file'
 print(f'[PASS] one 200-file batch: {elapsed * 1000 / 200:.3f} ms/file')
 PY
+
+python3 "$FIXTURE_DIR/test_legacy.py"

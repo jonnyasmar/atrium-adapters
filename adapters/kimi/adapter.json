@@ -5,7 +5,7 @@
   "description": "Moonshot AI's terminal coding agent",
   "accent": "#4f6bff",
   "binary": "kimi",
-  "version": "0.2.2",
+  "version": "0.3.1",
   "updateCommand": [
     "bash",
     "-c",
@@ -114,6 +114,23 @@
       "subagentEvents": false,
       "steering": false,
       "backgroundTasks": false
+    }
+  },
+  "sessionExtractor": {
+    "script": "extract_session.sh",
+    "schemaVersion": 1,
+    "supportsDepths": [
+      "quick"
+    ],
+    "usage": {
+      "source": "transcript",
+      "batch": true,
+      "roots": [
+        "~/.kimi-code/sessions"
+      ],
+      "rootEnv": [
+        "KIMI_CODE_HOME"
+      ]
     }
   }
 }

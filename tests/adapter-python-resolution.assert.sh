@@ -147,7 +147,7 @@ done
 
 # hermes and muse hand their arguments straight to Python; they only have to
 # reach it.
-for adapter in hermes muse; do
+for adapter in hermes muse kimi; do
   log="$TMP/$adapter.reach.log"
   : >"$log"
   env -i HOME="$TMP/home" PATH="$PATH_PYTHON_ONLY" INTERPRETER_LOG="$log" \

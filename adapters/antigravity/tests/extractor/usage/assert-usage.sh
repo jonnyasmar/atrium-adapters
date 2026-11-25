@@ -11,7 +11,7 @@ import sys
 
 adapter = Path(sys.argv[1])
 fixture = adapter / 'tests/extractor/usage'
-assert 'usage' not in json.loads((adapter / 'adapter.json').read_text())['sessionExtractor']
+assert json.loads((adapter / 'adapter.json').read_text())['sessionExtractor']['usage']['batch']
 env = dict(os.environ, ATRIUM_TEST_TRANSCRIPT_ROOT=str(fixture / 'input'))
 command = ['bash', str(adapter / 'extract_session.sh'), '--usage']
 def run(*args, data=''):
@@ -31,5 +31,7 @@ assert [row['path'] for row in rows] == [row['path'] for row in listed]
 assert all(row['type'] == 'checkpoint' and row['complete'] and row['events'] == 0
            and row['malformed'] == 0 for row in rows)
 assert not run('--batch').stdout
-print(f'{adapter.name}: unsupported manifest, discovery metadata/filter, ordered zero-usage checkpoints, empty batch passed')
+print(f'{adapter.name}: capability, discovery metadata/filter, aggregate decoys, empty batch passed')
 PYTEST
+
+python3 "$ADAPTER_DIR/tests/extractor/usage/test_database.py"

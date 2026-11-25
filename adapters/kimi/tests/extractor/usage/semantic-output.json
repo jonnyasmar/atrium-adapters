@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "sha256": "a732d19d30d03ec3535e4572e1d07bd3e4ba19d73c75ecf0821aa3e0a6a982e0",
+  "records": [
+    {
+      "at": "2026-11-06T21:21:40.000Z",
+      "session_id": "semantic:native.jsonl",
+      "model": "invented-kimi-model",
+      "dedupe": "kimi:semantic:native.jsonl:corpus:0",
+      "type": "usage",
+      "tokens": {
+        "input": 200,
+        "output": 80,
+        "cache_read": 700,
+        "cache_write_5m": 100,
+        "cache_write_1h": 0,
+        "reasoning": 0
+      },
+      "tier": null,
+      "cost_usd": null,
+      "subagent": true,
+      "agent_id": "corpus",
+      "fork_of": null
+    }
+  ]
+}

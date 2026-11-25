@@ -5,7 +5,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-USAGE_OUTPUT_VERSION = 1
+USAGE_OUTPUT_VERSION = 2
 
 
 def shared_dir():
@@ -22,6 +22,7 @@ def shared_dir():
 
 sys.path.insert(0, shared_dir())
 from extract_session_usage import count, main
+from usage_totals import legacy_events
 
 
 def session_id(path):
@@ -32,11 +33,14 @@ class GrokUsage:
     def __init__(self, path, supplied_id):
         self.session = supplied_id or session_id(path)
         self.ordinal = 0
-        self.response_prompts = set()
-        self.aggregate_prompts = set()
-        self.responses_since_aggregate = False
-        self.unassigned_response = False
-        self.unidentified_legacy = False
+        self.response_mode = False
+
+    def checkpoint_state(self):
+        return dict(ordinal=self.ordinal, response_mode=self.response_mode)
+
+    def restore_state(self, state):
+        self.ordinal = count(state.get('ordinal'))
+        self.response_mode = bool(state.get('response_mode'))
 
     @staticmethod
     def notification(row):
@@ -46,33 +50,23 @@ class GrokUsage:
         update = params.get('update') or {}
         return params, update
 
+    @staticmethod
+    def prompt(params, update):
+        meta = params.get('_meta') or {}
+        prompt = update.get('prompt_id') or (meta.get('promptId') if isinstance(meta, dict) else None)
+        return prompt if isinstance(prompt, str) and prompt else None
+
     def observe(self, row):
         notification = self.notification(row)
         if not notification:
-            return
+            return False
         params, update = notification
-        kind = update.get('sessionUpdate')
-        if kind not in ('response_completed', 'turn_completed') or not isinstance(update.get('usage'), dict):
-            return
-        meta = params.get('_meta') or {}
-        prompt = update.get('prompt_id') or (meta.get('promptId') if isinstance(meta, dict) else None)
-        prompt = prompt if isinstance(prompt, str) and prompt else None
-        if kind == 'response_completed':
-            self.responses_since_aggregate = True
-            if prompt:
-                self.response_prompts.add(prompt)
-            else:
-                self.unassigned_response = True
-        else:
-            if self.has_aggregate_usage(update['usage']):
-                if prompt:
-                    self.aggregate_prompts.add(prompt)
-                    if self.unassigned_response:
-                        self.response_prompts.add(prompt)
-                elif not self.responses_since_aggregate:
-                    self.unidentified_legacy = True
-            self.responses_since_aggregate = False
-            self.unassigned_response = False
+        # Older transcripts have only turn totals. Once the session starts
+        # writing responses, its turn totals overlap those per-request records,
+        # including delayed and duplicated totals for interleaved prompts.
+        if update.get('sessionUpdate') == 'response_completed' and isinstance(update.get('usage'), dict):
+            self.response_mode = True
+        return self.response_mode
 
     @staticmethod
     def has_aggregate_usage(usage):
@@ -89,11 +83,6 @@ class GrokUsage:
             for entry in entries if isinstance(entry, dict)
             for value in (entry.get(key) for key in counters)
         )
-
-    def checkpoint_unrecorded(self):
-        if self.unidentified_legacy or self.aggregate_prompts - self.response_prompts:
-            return dict(reason='legacy-turn-totals', count=1)
-        return None
 
     @staticmethod
     def usage_record(row):
@@ -121,10 +110,23 @@ class GrokUsage:
                 continue
 
     def event(self, row):
-        self.observe(row)
+        covered = self.observe(row)
         record = self.usage_record(row)
         if not record:
-            return None
+            notification = self.notification(row)
+            if not notification or covered:
+                return None
+            params, update = notification
+            usage = update.get('usage')
+            if update.get('sessionUpdate') != 'turn_completed' or not isinstance(usage, dict) or not self.has_aggregate_usage(usage):
+                return None
+            at = row.get('timestamp')
+            if not isinstance(at, int) or isinstance(at, bool) or not 0 <= at <= 253402300799:
+                return None
+            session = params.get('sessionId') or self.session
+            identity = self.prompt(params, update) or (params.get('_meta') or {}).get('eventId') or str(self.offset)
+            stamp = datetime.fromtimestamp(at, timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+            return legacy_events(usage, session, identity, stamp)
         params, update, usage = record
         self.ordinal += 1
         at = row.get('timestamp')

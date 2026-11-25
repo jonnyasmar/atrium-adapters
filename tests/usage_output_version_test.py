@@ -26,6 +26,15 @@ for line in sys.stdin:
 
 
 class SemanticVersionTests(unittest.TestCase):
+    def test_grok_additive_replay_keeps_every_prior_copy_and_rejects_rewrites(self):
+        old = [dict(dedupe='shared', session_id='original'), dict(dedupe='shared', session_id='fork')]
+        usage.additive_transition([*old, dict(dedupe='legacy-total')], old)
+        for changed in [old[:1], [dict(dedupe='shared', session_id='rewritten')]]:
+            with self.assertRaisesRegex(ValueError, 'every v1 request must remain identical'):
+                usage.additive_transition(changed, old)
+        with self.assertRaisesRegex(ValueError, 'every v1 request must remain identical'):
+            usage.additive_transition(old, None)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='usage-output-selftest-')
         self.addCleanup(self.temporary.cleanup)
