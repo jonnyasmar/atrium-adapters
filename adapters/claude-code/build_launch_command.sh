@@ -8,9 +8,23 @@ set -euo pipefail
 FLAGS="${1:-"{}"}"
 SKIP="false"
 
-# JSON-escape a raw string for embedding in the command array.
+# JSON-escape a raw string for embedding in the command array. Prefer a real
+# JSON encoder so controls (\n/\t) cannot break the argv JSON (ATR-2100).
 json_escape() {
-  echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+  if command -v jq &>/dev/null; then
+    # --arg keeps embedded newlines intact; strip the outer JSON quotes.
+    jq -n --arg s "$1" '$s' | sed 's/^"//; s/"$//'
+  elif command -v python3 &>/dev/null; then
+    python3 -c 'import json,sys; sys.stdout.write(json.dumps(sys.argv[1])[1:-1])' "$1"
+  else
+    case "$1" in
+      *$'\n'* | *$'\r'* | *$'\t'*)
+        echo "json_escape: control characters require jq or python3" >&2
+        return 1
+        ;;
+    esac
+    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+  fi
 }
 
 if command -v jq &>/dev/null; then
@@ -43,18 +57,20 @@ fi
 if command -v jq &>/dev/null; then
   MODEL="$(echo "$FLAGS" | jq -r '.model // ""' 2>/dev/null)" || MODEL=""
   if [ -n "$MODEL" ]; then
-    CMD="${CMD}, \"--model\", \"${MODEL}\""
+    # Always escape — a raw model string can break out of the JSON argv
+    # array and inject flags (ATR-2096).
+    CMD="${CMD}, \"--model\", \"$(json_escape "$MODEL")\""
   fi
 
   EFFORT="$(echo "$FLAGS" | jq -r '.effort // ""' 2>/dev/null)" || EFFORT=""
   if [ -n "$EFFORT" ]; then
-    CMD="${CMD}, \"--effort\", \"${EFFORT}\""
+    CMD="${CMD}, \"--effort\", \"$(json_escape "$EFFORT")\""
   fi
 
   EXTRA="$(echo "$FLAGS" | jq -r '.extraArgs // ""' 2>/dev/null)" || EXTRA=""
   if [ -n "$EXTRA" ]; then
     for arg in $EXTRA; do
-      CMD="${CMD}, \"${arg}\""
+      CMD="${CMD}, \"$(json_escape "$arg")\""
     done
   fi
 fi

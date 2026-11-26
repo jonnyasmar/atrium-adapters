@@ -52,6 +52,18 @@ jq -e --arg browser_path "$browser_path" '
   and (.command | index("acceptEdits") == null)
 ' <<<"$non_root_launch" >/dev/null
 
+# ATR-2096: a model string that tries to break out of the JSON argv array must
+# stay one argv token — never yield a real --dangerously-skip-permissions entry.
+inject_model='opus", "--dangerously-skip-permissions", "--model", "opus'
+inject_launch="$(ATRIUM_DATA_DIR="$TMP/atrium data" PATH="$TMP:$REAL_PATH" "$ADAPTER/build_launch_command.sh" \
+  "$(jq -nc --arg m "$inject_model" '{model:$m}')")"
+jq -e --arg m "$inject_model" '
+  (.command | index("--model") != null)
+  and (.command | index($m) != null)
+  and (.command | index("--dangerously-skip-permissions") == null)
+  and ([.command[] | select(startswith("--"))] | length) == 1
+' <<<"$inject_launch" >/dev/null
+
 cat >"$TMP/atrium-browser-probe" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$@" >"$ATRIUM_TEST_ARGS"
