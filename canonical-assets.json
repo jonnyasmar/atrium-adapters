@@ -12,7 +12,7 @@
       "id": "atrium-skill",
       "remotePath": "skills/atrium/SKILL.md",
       "target": "adapter-skill",
-      "sha256": "b12a0459f6a9079a5be9df60181669ee7c6670d2b4bd7f54b9f28869bbc265af"
+      "sha256": "b1c6e66f6001b2cf21455828300a4c301738818d2b472f5232b661d144ce8af5"
     },
     {
       "id": "atrium-skill-session-worktree-move",
@@ -82,7 +82,7 @@
       "remotePath": "skills/atrium/references/hq.md",
       "target": "adapter-skill-reference",
       "destName": "hq.md",
-      "sha256": "bbfdc23f383f9b92988d01a073bdaa1ef4feae25c4905b1b33e40fb2f31ef4ec"
+      "sha256": "942a33b2af643784f097616712e01324d60e5d54278b7cf1fbbe8be50e90b598"
     },
     {
       "id": "atrium-skill-dashboard-design",
@@ -130,6 +130,6 @@
   "source": {
     "repository": "jonnyasmar/atrium-adapters",
     "commit": "ff28b8a21f5781e2d97e098156cd7d5d34cb6d63",
-    "generation": 121
+    "generation": 122
   }
 }

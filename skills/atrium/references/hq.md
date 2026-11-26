@@ -261,7 +261,7 @@ Your browser uses the owner's shared profile, so it's signed in wherever the own
 "$ATRIUM_CLI_PATH" browser hand-off "<what the owner should do>" [--pane <pane|mine>] [--done-when-url <substring>]
 ```
 
-`mine` is the subtab a director's own browser shows, and `browser hand-off` uses it when a director names no pane. Staff name the browser they drive. Requests and hand-offs return at once: end your turn, and atrium tells you the outcome. SKILL.md's **Secrets** section has the rest.
+`secret run` scrubs known values (including shell-quoted / xtrace forms), turns *startup* shell xtrace off (argv/env; not a `set -x` inside the script), and omits ambient credential-shaped env (`*_TOKEN`, …), naming what it dropped on stderr — pass `--env NAME` for each the command needs. Derived values (a hash, a freshly generated secret) are not scrubbed — pipe them into the consumer; never echo or `set -x` around them. `mine` is the subtab a director's own browser shows, and `browser hand-off` uses it when a director names no pane. Staff name the browser they drive. Requests and hand-offs return at once: end your turn, and atrium tells you the outcome. SKILL.md's **Secrets** section has the rest.
 
 ## Connectors
 
